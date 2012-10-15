@@ -1,0 +1,3 @@
+#!/bin/sh
+cd /opt/saera/
+python saera.py
