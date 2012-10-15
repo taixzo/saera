@@ -4,7 +4,7 @@ import os
 import pocketsphinx as ps
 decoder = ps.Decoder(hmm='/usr/share/pocketsphinx/model/hmm/wsj1/',
 					 dict='/usr/share/pocketsphinx/model/lm/en_US/cmu07a.dic',
-					 jsgf='/home/skyler/Dropbox/saera/grammar.jsgf',
+					 jsgf='/home/taixzo/Dropbox/saera/grammar.jsgf',
 					 adcin='yes',
 					 samprate='8000')
 
