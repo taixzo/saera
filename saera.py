@@ -13,9 +13,12 @@ import gobject
 import pygst
 import urllib2
 import email
+import time
+import commands
 from subprocess import PIPE, Popen
 from threading import Thread
 from Queue import Queue, Empty
+
 try:
 	import json
 except ImportError:
@@ -58,8 +61,8 @@ able_to_listen = True
 settings = {}
 settings['use_google_voice'] = "unrecognized"
 settings['language'] = 'english'
+settings['use_answers_com'] = 'yes'
 lang = "en"
-lang_flag = "wiki"
 # Levels:
 #	0: No accuracy. User is probably somewhere on Earth.
 #	1: Very low accuracy, using geoip on cellular connection - accurate to within a thousand miles or so
@@ -307,7 +310,7 @@ class Saera:
 			if able_to_listen:
 				able_to_listen = False
 				os.system("aplay dingding.wav &")
-				os.system("sleep 0.5")
+				time.sleep(0.5)
 				self.pipeline.set_state(gst.STATE_PLAYING)
 			else:
 				self.pipeline.set_state(gst.STATE_PAUSED)
@@ -315,9 +318,9 @@ class Saera:
 					self.run_saera(None, 'speech-event', ' ')
 				finally:
 					fsink = self.pipeline.get_by_name('fsink')
-					fsink.set_state(gst.STATE_NULL)
-					# os.remove('/tmp/saera/output.flac')
-					fsink.set_state(gst.STATE_READY)
+					if not fsink is None:
+						fsink.set_state(gst.STATE_NULL)
+						fsink.set_state(gst.STATE_READY)
 					able_to_listen = True
 
 	def check_proximity_sensor(self):
@@ -331,7 +334,7 @@ class Saera:
 					global able_to_listen
 					able_to_listen = False
 					os.system("aplay dingding.wav &")
-					os.system("sleep 0.5")
+					time.sleep(0.5)
 					self.pipeline.set_state(gst.STATE_PLAYING)
 				else:
 					gobject.timeout_add(500, self.check_proximity_sensor)
@@ -514,63 +517,58 @@ class Saera:
 		else:
 			saera_processing.location = coords
 			print "Coords: ", coords
-		if event=="speech-event":
-			text = data[0].upper()+data[1:].lower().replace(" and nine hundred", " N900")
+
+		if(event == "speech-event"):
+			text = data[0].upper() + data[1:].lower().replace(" and nine hundred", " N900")
 		else:
 			text = self.input.get_text()
+
 		if text:
-			print "Got input: "+text
+			print "Got input: " + text
 			self.lines.append([text, True])
 			self.input.set_text("")
 			self.darea.queue_draw()
 			result, func = saera_processing.parse_input(text+" ")
-			if func:
-				eval(func)
-			elif result.startswith("I don't understand "):
-				if settings['use_google_voice']=="unrecognized" and event=="speech-event":
-					print "Sending to Google..."
-					# os.system('wget -q -U "Mozilla/5.0" --post-file /tmp/saera/output.flac' \
-						# + ' --header="Content-Type: audio/x-flac; rate='+str(SAMPLE_RATE)+'" -O - '+gv_api_url+' > /tmp/saera/parsed.ret')
-					os.system(r'wget -q -U "Mozilla/5.0" --post-file /tmp/saera/output.flac '\
-						'--header="Content-Type: audio/x-flac; rate='+str(SAMPLE_RATE)+r'" "'\
-						+gv_api_url+'" -O /tmp/saera/parsed.ret && '+"cat /tmp/saera/parsed.ret | sed 's/.*utterance\":\"//' | " \
-						+"sed 's/\",\"confidence.*//' > /tmp/saera/result.txt")
-					print (r'wget -q -U "Mozilla/5.0" --post-file /tmp/saera/output.flac '\
-						'--header="Content-Type: audio/x-flac; rate='+str(SAMPLE_RATE)+r'" -O '\
-						'- '+gv_api_url+' > /tmp/saera/parsed.ret && '+"cat /tmp/saera/parsed.ret | sed 's/.*utterance\":\"//' | " \
-						+"sed 's/\",\"confidence.*//' > /tmp/saera/result.txt")
-					text = open('/tmp/saera/result.txt').read().strip()
-					text = text[0].upper()+text[1:].lower().replace(" and nine hundred", " N900")
-					self.lines[-1][0] = text
-					print "Got back '"+text+"'"
-				query = text.replace(" ", "_")
-				request_url = "http://"+lang_flag+".answers.com/Q/"+query
-				print "Sending request to answers.com..."
-				os.system('wget "'+request_url+'" -O /tmp/saera/answer.html')
-				answer = open('/tmp/saera/answer.html').read()
-				if 'description' in answer:
-					result = [i for i in answer.split('\n') if 'description' in i][0]
-					if "content" in result:
-						result = "".join([i for i in result.split('content="')[1].strip('"\'<>') if not i in '"<>*'])
-					else:
-						result = "I don't understand "+text+". Sorry"
-				else:
-					result = "I don't understand "+text+". Sorry."
-			global pulsing
-			global able_to_listen
-			pulsing = False
-			able_to_listen = True
-			if result:
-				self.lines.append([result,False])
-				self.lines = self.lines[-20:]
-				self.darea.queue_draw()
-				#Espeak makes a poor guess how to pronounce this, so we help it out.
-				result = result.replace("maemo","maymo")
-				result = result.replace("I am.","Ay am.")
-				result = result.replace("sushi", "sooshi")
-				result = result.replace("falafel", "fuh-laHfel")
-				gobject.timeout_add(100, os.system, saera_processing.sent.espeak_cmdline+' "'+result+'"')
-				gobject.timeout_add(500, self.check_proximity_sensor)
+		else:
+			result = False
+			func = False
+
+		if(settings['use_google_voice'] == 'unrecognized' and result.startswith("I don't understand ")) or settings['use_google_voice'] == 'always':
+			print "Sending to Google..."
+			cmd = r'wget -q -U "Mozilla/5.0" --post-file /tmp/saera/output.flac -O- '\
+				'--header="Content-Type: audio/x-flac; rate='+str(SAMPLE_RATE)+r'" "'\
+				+gv_api_url+'"'
+			print(cmd)
+			status, result = commands.getstatusoutput(cmd)
+
+			if status:
+				print "Google voice recognition failed."
+			else:
+				print "Result from google: %s" % result
+				text = json.loads(result)['hypotheses'][0]['utterance']
+
+				print "Got back '"+text+"'"
+				self.lines[-1][0] = text
+				result, func = saera_processing.parse_input(text+" ")
+
+		if func:
+			eval(func)
+
+		global pulsing
+		global able_to_listen
+		pulsing = False
+		able_to_listen = True
+		if result:
+			self.lines.append([result,False])
+			self.lines = self.lines[-20:]
+			self.darea.queue_draw()
+			#Espeak makes a poor guess how to pronounce this, so we help it out.
+			result = result.replace("maemo","maymo")
+			result = result.replace("I am.","Ay am.")
+			result = result.replace("sushi", "sooshi")
+			result = result.replace("falafel", "fuh-laHfel")
+			gobject.timeout_add(100, os.system, saera_processing.sent.espeak_cmdline+' "'+result+'"')
+			gobject.timeout_add(500, self.check_proximity_sensor)
 
 	def pulse(self):
 		global rot_amount
@@ -617,25 +615,34 @@ class Saera:
 
 	def init_gst(self):
 		"""Initialize the speech components"""
-		self.pipeline = gst.parse_launch('pulsesrc ! audioconvert '
-										 + '! tee name = t ! audioresample '
-										 + '! vader name=vad auto-threshold=true '
-										 # + '! pocketsphinx name=asr ! fakesink')
-										 + '! pocketsphinx name=asr t. ! audiorate ! audio/x-raw-int, rate='+str(SAMPLE_RATE)+' ! flacenc'
-										 # + '! tee name = t ! queue '
-										 # + '! vader name=vad auto-threshold=true '
-										 # # + '! pocketsphinx name=asr ! fakesink')
-										 # + '! pocketsphinx name=asr t. ! queue ! audiorate ! audio/x-raw-int, rate=48000 ! flacenc'
-										 + ' ! filesink name=fsink location=/tmp/saera/output.flac')
-		asr = self.pipeline.get_by_name('asr')
-		asr.connect('partial_result', self.asr_partial_result)
-		asr.connect('result', self.asr_result)
-		asr.set_property('configured', True)
-		print dir(asr)
-		
-		#Experimental. Custom model for higher accuracy.
-		asr.set_property('lm', 'model/6577.lm')
-		asr.set_property('dict', 'model/6577.dic')
+
+		pipeline = 'pulsesrc ! audioconvert '
+		print(settings)
+
+		if(settings['use_google_voice'] != 'always'):
+			pipeline += '! tee name = t ! audioresample '
+			pipeline += '! vader name=vad auto-threshold=true '
+			pipeline += '! pocketsphinx name=asr t. '
+
+		if(settings['use_google_voice'] == 'never'):
+			pipeline += '! fakesink '
+		else:
+			pipeline += '! audiorate ! audioresample ! audio/x-raw-int, rate='+str(SAMPLE_RATE)
+			pipeline += '! flacenc ! filesink name=fsink location=/tmp/saera/output.flac'
+
+		print "GStreamer pipeline: " + pipeline
+		self.pipeline = gst.parse_launch(pipeline)
+
+		if(settings['use_google_voice'] != 'always'):
+			asr = self.pipeline.get_by_name('asr')
+			asr.connect('partial_result', self.asr_partial_result)
+			asr.connect('result', self.asr_result)
+			asr.set_property('configured', True)
+			print dir(asr)
+
+			#Experimental. Custom model for higher accuracy.
+			asr.set_property('lm', 'model/6577.lm')
+			asr.set_property('dict', 'model/6577.dic')
 
 		bus = self.pipeline.get_bus()
 		bus.add_signal_watch()
@@ -682,9 +689,9 @@ class Saera:
 			self.run_saera(None, "speech-event", hyp)
 		finally:
 			fsink = self.pipeline.get_by_name('fsink')
-			fsink.set_state(gst.STATE_NULL)
-			os.remove('/tmp/saera/output.flac')
-			fsink.set_state(gst.STATE_READY)
+			if not fsink is None:
+				fsink.set_state(gst.STATE_NULL)
+				fsink.set_state(gst.STATE_READY)
 
 if __name__=='__main__':
 
