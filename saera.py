@@ -61,8 +61,8 @@ able_to_listen = True
 settings = {}
 settings['use_google_voice'] = "unrecognized"
 settings['language'] = 'english'
+settings['use_answers_com'] = 'yes'
 lang = "en"
-lang_flag = "wiki"
 # Levels:
 #	0: No accuracy. User is probably somewhere on Earth.
 #	1: Very low accuracy, using geoip on cellular connection - accurate to within a thousand miles or so
