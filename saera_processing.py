@@ -7,6 +7,8 @@ import gobject
 import os, sys
 import tempfile
 import urllib2
+import saera
+
 try:
 	import json
 except ImportError:
@@ -178,6 +180,17 @@ def should_read_email(input):
 
 ########### Common questions/functions ############
 def ai(input):
+	if saera.settings["use_answers_com"] != "no":
+		query = input.replace(" ", "_")
+		request_url = "http://%s.answers.com/Q/%s" % ("wiki", query)
+		print "Sending request to answers.com: %s" % request_url
+		os.system('wget "'+request_url+'" -O /tmp/saera/answer.html')
+		answer = open('/tmp/saera/answer.html').read()
+		if 'description' in answer:
+			result = [i for i in answer.split('\n') if 'description' in i][0]
+			if "content" in result:
+				return "".join([i for i in result.split('content="')[1].strip('"\'<>') if not i in '"<>*'])
+
 	return "I don't understand "+input+". Sorry."
 
 def life_the_universe_and_everything():
