@@ -318,9 +318,9 @@ class Saera:
 					self.run_saera(None, 'speech-event', ' ')
 				finally:
 					fsink = self.pipeline.get_by_name('fsink')
-					fsink.set_state(gst.STATE_NULL)
-					# os.remove('/tmp/saera/output.flac')
-					fsink.set_state(gst.STATE_READY)
+					if not fsink is None:
+						fsink.set_state(gst.STATE_NULL)
+						fsink.set_state(gst.STATE_READY)
 					able_to_listen = True
 
 	def check_proximity_sensor(self):
@@ -689,9 +689,9 @@ class Saera:
 			self.run_saera(None, "speech-event", hyp)
 		finally:
 			fsink = self.pipeline.get_by_name('fsink')
-			fsink.set_state(gst.STATE_NULL)
-			os.remove('/tmp/saera/output.flac')
-			fsink.set_state(gst.STATE_READY)
+			if not fsink is None:
+				fsink.set_state(gst.STATE_NULL)
+				fsink.set_state(gst.STATE_READY)
 
 if __name__=='__main__':
 
