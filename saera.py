@@ -15,6 +15,7 @@ import urllib2
 import email
 import time
 import commands
+from settings_dialog import SaeraSettingsDialog
 from subprocess import PIPE, Popen
 from threading import Thread
 from Queue import Queue, Empty
@@ -155,13 +156,24 @@ class Saera:
 		self.ims = []
 		self.lines = [['What can I help you with?',False]]
 		try:
+			el = hildon.GtkButton(gtk.HILDON_SIZE_AUTO_WIDTH | gtk.HILDON_SIZE_FINGER_HEIGHT)
+			el.set_label("Settings")
+			el.connect("clicked", self.open_settings)
+			el.show()
+
+			menu = hildon.AppMenu()
+			menu.append(el)
+
 			program = hildon.Program.get_instance()
 			self.win = hildon.StackableWindow()
+			self.win.set_app_menu(menu)
+
 			rotation_object = FremantleRotation(app_name, self.win, app_version, initial_mode)
 			program.add_window(self.win)
 		except:
 			print "No hildon win"
 			self.win = gtk.Window()
+
 		self.win.set_size_request(400, 550)
 		self.win.set_title("Saera")
 		self.vbox = gtk.VBox()
@@ -467,46 +479,9 @@ class Saera:
 			return
 
 
-	def open_settings(self):
-		def set_lang(widget, langs):
-			sel = [None]
-			def selection_changed(selector, seltype):
-				global settings
-				__import__("sentences.sentences_"+selector.get_current_text())
-				saera_processing.sent = sys.modules["sentences.sentences_"+selector.get_current_text()]
-				settings['language'] = selector.get_current_text()
-				open(os.getenv('HOME')+'/.saera', 'w').write(json.dumps(settings))
-				stack = hildon.WindowStack.get_default()
-				stack.pop_1()
-			lwin = hildon.StackableWindow()
-			selector = hildon.TouchSelector(text = True)
-			selector.connect("changed", selection_changed)
-			for i in langs:
-				selector.append_text(i)
-			selector.set_column_selection_mode(hildon.TOUCH_SELECTOR_SELECTION_MODE_SINGLE)
-			lwin.add(selector)
-			lwin.show_all()
-		try:
-			win = hildon.StackableWindow()
-		except NameError:
-			win = gtk.Window()
-			win.set_modal(True)
-			win.set_transient_for(self.win)
-		win.set_title("Settings")
-		vbox = gtk.VBox()
-		win.add(vbox)
-		langs = [i.split("_")[1].split(".")[0] for i in os.listdir('sentences') if (i.endswith('.py') and not 'init' in i)]
-		try:
-			langbut = hildon.GtkButton(gtk.HILDON_SIZE_AUTO_WIDTH | gtk.HILDON_SIZE_FINGER_HEIGHT)
-			langbut.set_label("Language")
-			langbut.connect("clicked", set_lang, langs)
-			vbox.pack_start(langbut, True, False, 0)
-		except NameError:
-			cbox = gtk.combo_box_new_text()
-			for i in langs:
-				cbox.append_text(i)
-			vbox.pack_start(cbox, True, False, 0)
-		win.show_all()
+	def open_settings(self, widget = None):
+		dialog = SaeraSettingsDialog(settings)
+		dialog.show(self.win)
 	
 
 	def run_saera(self, widget=None, event=None, data=None):
