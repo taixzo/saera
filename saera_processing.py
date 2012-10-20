@@ -41,9 +41,16 @@ def overlap(a, b):
 	return bool(result)
 
 def parse_input(input):
+	global next_func
 	input = input.lower()
+
 	if next_func:
-		return next_func(input)
+		# Reset next_func before calling it, to allow currently installed
+		# next_func to set another one.
+		cur_call_func = next_func
+		next_func = None
+		return cur_call_func(input)
+
 	elif input.startswith('hello') or input.startswith('hi ') or input.startswith('hey'):
 		return hello(input), None
 	elif input.startswith('test'):
@@ -111,12 +118,6 @@ def parse_input(input):
 	else:
 		return ai(input), None
 	
-def store_answer(answer):
-	pass
-	global next_func
-	next_func = None
-	return 'Ok.', None
-	
 def play_music():
 	#Todo.
 	os.system("dbus-send --dest=com.nokia.mafw.renderer.Mafw-Gst-Renderer-Plugin.gstrenderer /com/nokia/mafw/renderer/gstrenderer com.nokia.mafw.renderer.resume")
@@ -170,8 +171,6 @@ def parse_to_nums(input):
 				
 ########### Callback functions ####################
 def should_read_email(input):
-	global next_func
-	next_func = None
 	if overlap(input.split(), sent.affirmative) and not overlap(input.split(), sent.negative):
 		return '', 'self.read_email()'
 	else:
@@ -479,9 +478,6 @@ def reminder (message):
 		return sent.what_reminder_time
 
 def reminder_time(input, message):
-	global next_func
-	next_func = None
-
 	time = input_to_datetime(input)
 	set_alarm(message, time, True)
 
