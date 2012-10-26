@@ -5,4 +5,4 @@ Comment=Voice control
 Exec=python /opt/saera/saera.py
 Terminal=false
 Type=Application
-
+Icon=saera

@@ -24,7 +24,7 @@ print "SETUP.PY RUNNING"
 APP_NAME="saera"
 PRETTY_APP_NAME="Saera"
 VERSION="0.2"
-BUILD="3"
+BUILD="4"
 DESKTOP_FILE_PATH="/usr/share/applications/hildon"
 INPUT_DESKTOP_FILE="saera.desktop"
 ICON_CATEGORY="apps"
@@ -108,7 +108,8 @@ dataFiles.extend([ (DESKTOP_FILE_PATH, [INPUT_DESKTOP_FILE]) ])
 
 ## add icons
 dataFiles.extend( [ (
-                    "/usr/share/icons/hicolor/%sx%s/%s" % (size, size, ICON_CATEGORY),
+                    # "/usr/share/icons/hicolor/%sx%s/%s" % (size, size, ICON_CATEGORY),
+                    "/usr/share/icons/hicolor/scalable/%s" % (ICON_CATEGORY),
                     ["%sx%s/%s.png" % (size, size, APP_NAME)]
                     ) for size in ICON_SIZES ] )
 

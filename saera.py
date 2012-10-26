@@ -331,6 +331,14 @@ class Saera:
 				state = f.read()
 				f.close()
 				if state=="closed\n":
+					cmd = """dbus-send --system --type=method_call --dest="com.nokia.mce" --print-reply "/com/nokia/mce/request" com.nokia.mce.request.get_tklock_mode|awk -F "\"" '/g/ {print $2}'"""
+					status, result = commands.getstatusoutput(cmd)
+					if status:
+						return # probably not on an N900
+					else:
+						if not "un" in result:
+							# Screen is locked
+							return
 					global able_to_listen
 					able_to_listen = False
 					os.system("aplay dingding.wav &")
