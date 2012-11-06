@@ -1,13 +1,16 @@
 #!/usr/bin/python
 
 import saera_processing
-import gtk
-import pango
-import cairo
-import pangocairo
+#import gtk
+#import pango
+#import cairo
+#import pangocairo
+
+from PySide import QtGui, QtCore
+
 import sys
 import os
-import gobject
+#import gobject
 import math
 import gobject
 import pygst
@@ -87,6 +90,8 @@ try:
 except OSError:
 	pass
 
+QT = False
+
 def get_ip_location():
 	global POSITION_ACCURACY
 	if POSITION_ACCURACY<3:
@@ -160,44 +165,85 @@ class Saera:
 			rotation_object = FremantleRotation(app_name, self.win, app_version, initial_mode)
 			program.add_window(self.win)
 		except:
-			print "No hildon win"
-			self.win = gtk.Window()
-		self.win.set_size_request(400, 550)
-		self.win.set_title("Saera")
-		self.vbox = gtk.VBox()
-		self.win.add(self.vbox)
-		self.input = gtk.Entry()
-		self.darea = gtk.DrawingArea()
-		self.vbox.pack_start(self.input, False, True, 0)
-		self.vbox.pack_start(self.darea, True, True, 0)
+			try:
+				self.win = gtk.Window()
+				print "No hildon win"
+			except:
+				print "Using QT"
+				self.app = QtGui.QApplication(sys.argv)
+				self.win = QtGui.QWidget()
+				self.win.setWindowTitle("Saera")
+				# self.win.setWindowIcon(QtGui.QIcon('80x80/saera.png'))
+				self.win.show()
+				global QT
+				QT = True
+		if not QT:
+			self.win.set_size_request(400, 550)
+			self.win.set_title("Saera")
+			self.vbox = gtk.VBox()
+			self.win.add(self.vbox)
+			self.input = gtk.Entry()
+			self.darea = gtk.DrawingArea()
+			self.vbox.pack_start(self.input, False, True, 0)
+			self.vbox.pack_start(self.darea, True, True, 0)
 
-		self.darea.add_events(gtk.gdk.EXPOSURE_MASK
-									| gtk.gdk.BUTTON_PRESS_MASK
-									| gtk.gdk.BUTTON_RELEASE_MASK
-									| gtk.gdk.POINTER_MOTION_MASK
-									| gtk.gdk.POINTER_MOTION_HINT_MASK)
+			self.darea.add_events(gtk.gdk.EXPOSURE_MASK
+										| gtk.gdk.BUTTON_PRESS_MASK
+										| gtk.gdk.BUTTON_RELEASE_MASK
+										| gtk.gdk.POINTER_MOTION_MASK
+										| gtk.gdk.POINTER_MOTION_HINT_MASK)
 
-		self.input.connect('activate', self.run_saera)
-		self.darea.connect("expose-event", self.expose_event)
-		self.darea.connect("button-press-event", self.button_press_event)
+			self.input.connect('activate', self.run_saera)
+			self.darea.connect("expose-event", self.expose_event)
+			self.darea.connect("button-press-event", self.button_press_event)
 
-		try:
-			self.bgimage = cairo.ImageSurface.create_from_png("saera_bg.png")
-			self.micimage = cairo.ImageSurface.create_from_png("siri_mic.png")
-			self.micpulse = cairo.ImageSurface.create_from_png("siri_mic_spinner.png")
-			self.cbgimage = cairo.ImageSurface.create_from_png("saera_chat_bg.png")
-		except Exception, e:
-			print e.message
-			sys.exit(1)
+			try:
+				self.bgimage = cairo.ImageSurface.create_from_png("saera_bg.png")
+				self.micimage = cairo.ImageSurface.create_from_png("siri_mic.png")
+				self.micpulse = cairo.ImageSurface.create_from_png("siri_mic_spinner.png")
+				self.cbgimage = cairo.ImageSurface.create_from_png("saera_chat_bg.png")
+			except Exception, e:
+				print e.message
+				sys.exit(1)
 
-		self.win.show_all()
-		#self.pixmap = gtk.gdk.Pixmap(self.darea.window, *self.darea.window.get_size(), depth=-1)
+			self.win.show_all()
+			#self.pixmap = gtk.gdk.Pixmap(self.darea.window, *self.darea.window.get_size(), depth=-1)
 
-		gobject.timeout_add(500, self.check_proximity_sensor)
-		# gobject.timeout_add(10000, self.check_mail)
-		gobject.timeout_add(60000, self.check_mail)
+			gobject.timeout_add(500, self.check_proximity_sensor)
+			# gobject.timeout_add(10000, self.check_mail)
+			gobject.timeout_add(60000, self.check_mail)
 
-		self.win.connect('destroy', gtk.main_quit)
+			self.win.connect('destroy', gtk.main_quit)
+		else:
+			self.vbox = QtGui.QVBoxLayout()
+			self.win.setLayout(self.vbox)
+			self.input = QtGui.QLineEdit()
+			self.vbox.addWidget(self.input)
+			class canvas(QtGui.QWidget):
+				def __init__(self):
+					super (canvas, self).__init__()
+					self.initUI()
+				def initUI(self):
+					self.show()
+				def paintEvent(self, event):
+					self.expose_event(self, event)
+			self.darea = canvas()
+			self.darea.expose_event = self.expose_event
+			self.vbox.addWidget(self.darea)
+
+			try:
+				self.bgimage = QtGui.QPixmap()
+				self.micimage = QtGui.QPixmap()
+				self.micpulse = QtGui.QPixmap()
+				self.cbgimage = QtGui.QPixmap()
+				self.bgimage.load("saera_bg.png")
+				self.micimage.load("siri_mic.png")
+				self.micpulse.load("siri_mic_spinner.png")
+				self.cbgimage.load("saera_chat_bg.png")
+			except Exception, e:
+				print e.message
+				sys.exit(1)
+			pass
 
 		self.init_gst()
 		self.init_mail()
@@ -218,85 +264,141 @@ class Saera:
 
 	def expose_event(self, widget, event):
 		global WIDTH, HEIGHT
-		cr = widget.window.cairo_create()
+		if not QT:
+			cr = widget.window.cairo_create()
 
-		cr.set_line_width(2)
-		cr.set_source_rgb(0.7, 0.2, 0.0)
+			cr.set_line_width(2)
+			cr.set_source_rgb(0.7, 0.2, 0.0)
 
-		w = widget.allocation.width
-		h = widget.allocation.height
-		WIDTH, HEIGHT = w, h
+			w = widget.allocation.width
+			h = widget.allocation.height
+			WIDTH, HEIGHT = w, h
 
-		pat = cairo.SurfacePattern(self.bgimage)
-		pat.set_extend (cairo.EXTEND_REPEAT)
-		cr.set_source(pat)
-		cr.paint()
+			pat = cairo.SurfacePattern(self.bgimage)
+			pat.set_extend (cairo.EXTEND_REPEAT)
+			cr.set_source(pat)
+			cr.paint()
 
-		surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, w,h*4)
-		cra = cairo.Context(surface)
-		pat = cairo.SurfacePattern(self.cbgimage)
-		pat.set_extend (cairo.EXTEND_REPEAT)
-		y = 0
-		for i in self.lines:
-			cra.set_source(pat)
+			surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, w,h*4)
+			cra = cairo.Context(surface)
+			pat = cairo.SurfacePattern(self.cbgimage)
+			pat.set_extend (cairo.EXTEND_REPEAT)
+			y = 0
+			for i in self.lines:
+				cra.set_source(pat)
 
-			pangocairo_context = pangocairo.CairoContext(cra)
-			pangocairo_context.set_antialias(cairo.ANTIALIAS_SUBPIXEL)
-			layout = pangocairo_context.create_layout()
-			fontname = "Arial"
-			font = pango.FontDescription(fontname + " 15")
-			layout.set_font_description(font)
-			layout.set_width(pango.SCALE * (w-40))
+				pangocairo_context = pangocairo.CairoContext(cra)
+				pangocairo_context.set_antialias(cairo.ANTIALIAS_SUBPIXEL)
+				layout = pangocairo_context.create_layout()
+				fontname = "Arial"
+				font = pango.FontDescription(fontname + " 15")
+				layout.set_font_description(font)
+				layout.set_width(pango.SCALE * (w-40))
 
-			layout.set_text(i[0])
-			height = layout.get_size()[1]/pango.SCALE
+				layout.set_text(i[0])
+				height = layout.get_size()[1]/pango.SCALE
 
 
-			cra.move_to(20,y)
-			cra.line_to(w-20,y)
-			cra.arc(w-20,y+10,10,3*math.pi/2,math.pi*2)
-			cra.line_to(w-10,y+height)
-			if i[1]:
-				cra.line_to(w,y+height+10)
-				cra.line_to(20,y+height+10)
-				cra.arc(20,y+height,10,math.pi/2,math.pi)
-			else:
-				cra.arc(w-20,y+height,10,0,math.pi/2)
-				cra.line_to(0,y+height+10)
-				cra.line_to(10,y+height)
-			cra.line_to(10,y+10)
-			cra.arc(20,y+10,10,math.pi,3*math.pi/2)
-			cra.fill_preserve()
-			cra.set_source_rgb(0.8,0.8,0.8)
-			cra.stroke()
+				cra.move_to(20,y)
+				cra.line_to(w-20,y)
+				cra.arc(w-20,y+10,10,3*math.pi/2,math.pi*2)
+				cra.line_to(w-10,y+height)
+				if i[1]:
+					cra.line_to(w,y+height+10)
+					cra.line_to(20,y+height+10)
+					cra.arc(20,y+height,10,math.pi/2,math.pi)
+				else:
+					cra.arc(w-20,y+height,10,0,math.pi/2)
+					cra.line_to(0,y+height+10)
+					cra.line_to(10,y+height)
+				cra.line_to(10,y+10)
+				cra.arc(20,y+10,10,math.pi,3*math.pi/2)
+				cra.fill_preserve()
+				cra.set_source_rgb(0.8,0.8,0.8)
+				cra.stroke()
 
-			cra.set_source_rgb(1,1,1)
-			cra.save()
-			cra.translate(20,y+5)
-			pangocairo_context.update_layout(layout)
-			pangocairo_context.show_layout(layout)
-			cra.restore()
+				cra.set_source_rgb(1,1,1)
+				cra.save()
+				cra.translate(20,y+5)
+				pangocairo_context.update_layout(layout)
+				pangocairo_context.show_layout(layout)
+				cra.restore()
 
-			y += height+20
-		cr.set_source_surface(surface, 0, -max(0, y-(h-128)))
-		cr.paint()
+				y += height+20
+			cr.set_source_surface(surface, 0, -max(0, y-(h-128)))
+			cr.paint()
 
-		cr.set_source_surface(self.micimage,w/2-64,h-128)
-		cr.save()
-		cr.translate(w/2, h-64)
-		cr.rectangle(-64,-64,128,128)
-		cr.fill()
-		if pulsing:
-			cr.rotate(rot_amount)
-			cr.set_source_surface(self.micpulse,-64,-64)
+			cr.set_source_surface(self.micimage,w/2-64,h-128)
+			cr.save()
+			cr.translate(w/2, h-64)
 			cr.rectangle(-64,-64,128,128)
 			cr.fill()
-		cr.restore()
-		
-		if photo:
-			cr.set_source_surface(photo,0,0)
-			cr.rectangle(0,0,w,h)
-			cr.fill()
+			if pulsing:
+				cr.rotate(rot_amount)
+				cr.set_source_surface(self.micpulse,-64,-64)
+				cr.rectangle(-64,-64,128,128)
+				cr.fill()
+			cr.restore()
+			
+			if photo:
+				cr.set_source_surface(photo,0,0)
+				cr.rectangle(0,0,w,h)
+				cr.fill()
+		else:
+			qp = QtGui.QPainter()
+			qp.begin(widget)
+
+			# Todo
+			# cr.set_line_width(2)
+			qp.setPen(QtGui.QColor(179, 51, 0))
+
+			w = widget.size().width()
+			h = widget.size().height()
+			WIDTH, HEIGHT = w, h
+
+			bw = self.bgimage.width()
+			bh = self.bgimage.height()
+			for i in range(0,int(w/bw)+1):
+				for j in range(0,int(h/bh)+1):
+					qp.drawPixmap(i*bw, j*bh, self.bgimage)
+
+			font = QtGui.QFont('Decorative', 10)
+			qp.setFont(font)
+			fm = QtGui.QFontMetrics(font)
+			y = 0
+			for i in self.lines:
+				qp.setPen(QtGui.QColor(255,255,255))
+				height = fm.boundingRect(20, 5, w-40, h, QtCore.Qt.AlignLeft | QtCore.Qt.TextWordWrap, i[0]).height()
+
+
+				# cra.move_to(20,y)
+				qp.drawLine(20, y, w-20,y)
+				qp.drawArc(w-30,y,20,20, 90*16, -90*16)
+				# cra.arc(w-20,y+10,10,3*math.pi/2,math.pi*2)
+				qp.drawLine(w-10,y+10,w-10,y+height)
+				if i[1]:
+					qp.drawLine(w-10,y+height,w,y+height+10)
+				# 	qp.drawLine(w,y+height+10,20,y+height+10)
+				# 	# cra.arc(20,y+height,10,math.pi/2,math.pi)
+				else:
+					# cra.arc(w-20,y+height,10,0,math.pi/2)
+					qp.drawArc(w-10,y+height-10,-20,20,0,-90*16)
+					qp.drawLine(w-20,y+height+10,20,y+height+10)
+					qp.drawLine(20,y+height+10,0,y+height+20)
+					qp.drawLine(0,y+height+20,10,y+height)
+				qp.drawLine(10,y+height,10,y+10)
+				qp.drawArc(10,y,20,20,180*16,-90*16)
+				# cra.arc(20,y+10,10,math.pi,3*math.pi/2)
+				# cra.fill_preserve()
+				# cra.set_source_rgb(0.8,0.8,0.8)
+				# cra.stroke()
+
+				qp.drawText(QtCore.QRectF(20, 5, w-40, h), QtCore.Qt.AlignLeft | QtCore.Qt.TextWordWrap, i[0])
+
+
+			# ...
+
+			qp.end()
 
 	def button_press_event(self, widget, event):
 		if WIDTH/2-64<event.x<WIDTH/2+64 and event.y>HEIGHT-128:
@@ -704,4 +806,7 @@ class Saera:
 if __name__=='__main__':
 
 	app = Saera()
-	gtk.main()
+	if not QT:
+		gtk.main()
+	else:
+		sys.exit(app.app.exec_())
