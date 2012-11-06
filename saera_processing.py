@@ -3,8 +3,14 @@
 import random
 import datetime
 import time
-import gobject
+try:
+	import gobject
+	QT = False
+except:
+	from PySide import QtCore
+	QT = True
 import os, sys
+import functools
 import tempfile
 import urllib2
 import saera
@@ -105,7 +111,10 @@ def parse_input(input):
 	#	return search_google(input)
 		
 	elif input in ("quit ", "go away "):
-		gobject.timeout_add(3000,sys.exit,0)
+		if not QT:
+			gobject.timeout_add(3000,sys.exit,0)
+		else:
+			QtCore.QTimer.singleShot(3000,sys.exit)
 		return "Goodbye.", None
 		
 	else:
@@ -254,9 +263,15 @@ def call(input):
 	if has_nums:
 		phone_number = "".join([str(i) for i in words if hasattr(i, '__int__')])
 		if len(phone_number) in [7, 10, 11]:
-			gobject.timeout_add(5000,os.system,'dbus-send --system --type=method_call'+
+			callback = functools.partial(os.system,'dbus-send --system --type=method_call'+
 				' --print-reply --dest=com.nokia.csd.Call /com/nokia/csd/call'+
 				' com.nokia.csd.Call.CreateWith string:"'+str(phone_number)+'" uint32:0')
+			if not QT:
+				gobject.timeout_add(5000,os.system,'dbus-send --system --type=method_call'+
+					' --print-reply --dest=com.nokia.csd.Call /com/nokia/csd/call'+
+					' com.nokia.csd.Call.CreateWith string:"'+str(phone_number)+'" uint32:0')
+			else:
+				QtCore.QTimer.singleShot(5000,callback)
 			return "Calling "+" ".join(phone_number.split(""))
 		else:
 			return sent.phone_number_error

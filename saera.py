@@ -7,12 +7,13 @@ import saera_processing
 #import pangocairo
 
 from PySide import QtGui, QtCore
+import functools
 
 import sys
 import os
 #import gobject
 import math
-import gobject
+# import gobject
 import pygst
 import urllib2
 import email
@@ -27,8 +28,11 @@ try:
 except ImportError:
 	import simplejson as json
 
+QT = True
+
 pygst.require('0.10')
-gobject.threads_init()
+if not QT:
+	gobject.threads_init()
 import gst
 
 # Absolute path tweak - thanks MartinK!
@@ -89,8 +93,6 @@ try:
 	os.mkdir('/tmp/saera')
 except OSError:
 	pass
-
-QT = False
 
 def get_ip_location():
 	global POSITION_ACCURACY
@@ -209,9 +211,15 @@ class Saera:
 			self.win.show_all()
 			#self.pixmap = gtk.gdk.Pixmap(self.darea.window, *self.darea.window.get_size(), depth=-1)
 
-			gobject.timeout_add(500, self.check_proximity_sensor)
-			# gobject.timeout_add(10000, self.check_mail)
-			gobject.timeout_add(60000, self.check_mail)
+			if not QT:
+				gobject.timeout_add(500, self.check_proximity_sensor)
+				# gobject.timeout_add(10000, self.check_mail)
+				gobject.timeout_add(60000, self.check_mail)
+			else:
+				t1 = QtCore.QTimer()
+				t1.singleShot(500, self.check_proximity_sensor)
+				t2 = QtCore.QTimer()
+				t2.singleShot(60000, self.check_mail)
 
 			self.win.connect('destroy', gtk.main_quit)
 		else:
@@ -230,6 +238,8 @@ class Saera:
 			self.darea = canvas()
 			self.darea.expose_event = self.expose_event
 			self.vbox.addWidget(self.darea)
+
+			self.input.returnPressed.connect(self.run_saera)
 
 			try:
 				self.bgimage = QtGui.QPixmap()
@@ -252,7 +262,7 @@ class Saera:
 		get_geo_location()
 		
 		# Commented out because there is a bug in the sqlite line that I can't find.
-		gobject.timeout_add(10000, self.check_texts)
+		# gobject.timeout_add(10000, self.check_texts)
 
 		self.current_message = None
 
@@ -371,6 +381,7 @@ class Saera:
 				height = fm.boundingRect(20, 5, w-40, h, QtCore.Qt.AlignLeft | QtCore.Qt.TextWordWrap, i[0]).height()
 
 
+				'''
 				# cra.move_to(20,y)
 				qp.drawLine(20, y, w-20,y)
 				qp.drawArc(w-30,y,20,20, 90*16, -90*16)
@@ -391,10 +402,40 @@ class Saera:
 				# cra.arc(20,y+10,10,math.pi,3*math.pi/2)
 				# cra.fill_preserve()
 				# cra.set_source_rgb(0.8,0.8,0.8)
+				# cra.stroke()'''
+
+				cra = QtGui.QPainterPath()
+				cra.moveTo(20,y)
+				cra.lineTo(w-20,y)
+				cra.arcTo(w-30,y,20,20,90,-90)
+				cra.lineTo(w-10,y+height)
+				if i[1]:
+					cra.lineTo(w,y+height+10)
+					cra.lineTo(20,y+height+10)
+					cra.arcTo(10,y+height-10,20,20,-90,-90)
+				else:
+					cra.arcTo(w-10,y+height-10,-20,20,180,90)
+					cra.lineTo(0,y+height+10)
+					cra.lineTo(10,y+height)
+				cra.lineTo(10,y+10)
+				cra.arcTo(10,y,20,20,180,-90)
+				qp.fillPath(cra, QtGui.QColor(255,255,255,128))
+				qp.drawPath(cra)
+				# cra.set_source_rgb(0.8,0.8,0.8)
 				# cra.stroke()
 
+
+				qp.translate(0,y+5)
 				qp.drawText(QtCore.QRectF(20, 5, w-40, h), QtCore.Qt.AlignLeft | QtCore.Qt.TextWordWrap, i[0])
 
+
+				y += height+20
+
+			qp.drawPixmap(w/2-64,h-128,self.micimage)
+			if pulsing:
+				qp.translate(w/2,h-64)
+				qp.rotate(rot_amount)
+				qp.drawPixmap(-64,-64,self.micpulse)
 
 			# ...
 
@@ -447,7 +488,11 @@ class Saera:
 					time.sleep(0.5)
 					self.pipeline.set_state(gst.STATE_PLAYING)
 				else:
-					gobject.timeout_add(500, self.check_proximity_sensor)
+					if not QT:
+						gobject.timeout_add(500, self.check_proximity_sensor)
+					else:
+						t1 = QtCore.QTimer()
+						t1.singleShot(500, self.check_proximity_sensor)
 		except:
 			# we probably don't have a proximity sensor
 			print "No proximity sensor."
@@ -482,7 +527,11 @@ class Saera:
 				able_to_listen = False
 				self.pipeline.set_state(gst.STATE_PLAYING)
 		# return False
-		gobject.timeout_add(45000, self.check_mail)
+		if not QT:
+			gobject.timeout_add(45000, self.check_mail)
+		else:
+			t1 = QtCore.QTimer()
+			t1.singleShot(45000, self.check_mail)
 
 	def check_texts(self):
 		self.pipeline.set_state(gst.STATE_PAUSED)
@@ -504,7 +553,10 @@ class Saera:
 		imp = [j for j in [[i.split("|")[0],"|".join(i.split("|")[1:])] for i in imp] if j]
 		imp = [j for j in imp if j[0] and j[1]]
 		self.ims = imp
-		gobject.timeout_add(10000, self.check_texts)
+		if not QT:
+			gobject.timeout_add(10000, self.check_texts)
+		else:
+			QtCore.QTimer().singleShot(10000, self.check_texts)
 		self.read_ims()
 
 	def read_email(self):
@@ -519,7 +571,11 @@ class Saera:
 				self.lines.append([words, False])
 				self.lines = self.lines[-20:]
 				self.darea.queue_draw()
-				gobject.timeout_add(100, os.system, saera_processing.sent.espeak_cmdline+' "'+words+'"')
+				if not QT:
+					gobject.timeout_add(100, os.system, saera_processing.sent.espeak_cmdline+' "'+words+'"')
+				else:
+					callback = functools.partial(os.system, saera_processing.sent.espeak_cmdline+' "'+words+'"')
+					QtCore.QTimer().singleShot(100, callback)
 			else:
 				for i in self.current_message:
 					if '"' in i['From']:
@@ -535,7 +591,11 @@ class Saera:
 					self.lines.append([words, False])
 					self.lines = self.lines[-20:]
 					self.darea.queue_draw()
-					gobject.timeout_add(100, os.system, saera_processing.sent.espeak_cmdline+' "'+words+'"')
+					if not QT:
+						gobject.timeout_add(100, os.system, saera_processing.sent.espeak_cmdline+' "'+words+'"')
+					else:
+						callback = functools.partial(os.system, saera_processing.sent.espeak_cmdline+' "'+words+'"')
+						QtCore.QTimer().singleShot(100, callback)
 	def read_all_emails(self):
 		self.pipeline.set_state(gst.STATE_PAUSED)
 		result = []
@@ -552,7 +612,11 @@ class Saera:
 			self.lines.append([words, False])
 			self.lines = self.lines[-20:]
 			self.darea.queue_draw()
-			gobject.timeout_add(100, os.system, saera_processing.sent.espeak_cmdline+' "'+words+'"')
+			if not QT:
+				gobject.timeout_add(100, os.system, saera_processing.sent.espeak_cmdline+' "'+words+'"')
+			else:
+				callback = functools.partial(os.system, saera_processing.sent.espeak_cmdline+' "'+words+'"')
+				QtCore.QTimer().singleShot(100, callback)
 
 	def read_ims(self):
 		try:
@@ -572,7 +636,10 @@ class Saera:
 			self.lines = self.lines[-20:]
 			self.darea.queue_draw()
 			os.system(saera_processing.sent.espeak_cmdline+' "'+words1+'"')
-			gobject.timeout_add(5000, self.read_ims)
+			if not QT:
+				gobject.timeout_add(5000, self.read_ims)
+			else:
+				QtCore.QTimer().singleShot(5000, self.read_ims)
 		except IndexError:
 			return
 
@@ -631,13 +698,19 @@ class Saera:
 		if(event == "speech-event"):
 			text = data[0].upper() + data[1:].lower().replace(" and nine hundred", " N900")
 		else:
-			text = self.input.get_text()
+			if not QT:
+				text = self.input.get_text()
+			else:
+				text = self.input.text()
 
 		if text:
 			print "Got input: " + text
 			self.lines.append([text, True])
-			self.input.set_text("")
-			self.darea.queue_draw()
+			if not QT:
+				self.input.set_text("")
+				self.darea.queue_draw()
+			else:
+				self.input.setText("")
 			result, func = saera_processing.parse_input(text+" ")
 		else:
 			result = False
@@ -671,21 +744,32 @@ class Saera:
 		if result:
 			self.lines.append([result,False])
 			self.lines = self.lines[-20:]
-			self.darea.queue_draw()
+			if not QT:
+				self.darea.queue_draw()
 			#Espeak makes a poor guess how to pronounce this, so we help it out.
 			result = result.replace("maemo","maymo")
 			result = result.replace("I am.","Ay am.")
 			result = result.replace("sushi", "sooshi")
 			result = result.replace("falafel", "fuh-laHfel")
-			gobject.timeout_add(100, os.system, saera_processing.sent.espeak_cmdline+' "'+result+'"')
-			gobject.timeout_add(500, self.check_proximity_sensor)
+			if not QT:
+				gobject.timeout_add(100, os.system, saera_processing.sent.espeak_cmdline+' "'+result+'"')
+			else:
+				callback = functools.partial(os.system, saera_processing.sent.espeak_cmdline+' "'+result+'"')
+				QtCore.QTimer.singleShot(100, callback)
+			if not QT:
+				gobject.timeout_add(500, self.check_proximity_sensor)
+			else:
+				QtCore.QTimer().singleShot(500, self.check_proximity_sensor)
 
 	def pulse(self):
 		global rot_amount
 		rot_amount+=0.3
 		self.darea.queue_draw()
 		if pulsing:
-			gobject.timeout_add(100, self.pulse)
+			if not QT:
+				gobject.timeout_add(100, self.pulse)
+			else:
+				QtCore.QTimer().singleShot(100, self.pulse)
 
 	def display_picture(self, pic):
 		global photo
