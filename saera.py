@@ -716,7 +716,9 @@ class Saera:
 			result = False
 			func = False
 
-		if(settings['use_google_voice'] == 'unrecognized' and result.startswith("I don't understand ")) or settings['use_google_voice'] == 'always':
+		if event == "speech-event" \
+			and ((settings['use_google_voice'] == 'unrecognized' and result.startswith("I don't understand ")) \
+				 or settings['use_google_voice'] == 'always'):
 			print "Sending to Google..."
 			cmd = r'wget -q -U "Mozilla/5.0" --post-file /tmp/saera/output.flac -O- '\
 				'--header="Content-Type: audio/x-flac; rate='+str(SAMPLE_RATE)+r'" "'\
