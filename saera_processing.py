@@ -47,9 +47,16 @@ def overlap(a, b):
 	return bool(result)
 
 def parse_input(input):
+	global next_func
 	input = input.lower()
+
 	if next_func:
-		return next_func(input)
+		# Reset next_func before calling it, to allow currently installed
+		# next_func to set another one.
+		cur_call_func = next_func
+		next_func = None
+		return cur_call_func(input)
+
 	elif input.startswith('hello') or input.startswith('hi ') or input.startswith('hey'):
 		return hello(input), None
 	elif input.startswith('test'):
@@ -120,12 +127,6 @@ def parse_input(input):
 	else:
 		return ai(input), None
 	
-def store_answer(answer):
-	pass
-	global next_func
-	next_func = None
-	return 'Ok.', None
-	
 def play_music():
 	#Todo.
 	os.system("dbus-send --dest=com.nokia.mafw.renderer.Mafw-Gst-Renderer-Plugin.gstrenderer /com/nokia/mafw/renderer/gstrenderer com.nokia.mafw.renderer.resume")
@@ -179,8 +180,6 @@ def parse_to_nums(input):
 				
 ########### Callback functions ####################
 def should_read_email(input):
-	global next_func
-	next_func = None
 	if overlap(input.split(), sent.affirmative) and not overlap(input.split(), sent.negative):
 		return '', 'self.read_email()'
 	else:
@@ -413,182 +412,129 @@ bells = {'quarter':15, 'half':30}
 times = {'noon':12, 'midnight':0, 'morning':9, 'afternoon':16, 'evening':19, 'night':21}
 weekdays = ['sunday','monday','tuesday','wednesday', 'thursday','friday','saturday']
 
+def input_to_datetime (input):
+	time = datetime.datetime.today()
+	words, has_nums = parse_to_nums(input.lower().split())
+	day_identifier = [i for i in words if i in weekdays]
+
+	if "after tomorrow" in input.lower():
+		time = time + datetime.timedelta(days = 2)
+	elif 'tomorrow' in words:
+		time = time + datetime.timedelta(days = 1)
+	elif day_identifier:
+		day = weekdays.index(day_identifier[0])
+		print day
+		time = time + datetime.timedelta(days = (day - time.weekday()) % 7)
+
+	hour = [i for i in words if i in times]
+	if hour:
+		time = time.replace(hour = times[hour[0]], minute = 0, second = 0, microsecond = 0)
+	hour = False
+	minute = 0
+	pmam = False
+	bell = False
+	for i in words:
+		try:
+			# try casting to integer, fails for non-numbers
+			int(i)
+
+			if type(hour) == bool and not hour:
+				hour = int(i)
+			elif not minute:
+				minute = int(i)
+		except ValueError:
+			pass
+
+		if i in bells:
+			bell = True
+			minute = bells[i]
+		elif bell:
+			if i in ['as', 'past', 'after']:
+				pass
+			elif i in ['to', 'told', 'til', 'till', 'of']:
+					minute = -minute
+			bell = False
+		elif pmam:
+			if i == 'm.':
+				if pmam == 'pm':
+					hour = hour % 12 + 12
+				elif pmam == 'am':
+					hour = hour%12
+			pmam = False
+		elif i in ['p.', 'a.']:
+			pmam = {'p.':'pm','a.':'am'}[i]
+
+	if minute < 0:
+		hour = (hour - 1) % 24
+		minute = 60 + minute
+
+	if type(hour) == bool:
+		hour = time.hour
+
+	return time.replace(hour = hour, minute = minute, second = 0, microsecond = 0)
 
 def reminder (message):
 	message = message.strip()
 	if message.startswith('to '):
 		message = message[len('to '):]
+
 	if ' at ' in message:
-		tiloc = message[message.index(' at ')+len(' at '):]
-		tiloc, has_nums = parse_to_nums(tiloc.split())
-		if has_nums:
-			nums = [i for i in tiloc if hasattr(i, '__int__')]
-		hour = 0
-		minute = 0
-		bell = False
-		pmam = False
-		for i in tiloc:
-			if hasattr(i, '__int__'):
-				if not hour:
-					hour = i
-				elif not minute:
-					minute = i
-			else:
-				if i in bells:
-					bell = True
-					minute = bells[i]
-				elif bell:
-					if i in ['as', 'past', 'after']:
-						pass
-					elif i in ['to', 'told', 'til', 'till', 'of']:
-						minute = -minute
-					bell = False
-				elif i in times:
-					hour = times[i]
-				elif pmam:
-					if i=='m.':
-						if pmam=='pm':
-							hour = hour%12+12
-						elif pmam=='am':
-							hour = hour%12
-					pmam = False
-				elif i in ['p.', 'a.']:
-					pmam = {'p.':'pm','a.':'am'}[i]
-		if minute<0:
-			hour=(hour-1)%24
-			minute = 60+minute
-		print tiloc, hour, minute
+		tiloc_ptr = message.index(' at ')
+		time = input_to_datetime(message[tiloc_ptr + 4:])
+		message = message[:tiloc_ptr - 1]
+
+		set_alarm(message, time, True)
+		return "Okay, at %s I will remind you to %s" % \
+			(time.strftime("%I:%M %P"), message)
+
 	else:
 		global next_func
-		next_func = reminder_time
+		next_func = lambda x: (reminder_time(x, message), None)
 		return sent.what_reminder_time
-	return sent.reminding_you+message
-	
-def reminder_time(input):
-	global next_func
-	next_func = None
-	time = datetime.datetime.today()
-	words, has_nums = parse_to_nums(input.lower().split())
-	day_identifier = [i for i in words if i in weekdays]
-	if "after tomorrow" in input.lower():
-		time = time+datetime.timedelta(days=2)
-	elif 'tomorrow' in words:
-		time = time+datetime.timedelta(days=1)
-	elif day_identifier:
-		day = weekdays.index(day_identifier[0])
-		print day
-		time = time+datetime.timedelta(days=(day-time.weekday())%7)
-	
-	hour = [i for i in words if i in times]
-	if hour:
-		time = time.replace(hour=times[hour[0]],minute=0,second=0,microsecond=0)
-	hour = False
-	minute = 0
-	pmam = False
-	bell = False
-	for i in words:
-		if hasattr(i, '__int__'):
-			if type(hour)==bool and not hour:
-				hour = i
-			elif not minute:
-				minute = i
-		if i in bells:
-			bell = True
-			minute = bells[i]
-		elif bell:
-			if i in ['as', 'past', 'after']:
-				pass
-			elif i in ['to', 'told', 'til', 'till', 'of']:
-					minute = -minute
-			bell = False
-		elif pmam:
-			if i=='m.':
-				if pmam=='pm':
-					hour = hour%12+12
-				elif pmam=='am':
-					hour = hour%12
-			pmam = False
-		elif i in ['p.', 'a.']:
-			pmam = {'p.':'pm','a.':'am'}[i]
-	if minute<0:
-		hour=(hour-1)%24
-		minute = 60+minute
-	if type(hour)==bool:
-		hour = time.hour
-	tf = tempfile.NamedTemporaryFile()
-	tf.write('espeak "'+input+'"')
-	time = time.replace(hour=hour,minute=minute,second=0,microsecond=0)
-	os.system('at -t '+time.strftime('%Y%m%d%H%M')+' -f '+tf.name)
 
-	return str(time), None
+def reminder_time(input, message):
+	time = input_to_datetime(input)
+	set_alarm(message, time, True)
 
-def new_alarm(input):
+	return "Okay, at %s I will remind you to %s" % \
+		(time.strftime("%I:%M %P"), message)
+
+def set_alarm(message, time, use_espeak = False):
 	event = alarm.Event()
-	event.appid = 'saera'
-	event.message = 'Wake Up'
-
-	time = datetime.datetime.today()
-	words, has_nums = parse_to_nums(input.lower().split())
-	day_identifier = [i for i in words if i in weekdays]
-	if "after tomorrow" in input.lower():
-		time = time+datetime.timedelta(days=2)
-	elif 'tomorrow' in words:
-		time = time+datetime.timedelta(days=1)
-	elif day_identifier:
-		day = weekdays.index(day_identifier[0])
-		print day
-		time = time+datetime.timedelta(days=(day-time.weekday())%7)
-	hour = [i for i in words if i in times]
-	if hour:
-		time = time.replace(hour=times[hour[0]],minute=0,second=0,microsecond=0)
-	hour = False
-	minute = 0
-	pmam = False
-	bell = False
-	for i in words:
-		if hasattr(i, '__int__'):
-			if type(hour)==bool and not hour:
-				hour = i
-			elif not minute:
-				minute = i
-		if i in bells:
-			bell = True
-			minute = bells[i]
-		elif bell:
-			if i in ['as', 'past', 'after']:
-				pass
-			elif i in ['to', 'told', 'til', 'till', 'of']:
-					minute = -minute
-			bell = False
-		elif pmam:
-			if i=='m.':
-				if pmam=='pm':
-					hour = hour%12+12
-				elif pmam=='am':
-					hour = hour%12
-			pmam = False
-		elif i in ['p.', 'a.']:
-			pmam = {'p.':'pm','a.':'am'}[i]
-	if minute<0:
-		hour=(hour-1)%24
-		minute = 60+minute
-	if type(hour)==bool:
-		hour = time.hour
-	time = time.replace(hour=hour,minute=minute,second=0,microsecond=0)
-
+	event.appid = 'Saera'
 	event.alarm_time = float(time.strftime("%s"))
 
-	action_stop, action_snooze = event.add_actions(2)
-	action_stop.label = 'Stop'
-	action_stop.flags |= alarm.ACTION_WHEN_RESPONDED | alarm.ACTION_TYPE_NOP
+	if use_espeak:
+		fd, name = tempfile.mkstemp()
+		fh = os.fdopen(fd, 'w+')
+		fh.write(r"""#! /bin/sh
+		espeak '%s'
+		rm -f '%s'
+		""" % (message, name))
+		fh.close()
 
-	action_snooze.label = 'Snooze'
-	action_snooze.flags |= alarm.ACTION_WHEN_RESPONDED | alarm.ACTION_TYPE_SNOOZE
+		actions = event.add_actions(1)
+		actions[0].flags |= alarm.ACTION_WHEN_TRIGGERED | alarm.ACTION_TYPE_EXEC
+		actions[0].command = "/bin/sh '%s'" % name
 
-	print event.is_sane()
+	else:
+		event.message = message
 
-	cookie = alarm.add_event(event)
+		action_stop, action_snooze = event.add_actions(2)
+		action_stop.label = 'Stop'
+		action_stop.flags |= alarm.ACTION_WHEN_RESPONDED | alarm.ACTION_TYPE_NOP
 
+		action_snooze.label = 'Snooze'
+		action_snooze.flags |= alarm.ACTION_WHEN_RESPONDED | alarm.ACTION_TYPE_SNOOZE
+
+	return alarm.add_event(event)
+
+def new_alarm(input):
+	time = input_to_datetime (input)
+	if time < datetime.datetime.now():
+		return "The alarm time is in the past, can't help.  Sorry.", None
+
+	set_alarm('Wake Up', time)
 	return "Okay, I set your alarm for "+time.strftime("%I:%M %P"), None
 
 def search_google(input):
