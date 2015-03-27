@@ -205,8 +205,8 @@ class vTime(Variable):
 						 'evening',
 						 'night',
 						 'midnight',
-						 'half'
-						 'quarter'
+						 'half',
+						 'quarter',
 						 'past',
 						 'till',
 						 'til',
