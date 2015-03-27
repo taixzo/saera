@@ -3,6 +3,7 @@
 
 # import pyotherside
 
+from time import timezone
 from datetime import datetime, time, timedelta
 import calendar
 import re
@@ -262,6 +263,36 @@ class Saera:
 			return "What are you referring to?"
 	def time(self, result):
 		now = datetime.now()
+		if 'location' in result['outcome']['entities']:
+			platform.cur.execute("SELECT * FROM Variables WHERE VarName='here'")
+			loc = platform.cur.fetchone()
+			if loc:
+				platform.cur.execute("SELECT * FROM Locations WHERE Id="+str(loc[2]))
+				loc = platform.cur.fetchone()
+				localOffset = loc[5]
+			else:
+				platform.cur.execute("SELECT * FROM Variables WHERE VarName='home'")
+				loc = platform.cur.fetchone()
+				if loc:
+					platform.cur.execute("SELECT * FROM Locations WHERE Id="+str(loc[2]))
+					loc = platform.cur.fetchone()
+					localOffset = loc[5]
+				else:
+					localOffset = timezone / 60 / 60 * (-1) # time.timezone is measured in seconds West of UTC, whereas everything else uses East of UTC, hence the -1
+			location = result['outcome']['entities']['location']
+			platform.cur.execute("SELECT * FROM Locations WHERE LocName='"+location+"'")
+			loc = platform.cur.fetchone()
+			if not loc:
+				# How to convert a generalized location to a city??
+				# For some idiotic reson, this segfaults under SailfishOS. Return of the cUrl!
+				req = urllib2.urlopen('http://api.geonames.org/searchJSON?q='+location.replace(" ","+")+'&username=taixzo').read().decode("utf-8")
+				# req  = subprocess.Popen(["curl",
+										   # 'http://api.geonames.org/searchJSON?q='+location.replace(" ","+")+'&username=taixzo'], stdout=subprocess.PIPE).communicate()[0].decode("utf-8")
+				locdic = json.loads(req)
+				tz = json.loads(urllib2.urlopen('http://api.geonames.org/timezoneJSON?lat='+locdic['geonames'][0]["lat"]+'&lng='+locdic['geonames'][0]["lng"]+'&username=taixzo').read().decode("utf-8"))['rawOffset']
+				loc = (0,locdic['geonames'][0]["toponymName"],"",locdic['geonames'][0]["lat"],locdic['geonames'][0]["lng"],tz)
+			now = now + timedelta(hours=loc[5]-localOffset)
+			return "It is "+str((now.hour-1)%12+1 if True else now.hour)+":"+str(now.minute).zfill(2)+" in "+loc[1]
 		return "It is "+str((now.hour-1)%12+1 if True else now.hour)+":"+str(now.minute).zfill(2)
 	def set_name(self, result):
 		platform.cur.execute('INSERT OR REPLACE INTO Variables (ID, VarName, Value) VALUES ((SELECT ID FROM Variables WHERE VarName = "name"), "name", "'+result['outcome']['entities']['name']+'");')
