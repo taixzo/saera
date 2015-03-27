@@ -164,6 +164,7 @@ class Guesser:
 				outvars[i] = variables[i].parse(splitstring[first:last])
 		# return (best_guess, best_guess_intent.name, string)
 		return {
+				'text':string,
 				'outcome':{
 					'intent':best_guess_intent.name,
 					'entities':outvars
