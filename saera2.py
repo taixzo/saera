@@ -8,9 +8,9 @@ import calendar
 import re
 # import urllib2
 try:
-    import urllib.request as urllib2
+	import urllib.request as urllib2
 except:
-    import urllib2
+	import urllib2
 try:
 	import json
 except ImportError:
@@ -32,12 +32,12 @@ import cmd_hw as platform
 # 	data = {'username':None}
 
 if sys.version < '3':
-    import codecs
-    def u(x):
-        return codecs.unicode_escape_decode(x)[0]
+	import codecs
+	def u(x):
+		return codecs.unicode_escape_decode(x)[0]
 else:
-    def u(x):
-        return x
+	def u(x):
+		return x
 
 class ForgottenException(Exception):
 	pass
@@ -63,19 +63,22 @@ class Memory:
 
 import math, sys
 
-def is_day(longitude):
-    dt = datetime.now()
+def is_day(lon):
+	sin,cos,pi = math.sin,math.cos,math.pi
+	dt = datetime.now()
+	longit = float(lon)
 
-    gamma = 2 * math.pi / 365 * (dt.timetuple().tm_yday - 1 + float(dt.hour - 12) / 24)
-    eqtime = 229.18 * (0.000075 + 0.001868 * math.cos(gamma) - 0.032077 * math.sin(gamma) \
-             - 0.014615 * math.cos(2 * gamma) - 0.040849 * math.sin(2 * gamma))
-    decl = 0.006918 - 0.399912 * math.cos(gamma) + 0.070257 * math.sin(gamma) \
-           - 0.006758 * math.cos(2 * gamma) + 0.000907 * math.sin(2 * gamma) \
-           - 0.002697 * math.cos(3 * gamma) + 0.00148 * math.sin(3 * gamma)
-    time_offset = eqtime + 4 * longitude
-    tst = dt.hour * 60 + dt.minute + dt.second / 60 + time_offset
-    solar_time = datetime.combine(dt.date(), time(0)) + timedelta(minutes=tst)
-    return solar_time.hour>14 or solar_time.hour<2
+	gamma = 2 * pi / 365 * (dt.timetuple().tm_yday - 1 + float(dt.hour - 12) / 24)
+	eqtime = 229.18 * (0.000075 + 0.001868 * cos(gamma) - 0.032077 * sin(gamma) \
+			 - 0.014615 * cos(2 * gamma) - 0.040849 * sin(2 * gamma))
+	decl = 0.006918 - 0.399912 * cos(gamma) + 0.070257 * sin(gamma) \
+		   - 0.006758 * cos(2 * gamma) + 0.000907 * sin(2 * gamma) \
+		   - 0.002697 * cos(3 * gamma) + 0.00148 * sin(3 * gamma)
+	time_offset = eqtime + 4 * longit
+	tst = dt.hour * 60 + dt.minute + dt.second / 60 + time_offset
+	solar_time = datetime.combine(dt.date(), time(0)) + timedelta(minutes=tst)
+	print solar_time
+	return solar_time.hour<12
 
 class Saera:
 	def __init__(self):
@@ -141,6 +144,7 @@ class Saera:
 				return "What time do you want the alarm set for?"
 	def weather(self,result):
 		self.short_term_memory.set('intent','weather')
+		here = False
 		if 'location' in result['outcome']['entities']:
 			location = result['outcome']['entities']['location']
 			platform.cur.execute("SELECT * FROM Locations WHERE LocName='"+location+"'")
@@ -159,12 +163,14 @@ class Saera:
 			if loc:
 				platform.cur.execute("SELECT * FROM Locations WHERE Id="+str(loc[2]))
 				loc = platform.cur.fetchone()
+				here = True
 			else:
 				platform.cur.execute("SELECT * FROM Variables WHERE VarName='home'")
 				loc = platform.cur.fetchone()
 				if loc:
 					platform.cur.execute("SELECT * FROM Locations WHERE Id="+str(loc[2]))
 					loc = platform.cur.fetchone()
+					here = True
 				else:
 					return "Where do you live?"
 			# location = 'New York'
@@ -188,29 +194,33 @@ class Saera:
 		except ValueError:
 			precip = 0
 		weather = parsed_json['current_observation']['weather'].lower()
-		if 'weather' in result['outcome']['entities']:
-			if result['outcome']['entities']['weather']['value'] == "rain":
-				if precip>0.3:
-					return "Yes, it's really pouring."
-				elif precip>0.1:
-					return "Yes, it's raining."
-				elif precip>0 or "rain" in weather:
-					return "Maybe it's drizzling a little."
+		# if 'weather' in result['outcome']['entities']:
+			# if result['outcome']['entities']['weather']['value'] == "rain":
+		if "rain" in result['text']:
+			if precip>0.3:
+				return "Yes, it's really pouring."
+			elif precip>0.1:
+				return "Yes, it's raining."
+			elif precip>0 or "rain" in weather:
+				return "Maybe it's drizzling a little."
+			else:
+				return "No, it's "+weather+"."
+		# elif result['outcome']['entities']['weather']['value'] == 'sun':
+		elif 'sun' in result['text']:
+			if "sun" in weather or "clear" in weather:
+				print loc[4]
+				if is_day(float(loc[4])):
+					return "Yes, it's sunny in "+loc[1]+"!"
 				else:
-					return "No, it's "+weather+"."
-			elif result['outcome']['entities']['weather']['value'] == 'sun':
-				if "sun" in weather or "clear" in weather:
-					if is_day(float(loc[4])):
-						return "Yes, it's sunny in "+loc[1]+"!"
-					else:
-						return "It would be sunny if the sun were still up."
-				elif "scattered clouds" in weather:
-					if is_day(float(loc[1])):
-						return "Yes, with scattered clouds."
-					else:
-						return "There's a few clouds, and it's night in "+loc[1]+"."
+					now = datetime.now()
+					return "It would be sunny if the sun were still up. It is "+str((now.hour-1)%12+1 if True else now.hour)+":"+str(now.minute).zfill(2)+(" in "+loc[1]+"." if not here else ".")
+			elif "scattered clouds" in weather:
+				if is_day(float(loc[1])):
+					return "Yes, with scattered clouds."
 				else:
-					return "No, the weather in "+loc[1]+" is "+weather+"."
+					return "There's a few clouds, and it's night in "+loc[1]+"."
+			else:
+				return "No, the weather in "+loc[1]+" is "+weather+"."
 		if 'temperature' in result['outcome']['entities']:
 			if result['outcome']['entities']['temperature']['value'] == "cold":
 				if abs(temp_f-feelslike_f)<5:
@@ -279,7 +289,7 @@ class Saera:
 				tz = json.loads(urllib2.urlopen('http://api.geonames.org/timezoneJSON?lat='+loc['lat']+'&lng='+loc['lon']+'&username=taixzo').read().decode("utf-8"))['rawOffset']
 				zip = json.loads(urllib2.urlopen('http://api.geonames.org/findNearbyPostalCodesJSON?lat='+loc['lat']+'&lng='+loc['lon']+'&radius=10&username=taixzo').read().decode("utf-8"))["postalCodes"][0]["postalCode"]
 				platform.cur.execute('INSERT INTO Locations (LocName, Zip, Latitude, Longitude, Timezone) VALUES ("'+loc['name']+'", "'+zip+'", '+loc['lat']+', '+loc['lon']+', '+str(tz)+')')
-				platform.cur.execute('INSERT OR REPLACE INTO Variables (ID, VarName, Value) VALUES ((SELECT ID FROM Variables WHERE VarName = "home"), "name", "'+str(platform.cur.lastrowid)+'");')
+				platform.cur.execute('INSERT OR REPLACE INTO Variables (ID, VarName, Value) VALUES ((SELECT ID FROM Variables WHERE VarName = "home"), "home", "'+str(platform.cur.lastrowid)+'");')
 				platform.conn.commit()
 				return "Ok, you live in "+loc['name']+", "+loc["region"]+"."
 			except urllib2.URLError:
