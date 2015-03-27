@@ -121,7 +121,10 @@ class Saera:
 			# return "Hello, "+self.long_term_memory.get("nickname")
 			platform.cur.execute("SELECT * FROM Variables WHERE VarName='name'")
 			row = platform.cur.fetchone()
-			return "Hello, "+row['Value']
+			if row:
+				return "Hello, "+row['Value']+"!"
+			else:
+				return "Hello!"
 		except ForgottenException:
 			return "Hello!"
 	def set_alarm(self,result):
@@ -297,7 +300,7 @@ class Saera:
 	def set_name(self, result):
 		platform.cur.execute('INSERT OR REPLACE INTO Variables (ID, VarName, Value) VALUES ((SELECT ID FROM Variables WHERE VarName = "name"), "name", "'+result['outcome']['entities']['name']+'");')
 		platform.conn.commit()
-		return "Ok, from now on I'll refer to you as "+result['outcome']['entities']['name']
+		return "Ok, from now on I'll refer to you as "+result['outcome']['entities']['name']+"."
 	def set_home(self, result):
 		# platform.cur.execute('INSERT OR REPLACE INTO Variables (ID, VarName, Value) VALUES ((SELECT ID FROM Variables WHERE VarName = "name"), "name", "'+result['outcome']['entities']['name']+'");')
 		# platform.conn.commit()
