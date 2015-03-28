@@ -292,6 +292,7 @@ class Saera:
 				# req  = subprocess.Popen(["curl",
 										   # 'http://api.geonames.org/searchJSON?q='+location.replace(" ","+")+'&username=taixzo'], stdout=subprocess.PIPE).communicate()[0].decode("utf-8")
 				locdic = json.loads(req)
+				
 				tz = json.loads(urllib2.urlopen('http://api.geonames.org/timezoneJSON?lat='+locdic['geonames'][0]["lat"]+'&lng='+locdic['geonames'][0]["lng"]+'&username=taixzo').read().decode("utf-8"))['rawOffset']
 				loc = (0,locdic['geonames'][0]["toponymName"],"",locdic['geonames'][0]["lat"],locdic['geonames'][0]["lng"],tz)
 			now = now + timedelta(hours=loc[5]-localOffset)
@@ -321,7 +322,10 @@ class Saera:
 				locdic = json.loads(req)
 				loc = {'lat':locdic['geonames'][0]["lat"],'lon':locdic['geonames'][0]["lng"],'name':locdic['geonames'][0]["name"],"region":locdic['geonames'][0]["adminName1"]}
 				tz = json.loads(urllib2.urlopen('http://api.geonames.org/timezoneJSON?lat='+loc['lat']+'&lng='+loc['lon']+'&username=taixzo').read().decode("utf-8"))['rawOffset']
-				zip = json.loads(urllib2.urlopen('http://api.geonames.org/findNearbyPostalCodesJSON?lat='+loc['lat']+'&lng='+loc['lon']+'&radius=10&username=taixzo').read().decode("utf-8"))["postalCodes"][0]["postalCode"]
+				try:
+					zip = json.loads(urllib2.urlopen('http://api.geonames.org/findNearbyPostalCodesJSON?lat='+loc['lat']+'&lng='+loc['lon']+'&radius=10&username=taixzo').read().decode("utf-8"))["postalCodes"][0]["postalCode"]
+				except IndexError:
+					zip = ''
 				platform.cur.execute('INSERT INTO Locations (LocName, Zip, Latitude, Longitude, Timezone) VALUES ("'+loc['name']+'", "'+zip+'", '+loc['lat']+', '+loc['lon']+', '+str(tz)+')')
 				platform.cur.execute('INSERT OR REPLACE INTO Variables (ID, VarName, Value) VALUES ((SELECT ID FROM Variables WHERE VarName = "home"), "home", "'+str(platform.cur.lastrowid)+'");')
 				platform.conn.commit()

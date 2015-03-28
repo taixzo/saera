@@ -154,10 +154,10 @@ class Guesser:
 						first = min(first,splitstring.index(j)+1) if first >= 0 else splitstring.index(j)+1
 				if first >= 0:
 					for j in variables[i].postwords:
-						if j in splitstring:
-							print "In string: ", j
-							last = max(last,splitstring.index(j)+1)
-					else:
+						if j in splitstring and splitstring.index(j)>first:
+							print "In string (post): ", j
+							last = max(last,splitstring.index(j))
+					if last==-1:
 						last = len(splitstring)
 			if last >= 0:
 				print "Var:",variables[i].parse(splitstring[first:last])
@@ -234,6 +234,7 @@ class vLocation(Variable):
 		Variable.__init__(self)
 		self.keywords = []
 		self.prewords = ['in','at','from']
+		self.postwords = ['at','after','when','if','in']
 
 #################################
 class vName(Variable):			#
