@@ -5,13 +5,14 @@ def parse(tokens):
 	numbers = {'zero':0,'oh':0,'one':1,'two':2,'three':3,'four':4,'five':5,'six':6,'seven':7,'eight':8,'nine':9,'ten':10,'eleven':11,'twelve':12,'thirteen':13,'fourteen':14,'fifteen':15,'sixteen':16,
 				'seventeen':17,'eighteen':18,'nineteen':19,'twenty':20,'thirty':30,'forty':40,'fifty':50}
 	bells = {'quarter':15,'half':30}
+	days = {'tomorrow':1,'day':1,'yesterday':-1}
 	signs = {'past':1,'after':1,'til':-1,'till':-1,'before':-1,'to':-1,'of':-1}
 	for index in range(len(tokens)):
 		i = tokens[index]
 		if i in numbers:
 			if numbers[i]>19:
 				tokens[index] = str(numbers[i])
-			elif index>0 and tokens[index-1].isdigit() and int(tokens[index-1])>19 and int(tokens[index-1])%10==0:
+			elif index>0 and tokens[index-1].isdigit() and (int(tokens[index-1])>19 or int(tokens[index-1])==0) and int(tokens[index-1])%10==0:
 				tokens[index-1] = str(int(tokens[index-1]) + numbers[i])
 				tokens[index] = ''
 			else:
@@ -21,7 +22,8 @@ def parse(tokens):
 	hour = None
 	minute = None
 
-	adjustment = 0
+	timeadjustment = 0
+	dateadjustment = 0
 
 	for token in tokens:
 		if token.isdigit():
@@ -31,15 +33,22 @@ def parse(tokens):
 				if minute is None:
 					minute = int(token)
 		elif token in bells:
-			adjustment = bells[token]
-		elif token in signs and adjustment!=0:
-			adjustment = abs(adjustment)*signs[token] # double negatives should not cancel out
+			timeadjustment = bells[token]
+		elif token in signs and timeadjustment!=0:
+			timeadjustment = abs(timeadjustment)*signs[token] # double negatives should not cancel out
+		elif token in days:
+			dateadjustment = days[token]
+		elif token in signs and dateadjustment!=0:
+			dateadjustment = abs(dateadjustment)*signs[token] # double negatives should not cancel out
 
-	adjustmentdelta = timedelta(minutes = adjustment)
+	adjustmentdelta = timedelta(days = dateadjustment, minutes = timeadjustment)
 	# print hour, minute
-	now = now.replace(hour = hour if hour is not None else now.hour, minute = minute if minute is not None else now.minute if adjustmentdelta==0 else 0, second = 0, microsecond = 0) + adjustmentdelta
+	then = now.replace(hour = hour if hour is not None else now.hour, minute = minute if minute is not None else now.minute if adjustmentdelta==0 else 0, second = 0, microsecond = 0) + adjustmentdelta
+	if then.date()==now.date():
+		if then<now:
+			then = then+timedelta(days=1)
 
-	print now, tokens
+	print then, tokens
 
 
 if __name__=="__main__":
@@ -50,3 +59,4 @@ if __name__=="__main__":
 	parse("January second".split())
 	parse("The day after tomorrow".split())
 	parse("Sunday".split())
+	parse("One oh nine".split())
