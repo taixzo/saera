@@ -6,6 +6,7 @@ def parse(tokens):
 				'seventeen':17,'eighteen':18,'nineteen':19,'twenty':20,'thirty':30,'forty':40,'fifty':50}
 	bells = {'quarter':15,'half':30}
 	days = {'tomorrow':1,'day':1,'yesterday':-1}
+	weekdays = {'monday':0,'tuesday':1,'wednesday':2,'thursday':3,'friday':4,'saturday':5,'sunday':6}
 	signs = {'past':1,'after':1,'til':-1,'till':-1,'before':-1,'to':-1,'of':-1}
 	for index in range(len(tokens)):
 		i = tokens[index]
@@ -40,6 +41,8 @@ def parse(tokens):
 			dateadjustment = days[token]
 		elif token in signs and dateadjustment!=0:
 			dateadjustment = abs(dateadjustment)*signs[token] # double negatives should not cancel out
+		elif token in weekdays:
+			dateadjustment += (weekdays[token]-now.weekday()+7) % 7
 
 	adjustmentdelta = timedelta(days = dateadjustment, minutes = timeadjustment)
 	# print hour, minute
