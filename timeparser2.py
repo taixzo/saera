@@ -55,11 +55,12 @@ def parse(tokens):
 
 
 if __name__=="__main__":
-	parse("A quarter to twelve".split())
-	parse("Half past one".split())
-	parse("Nine thirty".split())
-	parse("Six twenty one".split())
-	parse("January second".split())
-	parse("The day after tomorrow".split())
-	parse("Sunday".split())
-	parse("One oh nine".split())
+	parse("A quarter to twelve".split()) # Pass
+	parse("Half past one".split()) # Pass
+	parse("Nine thirty".split()) # Pass
+	parse("Six twenty one".split()) # Pass
+	parse("January second".split()) # Fail
+	parse("The day after tomorrow".split()) # Fail
+	parse("Sunday".split()) # Pass
+	parse("Tuesday".split()) # Pass
+	parse("One oh nine".split()) # Pass
