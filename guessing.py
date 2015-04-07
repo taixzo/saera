@@ -269,6 +269,11 @@ class vDirection(Variable):
 	def __init__(self):
 		Variable.__init__(self)
 		self.keywords = ['north','east','south','west']
+
+class vPreposition(Variable):
+	def __init__(self):
+		Variable.__init__(self)
+		self.keywords = ['i','you','he','she','it','we','they']
 			
 	
 
@@ -280,7 +285,8 @@ variables = {'time':vTime(),
 			 'location':vLocation(),
 			 'food':vFood(),
 			 'distance':vDistance(),
-			 'direction':vDirection()}
+			 'direction':vDirection(),
+			 'preposition':vPreposition()}
 
 if __name__=="__main__":
 	# i = Intent()

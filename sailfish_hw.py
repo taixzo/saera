@@ -16,6 +16,7 @@ if not os.path.exists(memory_path):
 	cur = conn.cursor()
 	cur.execute('CREATE TABLE Variables (Id INT NOT NULL PRIMARY KEY AUTOINCREMENT, VarName TEXT NOT NULL, Value TEXT NOT NULL, UpdateTime DATETIME DEFAULT CURRENT_TIMESTAMP')
 	cur.execute('CREATE TABLE Locations (Id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, LocName TEXT NOT NULL, Zip TEXT, Latitude REAL, Longitude REAL, UpdateTime TIMESTAMP DEFAULT CURRENT_TIMESTAMP)')
+	cur.execute('CREATE TABLE People (Id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, Name TEXT NOT NULL COLLATE NOCASE, Description TEXT, Born DATE, Died DATE, Profession TEXT')
 else:
 	conn = sqlite3.connect(memory_path)
 	conn.row_factory = sqlite3.Row

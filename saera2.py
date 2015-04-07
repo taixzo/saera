@@ -292,16 +292,22 @@ class Saera:
 				# req  = subprocess.Popen(["curl",
 										   # 'http://api.geonames.org/searchJSON?q='+location.replace(" ","+")+'&username=taixzo'], stdout=subprocess.PIPE).communicate()[0].decode("utf-8")
 				locdic = json.loads(req)
-				
+
 				tz = json.loads(urllib2.urlopen('http://api.geonames.org/timezoneJSON?lat='+locdic['geonames'][0]["lat"]+'&lng='+locdic['geonames'][0]["lng"]+'&username=taixzo').read().decode("utf-8"))['rawOffset']
 				loc = (0,locdic['geonames'][0]["toponymName"],"",locdic['geonames'][0]["lat"],locdic['geonames'][0]["lng"],tz)
 			now = now + timedelta(hours=loc[5]-localOffset)
 			return "It is "+str((now.hour-1)%12+1 if True else now.hour)+":"+str(now.minute).zfill(2)+" in "+loc[1]
 		return "It is "+str((now.hour-1)%12+1 if True else now.hour)+":"+str(now.minute).zfill(2)
-	def set_name(self, result):
-		platform.cur.execute('INSERT OR REPLACE INTO Variables (ID, VarName, Value) VALUES ((SELECT ID FROM Variables WHERE VarName = "name"), "name", "'+result['outcome']['entities']['name']+'");')
+	def set_user_name(self, result):
+		platform.cur.execute('INSERT OR REPLACE INTO Variables (ID, VarName, Value) VALUES ((SELECT ID FROM Variables WHERE VarName = "userName"), "userName", "'+result['outcome']['entities']['name']+'");')
 		platform.conn.commit()
+		self.short_term_memory.set('you',{'name':result['outcome']['entities']['name'].capitalize()})
 		return "Ok, from now on I'll refer to you as "+result['outcome']['entities']['name']+"."
+	def set_sys_name(self, result):
+		platform.cur.execute('INSERT OR REPLACE INTO Variables (ID, VarName, Value) VALUES ((SELECT ID FROM Variables WHERE VarName = "sysName"), "sysName", "'+result['outcome']['entities']['name']+'");')
+		platform.conn.commit()
+		self.short_term_memory.set('I',{'name':result['outcome']['entities']['name'].capitalize()})
+		return "Ok, now my name is "+result['outcome']['entities']['name']+"."
 	def set_home(self, result):
 		# platform.cur.execute('INSERT OR REPLACE INTO Variables (ID, VarName, Value) VALUES ((SELECT ID FROM Variables WHERE VarName = "name"), "name", "'+result['outcome']['entities']['name']+'");')
 		# platform.conn.commit()
@@ -333,6 +339,59 @@ class Saera:
 			except urllib2.URLError:
 				return "I need an internet connection to look up the weather, sorry."
 		return "Where is "+result['outcome']['entities']['location']
+	def who_is(self,result):
+		conjugations = {'I':'am','you':'are','he':'is','she':'is','it':'is','we':'are','they':'are'}
+		if 'preposition' in result['outcome']['entities']:
+			who = result['outcome']['entities']['preposition']
+			who = 'you' if who=='i' else 'I' if who=='you' else who
+			if who in self.short_term_memory.items:
+				return who.capitalize()+" "+conjugations[who]+" "+' '.join([i.capitalize() for i in self.short_term_memory.get(who)['name'].split(' ')])+"."
+			else:
+				if who is "you":
+					platform.cur.execute("SELECT * FROM Variables WHERE VarName='userName'")
+					name = platform.cur.fetchone()
+					if name:
+						return who.capitalize()+" "+conjugations[who]+" "+' '.join([i.capitalize() for i in name[2].split(' ')])+"."
+					else:
+						return "I don't know. What is your name?"
+				elif who is "I":
+					platform.cur.execute("SELECT * FROM Variables WHERE VarName='sysName'")
+					name = platform.cur.fetchone()
+					if name:
+						return who.capitalize()+" "+conjugations[who]+" "+' '.join([i.capitalize() for i in name[2].split(' ')])+"."
+					else:
+						return "I am Saera."
+			print self.short_term_memory.items
+			return who+" is whoever "+who+" is."
+		elif 'name' in result['outcome']['entities']:
+			who = result['outcome']['entities']['name']
+			try:
+				person = self.short_term_memory.get(who)
+			except ForgottenException:
+				platform.cur.execute("SELECT * FROM People WHERE Name='"+who+"'")
+				res = platform.cur.fetchone()
+				if res:
+					person = {'name':res[1],'description':res[2],'born':res[3],'died':res[4],'gender':res[5],'profession':res[6]}
+				else:
+					req = json.loads(urllib2.urlopen("https://www.wikidata.org/w/api.php?action=wbsearchentities&search="+who.replace(" ","%20")+"&language=en&format=json").read().decode("utf-8"))
+					if req['search']:
+						genders = {6581097:'male',6581072:'female'}
+						wikidataid = req['search'][0]['id']
+						req = json.loads(urllib2.urlopen("https://www.wikidata.org/wiki/Special:EntityData/"+wikidataid+".json").read().decode("utf-8"))
+						person = {	'name':req['entities'][wikidataid]['labels']['en']['value'],
+									'description':req['entities'][wikidataid]['descriptions']['en']['value'],
+									'born':req['entities'][wikidataid]['claims']['P569'][0]['mainsnak']['datavalue']['value']['time'] if 'P569' in req['entities'][wikidataid]['claims'] else None,
+									'died':None,
+									'profession':None,
+									'gender':genders[req['entities'][wikidataid]['claims']['P21'][0]['mainsnak']['datavalue']['value']['numeric-id']] if req['entities'][wikidataid]['claims']['P21'][0]['mainsnak']['datavalue']['value']['numeric-id'] in genders else 'other'
+									}
+						platform.cur.execute('INSERT OR REPLACE INTO People (ID, Name, Description, Born, Died, Gender, Profession) VALUES ((SELECT ID FROM People WHERE Name = "'+person['name']+'"), "'+person['name']+'", "'+person['description']+'", "'+(person['born'] or 'NULL')+'","'+(person['died'] or 'NULL')+'","'+person['gender']+'",NULL);')
+						platform.conn.commit()
+					else:
+						return "I don't know who "+who+" is."
+			pronoun = 'he' if person["gender"] == "male" else 'she' if person["gender"] == "female" else 'it'
+			self.short_term_memory.set(pronoun,person)
+			return pronoun.capitalize() + " " + conjugations[pronoun] + " " + ("a " if not (person['description'].lower().startswith("the ") or person['description'].lower().startswith("a ") or person['description'].lower().startswith("an ")) else "") + person["description"][0].upper()+person["description"][1:]+'.'
 	def process(self,result):
 		print (result['outcome']['intent'])
 		self.short_term_memory.tick()
@@ -377,10 +436,14 @@ class Saera:
 				return "I'm sorry, what were we talking about?"
 		elif result['outcome']['intent']=="yes_no":
 			return self.yesno(result)
-		elif result['outcome']['intent']=="set_name":
-			return self.set_name(result)
+		elif result['outcome']['intent']=="set_user_name":
+			return self.set_user_name(result)
+		elif result['outcome']['intent']=="set_sys_name":
+			return self.set_sys_name(result)
 		elif result['outcome']['intent']=="set_home":
 			return self.set_home(result)
+		elif result['outcome']['intent']=="who_is":
+			return self.who_is(result)
 		elif result['outcome']['intent']=="quit" or result['outcome']['intent']=="good_bye":
 			# sys.exit(0)
 			platform.quit()
