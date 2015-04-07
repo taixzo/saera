@@ -88,7 +88,6 @@ class Intent:
 			if path[i][0] == '':
 				del path[i]
 		self.paths.append(path)
-		print (path)
 	def match(self,string):
 		scores = []
 		for path in self.paths:
@@ -138,29 +137,22 @@ class Guesser:
 			last = -1
 			for j in variables[i].keywords:
 				if j in splitstring:
-					print "In string: ", j
 					first = min(first,splitstring.index(j)) if first >= 0 else splitstring.index(j)
 			if first >= 0:
-				print 'j', i, first
 				for j in variables[i].keywords:
 					if j in splitstring:
-						print "In string: ", j
 						last = max(last,splitstring.index(j)+1)
 			else:
 				for j in variables[i].prewords:
-					print j, splitstring
 					if j in splitstring:
-						print "In string: ", j
 						first = min(first,splitstring.index(j)+1) if first >= 0 else splitstring.index(j)+1
 				if first >= 0:
 					for j in variables[i].postwords:
 						if j in splitstring and splitstring.index(j)>first:
-							print "In string (post): ", j
 							last = max(last,splitstring.index(j))
 					if last==-1:
 						last = len(splitstring)
 			if last >= 0:
-				print "Var:",variables[i].parse(splitstring[first:last])
 				outvars[i] = variables[i].parse(splitstring[first:last])
 		# return (best_guess, best_guess_intent.name, string)
 		return {
