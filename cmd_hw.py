@@ -8,6 +8,9 @@ import sqlite3
 global app
 app = None
 
+if sys.version_info.major==3:
+	raw_input = input
+
 memory_path = os.getenv('HOME')+'/.saera_memory.db'
 if not os.path.exists(memory_path):
 	conn = sqlite3.connect(memory_path)
@@ -44,7 +47,7 @@ def run_app(s):
 		# try:
 			inp = raw_input("> ")
 			result = run_text(inp)
-			print result
+			print (result)
 		# except Exception as e:
 		# 	print "Error: ", e.message
 		# 	quit()
@@ -75,6 +78,6 @@ def speak(string):
 	return string
 
 def quit():
-	print "Bye!"
+	print ("Bye!")
 	conn.close()
 	sys.exit(0)

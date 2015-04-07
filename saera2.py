@@ -22,11 +22,13 @@ import subprocess
 
 from guessing import Guesser
 
-#import fremantle_hw as platform
-#import harmattan_hw as platform
-# import x86_hw as platform
-# import sailfish_hw as platform
-import cmd_hw as platform
+if sys.platform=='darwin':
+	import cmd_hw as platform
+else:
+	#import fremantle_hw as platform
+	#import harmattan_hw as platform
+	# import x86_hw as platform
+	import sailfish_hw as platform
 
 # if not os.path.exists(platform.memory_path):
 
@@ -78,7 +80,6 @@ def is_day(lon):
 	time_offset = eqtime + 4 * longit
 	tst = dt.hour * 60 + dt.minute + dt.second / 60 + time_offset
 	solar_time = datetime.combine(dt.date(), time(0)) + timedelta(minutes=tst)
-	print solar_time
 	return solar_time.hour<12
 
 class Saera:
@@ -98,7 +99,6 @@ class Saera:
 			# 			}
 			# 		}
 		result = self.guesser.guess(string)
-		print result
 			# result = self.w.get_message(string, context={"timezone":"America/New_York"})
 		# except:
 		# 	'''# Hack. Hacky hack hack. Python stdlib on Sailfish was compiled without SSL for some reason.
@@ -180,7 +180,6 @@ class Saera:
 			# location = 'New York'
 		try:
 			# self.short_term_memory.set('location',location)
-			print loc
 			f = urllib2.urlopen('http://api.wunderground.com/api/0a02b434d9bf118f/geolookup/conditions/q/'+str(loc[3])+','+str(loc[4])+'.json').read()
 			# DAMMIT SAILFISH WHY DO YOU HATE THE INTERNET
 			# req  = subprocess.Popen(["curl",
@@ -212,7 +211,6 @@ class Saera:
 		# elif result['outcome']['entities']['weather']['value'] == 'sun':
 		elif 'sun' in result['text']:
 			if "sun" in weather or "clear" in weather:
-				print loc[4]
 				if is_day(float(loc[4])):
 					return "Yes, it's sunny in "+loc[1]+"!"
 				else:
@@ -264,6 +262,9 @@ class Saera:
 				return "Good."
 		except ForgottenException:
 			return "What are you referring to?"
+	def feeling_query(self,result):
+		#TODO: feelings?
+		return "I am feeling well."
 	def time(self, result):
 		now = datetime.now()
 		if 'location' in result['outcome']['entities']:
@@ -361,7 +362,6 @@ class Saera:
 						return who.capitalize()+" "+conjugations[who]+" "+' '.join([i.capitalize() for i in name[2].split(' ')])+"."
 					else:
 						return "I am Saera."
-			print self.short_term_memory.items
 			return who+" is whoever "+who+" is."
 		elif 'name' in result['outcome']['entities']:
 			who = result['outcome']['entities']['name']
@@ -392,6 +392,8 @@ class Saera:
 			pronoun = 'he' if person["gender"] == "male" else 'she' if person["gender"] == "female" else 'it'
 			self.short_term_memory.set(pronoun,person)
 			return pronoun.capitalize() + " " + conjugations[pronoun] + " " + ("a " if not (person['description'].lower().startswith("the ") or person['description'].lower().startswith("a ") or person['description'].lower().startswith("an ")) else "") + person["description"][0].upper()+person["description"][1:]+'.'
+		else:
+			return "What?"
 	def process(self,result):
 		print (result['outcome']['intent'])
 		self.short_term_memory.tick()
@@ -436,6 +438,8 @@ class Saera:
 				return "I'm sorry, what were we talking about?"
 		elif result['outcome']['intent']=="yes_no":
 			return self.yesno(result)
+		elif result['outcome']['intent']=="feeling_query":
+			return self.feeling_query(result)
 		elif result['outcome']['intent']=="set_user_name":
 			return self.set_user_name(result)
 		elif result['outcome']['intent']=="set_sys_name":
