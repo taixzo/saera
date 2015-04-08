@@ -6,6 +6,8 @@ import email
 import subprocess
 import sqlite3
 
+import ast # for safely parsing timed stuff
+
 global app
 app = None
 
@@ -31,8 +33,31 @@ else:
 	conn.row_factory = sqlite3.Row
 	cur = conn.cursor()
 
+class timed:
+	alarms = []
+
+	def check():
+		result = subprocess.Popen(["timedclient-qt5", "--info"], stdout=subprocess.PIPE).communicate()
+		rawvals = result[0].decode("UTF-8").split("Cookie ")
+		for val in rawvals:
+			alm = {}
+			for line in val.split('\n'):
+				line = line.strip()
+				if '=' in line:
+					sections = [i.strip() for i in line.split('=')]
+					alm[sections[0]] = ast.literal_eval(sections[-1])
+				else:
+					pass
+			timed.alarms.append(alm)
+	def set_alarm(time,message):
+		# result = subprocess.Popen(["timedclient-qt5", "-b'TITLE=button0'", "-e'APPLICATION=saera;TITLE=Alarm;time="+time.strftime("%Y-%m-%d %H:%M")+"'"], stdout=subprocess.PIPE).communicate()
+		# For some reason, subprocess.Popen returns an error for this (probably because of how timedclient-qt5 mangles argv), so we use os.system instead
+		result = os.system("timedclient-qt5 -b'TITLE=button0' -e'APPLICATION=saera;TITLE=Alarm;time="+time.strftime("%Y-%m-%d %H:%M")+"'")
+		# print ("timedclient-qt5", "-b'TITLE=button0'", "-e'APPLICATION=saera;TITLE=Alarm;time="+time.strftime("%Y-%m-%d %H:%M")+"'")
+		timed.check()
+
 def set_alarm(time, message = "alarm"):
-	# TODO
+	timed.set_alarm(time,message)
 	pass
 
 def run_text(t):
@@ -103,5 +128,5 @@ class MailFolder:
 				self.messages[i] = email.message_from_file(open(os.getenv("HOME")+"/.qmf/mail/"+i))
 
 def speak(string):
-	os.system('espeak --stdout -v +f2 "' + string + '" | gst-launch-0.10 -v fdsrc ! wavparse ! audioconvert ! alsasink &')
+	os.system('espeak --stdout -v +f2 "' + string.replace(":00"," o'clock") + '" | gst-launch-0.10 -v fdsrc ! wavparse ! audioconvert ! alsasink &')
 	return string

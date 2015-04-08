@@ -132,7 +132,8 @@ class Saera:
 		if 'time' in result['outcome']['entities']:
 			# alarm_time = datetime.strptime(result['outcome']['entities']['time']['value']['from'][:-6], "%Y-%m-%dT%H:%M:%S.%f")
 			alarm_time = result['outcome']['entities']['time']
-			platform.set_alarm(calendar.timegm(alarm_time.utctimetuple()))
+			# platform.set_alarm(calendar.timegm(alarm_time.utctimetuple()))
+			platform.set_alarm(alarm_time)
 			self.short_term_memory.set('time',alarm_time)
 			return "Setting alarm for "+str(alarm_time.hour)+":"+'{0:02d}'.format(alarm_time.minute)+"."
 		elif 'location' in result['outcome']['entities']:
