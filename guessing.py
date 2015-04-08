@@ -3,7 +3,7 @@
 import json
 import os
 
-import timeparser
+import timeparser2
 
 intentscfg = json.load(open(os.path.dirname(os.path.abspath(__file__))+"/intents.cfg"))
 
@@ -205,11 +205,12 @@ class vTime(Variable):
 						 'after',
 						 'am',
 						 'pm']
+		self.keywords += [str(i) for i in range(60)]
 		self.keywords += ['one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve','thirteen','fourteen','fifteen','sixteen','seventeen','eighteen','nineteen','twenty','thirty','forty','fifty']
 		self.keywords += ['first','second','third','fourth','fifth','sixth','seventh','eighth','ninth','tenth','eleventh','twelfth','thirteenth','fourteenth','fifteenth','sixteenth','seventeenth','eighteenth','nineteenth','twentieth','thirtieth']
 		self.keywords += ['january','march','april','may','june','july','august','september','october','november','december']
 	def parse(self, words):
-		return timeparser.parse(' '.join(words)).calculatedTime
+		return timeparser2.parse(words)
 
 class  vDigits(Variable):
 	def __init__(self):

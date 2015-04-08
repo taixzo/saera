@@ -51,7 +51,9 @@ def parse(tokens):
 		if then<now:
 			then = then+timedelta(days=1)
 
-	print then, tokens
+	print (then, tokens)
+
+	return then
 
 
 if __name__=="__main__":
