@@ -5,6 +5,7 @@ import os
 import email
 import subprocess
 import sqlite3
+from datetime import datetime, timedelta
 
 import ast # for safely parsing timed stuff
 
@@ -32,6 +33,9 @@ else:
 	conn = sqlite3.connect(memory_path)
 	conn.row_factory = sqlite3.Row
 	cur = conn.cursor()
+
+mailconn = sqlite3.connect('/home/nemo/.qmf/database/qmailstore.db')
+mailcur = mailconn.cursor()
 
 class timed:
 	alarms = []
@@ -118,6 +122,16 @@ def call_phone(num):
 								"com.jolla.voicecall.ui.dial",
 								"'"+num+"'"], stdout=subprocess.PIPE).communicate()
 	return "true" in result[0].decode("UTF-8")
+
+def get_unread_email():
+	mailconn.execute("VACUUM") # to move messages from the WAL into the main database
+	mailcur.execute("SELECT * FROM mailmessages WHERE stamp>'"+(datetime.now()+timedelta(days=-1)).strftime("%Y-%m-%dT%H:%M:%S.000")+"'")
+	rows = mailcur.fetchall()
+	messages = []
+	for row in rows:
+		if bin(row[8])[2:][-8]=='0' and bin(row[8])[2:][-10]=='0': # one of those two bits is the read flag
+			messages.append({'to':row[9],'from':row[4].split(" <")[0].replace('"',''),'subject':row[6],'content':row[22]})
+	return messages
 
 class MailFolder:
 	def __init__(self):

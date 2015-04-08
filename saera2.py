@@ -395,6 +395,14 @@ class Saera:
 			return pronoun.capitalize() + " " + conjugations[pronoun] + " " + ("a " if not (person['description'].lower().startswith("the ") or person['description'].lower().startswith("a ") or person['description'].lower().startswith("an ")) else "") + person["description"][0].upper()+person["description"][1:]+'.'
 		else:
 			return "What?"
+	def email(self,result):
+		messages = platform.get_unread_email()
+		if not messages:
+			return "You have no new mail."
+		elif len(messages) == 1:
+			return "You have a new email from "+messages[0]['from']
+		else:
+			return "You have "+str(len(messages))+" new email messages."
 	def process(self,result):
 		print (result['outcome']['intent'])
 		self.short_term_memory.tick()
@@ -427,7 +435,7 @@ class Saera:
 			else:
 				return "Play what?"
 		elif result['outcome']['intent']=="email":
-			pass
+			return self.email(result)
 		elif result['outcome']['intent']=="call":
 			return self.call_phone(result)
 		elif result['outcome']['intent']=="how_about":

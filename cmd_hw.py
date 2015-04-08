@@ -65,6 +65,9 @@ def play():
 def call_phone(num):
 	pass
 
+def get_unread_email():
+	return []
+
 class MailFolder:
 	def __init__(self):
 		self.messages = {}
