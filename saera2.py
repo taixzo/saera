@@ -162,6 +162,9 @@ class Saera:
 										   # 'http://api.geonames.org/searchJSON?q='+location.replace(" ","+")+'&username=taixzo'], stdout=subprocess.PIPE).communicate()[0].decode("utf-8")
 				locdic = json.loads(req)
 				loc = (0,locdic['geonames'][0]["toponymName"],"",locdic['geonames'][0]["lat"],locdic['geonames'][0]["lng"])
+				tz = json.loads(urllib2.urlopen('http://api.geonames.org/timezoneJSON?lat='+locdic['geonames'][0]["lat"]+'&lng='+locdic['geonames'][0]["lng"]+'&username=taixzo').read().decode("utf-8"))['rawOffset']
+				platform.cur.execute('INSERT INTO Locations (LocName, Zip, Latitude, Longitude, Timezone) VALUES ("'+loc[1]+'", "", '+loc[3]+', '+loc[4]+', '+str(tz)+')')
+				platform.conn.commit()
 		else:
 			platform.cur.execute("SELECT * FROM Variables WHERE VarName='here'")
 			loc = platform.cur.fetchone()
@@ -401,14 +404,14 @@ class Saera:
 			return "You have no new mail."
 		elif len(messages) == 1:
 			if "read " in result['text'].lower():
-				return "From "+messages[0]['from']+". Subject: "+messages[0]['subject']+". Message: "+messages[0]['message']
+				return "From "+messages[0]['from']+". "+messages[0]['subject']+". Message: "+messages[0]['message']
 			return "You have a new email from "+messages[0]['from']
 		else:
 			print (result['text'])
 			if "read " in result['text'].lower():
 				retstr = ''
 				for message in messages:
-					retstr += "From "+message['from']+". Subject: "+message['subject']+". Message: "+message['content']+"\n              "
+					retstr += "From "+message['from']+".\n"+message['subject']+".\n\n"
 				return retstr
 			return "You have "+str(len(messages))+" new email messages."
 	def process(self,result):
