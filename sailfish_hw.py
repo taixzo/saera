@@ -54,10 +54,7 @@ class timed:
 					pass
 			timed.alarms.append(alm)
 	def set_alarm(time,message):
-		# result = subprocess.Popen(["timedclient-qt5", "-b'TITLE=button0'", "-e'APPLICATION=saera;TITLE=Alarm;time="+time.strftime("%Y-%m-%d %H:%M")+"'"], stdout=subprocess.PIPE).communicate()
-		# For some reason, subprocess.Popen returns an error for this (probably because of how timedclient-qt5 mangles argv), so we use os.system instead
-		result = os.system("timedclient-qt5 -b'TITLE=button0' -e'APPLICATION=saera;TITLE=Alarm;time="+time.strftime("%Y-%m-%d %H:%M")+"'")
-		# print ("timedclient-qt5", "-b'TITLE=button0'", "-e'APPLICATION=saera;TITLE=Alarm;time="+time.strftime("%Y-%m-%d %H:%M")+"'")
+		result = subprocess.Popen(["timedclient-qt5 -r'hour="+str(time.hour)+";minute="+str(time.minute)+";everyDayOfWeek;everyDayOfMonth;everyMonth;' -e'APPLICATION=nemoalarms;TITLE=Alarm;createdDate="+str(int(datetime.now().timestamp()))+";timeOfDay="+str(time.hour*60+time.minute)+";type=clock;alarm;reminder;boot;keepAlive;time="+time.strftime("%Y-%m-%d %H:%M")+";'"], shell=True, stdout=subprocess.PIPE).communicate()
 		timed.check()
 
 def set_alarm(time, message = "alarm"):
@@ -130,7 +127,7 @@ def get_unread_email():
 	messages = []
 	for row in rows:
 		if bin(row[8])[2:][-8]=='0' and bin(row[8])[2:][-10]=='0': # one of those two bits is the read flag
-			messages.append({'to':row[9],'from':row[4].split(" <")[0].replace('"',''),'subject':row[6],'content':row[22]})
+			messages.append({'to':row[9],'from':row[4].split(" <")[0].split(" (")[0].replace('"',''),'subject':row[6].split(' [')[0],'content':row[22]})
 	return messages
 
 class MailFolder:
