@@ -400,8 +400,16 @@ class Saera:
 		if not messages:
 			return "You have no new mail."
 		elif len(messages) == 1:
+			if "read " in result['text'].lower():
+				return "From "+messages[0]['from']+". Subject: "+messages[0]['subject']+". Message: "+messages[0]['message']
 			return "You have a new email from "+messages[0]['from']
 		else:
+			print (result['text'])
+			if "read " in result['text'].lower():
+				retstr = ''
+				for message in messages:
+					retstr += "From "+message['from']+". Subject: "+message['subject']+". Message: "+message['content']+"\n              "
+				return retstr
 			return "You have "+str(len(messages))+" new email messages."
 	def process(self,result):
 		print (result['outcome']['intent'])

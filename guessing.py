@@ -235,6 +235,11 @@ class vName(Variable):			#
 		Variable.__init__(self)		#
 		self.keywords = []		#
 		self.prewords = ['am','me','is','named']		#
+class vThing(Variable):			#
+	def __init__(self):	
+		Variable.__init__(self)		#
+		self.keywords = []		#
+		self.prewords = ['is','are']		#
 class vHome(Variable):			#
 	def __init__(self):	
 		Variable.__init__(self)		#
@@ -273,7 +278,8 @@ class vPreposition(Variable):
 variables = {'time':vTime(),
 			 'digits':vDigits(),
 			 'contact':vContact(),
-			 'name':vName(),	#
+			 'name':vName(),
+			 'thing':vThing(),
 			 'home':vHome(),	#  Do we need these?
 			 'location':vLocation(),
 			 'food':vFood(),
