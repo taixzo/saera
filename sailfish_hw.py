@@ -59,7 +59,7 @@ class timed:
 		timed.check()
 
 	def set_reminder(time,message,location=None):
-		result = subprocess.Popen(["timedclient-qt5 -e'APPLICATION=saera;TITLE="+message+(";location="+location if location else "")+";time="+time.strftime("%Y-%m-%d %H:%M")+";type=clock;'"], shell=True, stdout=subprocess.PIPE).communicate()
+		result = subprocess.Popen(["timedclient-qt5 -b'TITLE=button0' -e'APPLICATION=saera;TITLE="+message+(";location="+location if location else "")+";time="+time.strftime("%Y-%m-%d %H:%M")+";'"], shell=True, stdout=subprocess.PIPE).communicate()
 		print (result)
 		timed.check()
 
