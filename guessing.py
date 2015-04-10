@@ -279,7 +279,7 @@ class vDoAction(Variable):
 	def __init__(self):
 		Variable.__init__(self)
 		self.prewords = ['to','should']
-		self.postwords = ['in']
+		self.postwords = ['in','at']
 		self.greedy = True
 
 class vDistance(Variable):

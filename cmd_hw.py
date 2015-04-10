@@ -37,6 +37,9 @@ def set_alarm(time, message = "alarm"):
 	# TODO
 	pass
 
+def set_reminder(time, message, location=None):
+	os.system("echo 'echo \""+message.replace('"','\\"').replace("'","\\'")+"\" | wall' | at "+time.strftime("%H:%M"))
+
 def run_text(t):
 	return app.execute_text(t)
 
