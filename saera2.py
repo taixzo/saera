@@ -403,17 +403,45 @@ class Saera:
 		if not messages:
 			return "You have no new mail."
 		elif len(messages) == 1:
+			self.short_term_memory.set('object',messages[0])
 			if "read " in result['text'].lower():
 				return "From "+messages[0]['from']+". "+messages[0]['subject']+". Message: "+messages[0]['message']
 			return "You have a new email from "+messages[0]['from']
 		else:
 			print (result['text'])
+			self.short_term_memory.set('plural_object',messages)
 			if "read " in result['text'].lower():
 				retstr = ''
 				for message in messages:
 					retstr += "From "+message['from']+".\n"+message['subject']+".\n\n"
 				return retstr
 			return "You have "+str(len(messages))+" new email messages."
+	def reminder(self,result):
+		print (result)
+		if 'do_action' in result['outcome']['entities']:
+			if 'time' in result['outcome']['entities']:
+				platform.set_reminder(result['outcome']['entities']['time'],result['outcome']['entities']['do_action'])
+				return 'I will remind you to '+result['outcome']['entities']['do_action']+' at '+result['outcome']['entities']['time'].strftime("%H:%M.")
+		else:
+			return 'No idea what to remind you of'
+	def read_out(self,result):
+		if "them" in result['text'].split():
+			try:
+				thingsToRead = self.short_term_memory.get('plural_object')
+				if thingsToRead[0]['type']=='email':
+					retstr = ''
+					for message in thingsToRead:
+						retstr += "From "+message['from']+".\n"+message['subject']+"."+message['content']+"\n\n"
+					return retstr
+			except ForgottenException:
+				return (" "+result.text+" ").replace(" them "," what ").strip()+"?"
+		elif "it" in result['text'].split():
+			try:
+				thingToRead = self.short_term_memory.get('object')
+				if thingToRead['type']=='email':
+					return "From "+messages[0]['from']+". "+messages[0]['subject']+". Message: "+messages[0]['message']
+			except ForgottenException:
+				return (" "+result.text+" ").replace(" it "," what ").strip()+"?"
 	def process(self,result):
 		print (result['outcome']['intent'])
 		self.short_term_memory.tick()
@@ -421,6 +449,8 @@ class Saera:
 			return self.hello(result)
 		elif result['outcome']['intent']=='alarm':
 			return self.set_alarm(result)
+		elif result['outcome']['intent']=='reminder':
+			return self.reminder(result)
 		elif result['outcome']['intent']=="weather":
 			return self.weather(result)
 		elif result['outcome']['intent']=="time":
@@ -450,6 +480,7 @@ class Saera:
 		elif result['outcome']['intent']=="call":
 			return self.call_phone(result)
 		elif result['outcome']['intent']=="how_about":
+			print (result)
 			if self.short_term_memory.get('intent')=='alarm':
 				return self.set_alarm(result)
 			elif self.short_term_memory.get('intent')=='weather':
@@ -460,6 +491,8 @@ class Saera:
 			return self.yesno(result)
 		elif result['outcome']['intent']=="feeling_query":
 			return self.feeling_query(result)
+		elif result['outcome']['intent']=='read_out':
+			return self.read_out(result)
 		elif result['outcome']['intent']=="set_user_name":
 			return self.set_user_name(result)
 		elif result['outcome']['intent']=="set_sys_name":

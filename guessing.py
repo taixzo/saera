@@ -35,6 +35,10 @@ def levenshtein(seq1, seq2):
             thisrow[y] = min(delcost, addcost, subcost)
     return thisrow[len(seq2) - 1]
 
+# lists have no .rindex() method
+def listRightIndex(alist, value):
+    return len(alist) - alist[-1::-1].index(value) -1
+
 class Intent:
 	def __init__(self,name):
 		self.name = name
@@ -157,7 +161,10 @@ class Guesser:
 				if first >= 0:
 					for j in variables[i].postwords:
 						if j in splitstring and splitstring.index(j)>first:
-							last = max(last,splitstring.index(j))
+							if variables[i].greedy:
+								last = max(last,listRightIndex(splitstring,j))
+							else:
+								last = max(last,splitstring.index(j))
 					if last==-1:
 						last = len(splitstring)
 			if last >= 0:
@@ -178,6 +185,7 @@ class Variable:
 		self.prewords = []
 		self.postwords = []
 		self.sensitivity = 1.1
+		self.greedy = False
 	def parse(self,words):
 		return ' '.join(words)
 
@@ -267,6 +275,13 @@ class vFood(Variable):
 						 'falafel',
 						 'sandwich']
 
+class vDoAction(Variable):
+	def __init__(self):
+		Variable.__init__(self)
+		self.prewords = ['to','should']
+		self.postwords = ['in']
+		self.greedy = True
+
 class vDistance(Variable):
 	def __init__(self):
 		Variable.__init__(self)
@@ -295,7 +310,8 @@ variables = {'time':vTime(),
 			 'food':vFood(),
 			 'distance':vDistance(),
 			 'direction':vDirection(),
-			 'preposition':vPreposition()}
+			 'preposition':vPreposition(),
+			 'do_action':vDoAction()}
 
 if __name__=="__main__":
 	# i = Intent()

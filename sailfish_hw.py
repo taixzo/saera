@@ -47,6 +47,7 @@ class timed:
 			alm = {}
 			for line in val.split('\n'):
 				line = line.strip()
+				# TODO: recurrence0 determines whether alarm is active if it comes from clock app
 				if '=' in line:
 					sections = [i.strip() for i in line.split('=')]
 					alm[sections[0]] = ast.literal_eval(sections[-1])
@@ -57,9 +58,16 @@ class timed:
 		result = subprocess.Popen(["timedclient-qt5 -r'hour="+str(time.hour)+";minute="+str(time.minute)+";everyDayOfWeek;everyDayOfMonth;everyMonth;' -e'APPLICATION=nemoalarms;TITLE=Alarm;createdDate="+str(int(datetime.now().timestamp()))+";timeOfDay="+str(time.hour*60+time.minute)+";type=clock;alarm;reminder;boot;keepAlive;time="+time.strftime("%Y-%m-%d %H:%M")+";'"], shell=True, stdout=subprocess.PIPE).communicate()
 		timed.check()
 
+	def set_reminder(time,message,location=None):
+		result = subprocess.Popen(["timedclient-qt5 -e'APPLICATION=saera;TITLE="+message+(";location="+location if location else "")+";time="+time.strftime("%Y-%m-%d %H:%M")+";type=clock;'"], shell=True, stdout=subprocess.PIPE).communicate()
+		print (result)
+		timed.check()
+
 def set_alarm(time, message = "alarm"):
 	timed.set_alarm(time,message)
-	pass
+
+def set_reminder(time,message,location=None):
+	return timed.set_reminder(time,message,location)
 
 def run_text(t):
 	return app.execute_text(t)
@@ -127,7 +135,7 @@ def get_unread_email():
 	messages = []
 	for row in rows:
 		if bin(row[8])[2:][-8]=='0' and bin(row[8])[2:][-10]=='0': # one of those two bits is the read flag
-			messages.append({'to':row[9],'from':row[4].split(" <")[0].split(" (")[0].replace('"',''),'subject':row[6].split(' [')[0],'content':row[22]})
+			messages.append({'type':'email','to':row[9],'from':row[4].split(" <")[0].split(" (")[0].replace('"',''),'subject':row[6].split(' [')[0],'content':row[22]})
 	return messages
 
 class MailFolder:
