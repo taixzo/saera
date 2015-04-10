@@ -22,8 +22,10 @@ def parse(tokens):
 
 	hour = None
 	minute = None
+	temptime = None
 
 	timeadjustment = 0
+	addedtimeadjustment = 0
 	dateadjustment = 0
 
 	for token in tokens:
@@ -33,6 +35,16 @@ def parse(tokens):
 			else:
 				if minute is None:
 					minute = int(token)
+		elif token in ['a','an']:
+			temptime = 1
+		elif (token=='hours' and hour) or (token=='hour' and (hour==1 or temptime)):
+			addedtimeadjustment = hour*60 if hour else 60
+			hour = None
+			minute = None
+		elif (token=='minutes' and hour) or (token=='minute' and (hour==1 or temptime)):
+			addedtimeadjustment = hour if hour else 1
+			hour = None
+			minute = None
 		elif token in bells:
 			timeadjustment = bells[token]
 		elif token in signs and timeadjustment!=0:
@@ -45,8 +57,9 @@ def parse(tokens):
 			dateadjustment += (weekdays[token]-now.weekday()+7) % 7
 
 	adjustmentdelta = timedelta(days = dateadjustment, minutes = timeadjustment)
-	# print hour, minute
-	then = now.replace(hour = hour if hour is not None else now.hour, minute = minute if minute is not None else now.minute if adjustmentdelta==0 else 0, second = 0, microsecond = 0) + adjustmentdelta
+	adjustmentdelta2 = timedelta(minutes = addedtimeadjustment)
+	# print (hour, minute, timeadjustment)
+	then = now.replace(hour = hour if hour is not None else now.hour, minute = minute if minute is not None else now.minute if adjustmentdelta.total_seconds()==0 else 0, second = 0, microsecond = 0) + adjustmentdelta + adjustmentdelta2
 	if then.date()==now.date():
 		if then<now:
 			then = then+timedelta(days=1)
