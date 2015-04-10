@@ -139,6 +139,14 @@ class Guesser:
 				if j in splitstring:
 					first = min(first,splitstring.index(j)) if first >= 0 else splitstring.index(j)
 			if first >= 0:
+				for j in variables[i].assistantkeywords:
+					if j in splitstring:
+						for k in variables[i].keywords:
+							kindices = [l for l, x in enumerate(splitstring) if x == k]
+							indices = [l for l, x in enumerate(splitstring) if x == j]
+							matches = [l for l in indices if l+1 in kindices]
+							if matches:
+								first = min(first,min(matches))
 				for j in variables[i].keywords:
 					if j in splitstring:
 						last = max(last,splitstring.index(j)+1)
@@ -166,6 +174,7 @@ class Guesser:
 class Variable:
 	def __init__(self):
 		self.keywords = []
+		self.assistantkeywords = []
 		self.prewords = []
 		self.postwords = []
 		self.sensitivity = 1.1
@@ -175,6 +184,7 @@ class Variable:
 class vTime(Variable):
 	def __init__(self):
 		Variable.__init__(self)
+		self.assistantkeywords = ['a','an']
 		self.keywords = ['year',
 						 'years',
 						 'month',

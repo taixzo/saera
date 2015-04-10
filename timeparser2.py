@@ -38,11 +38,11 @@ def parse(tokens):
 		elif token in ['a','an']:
 			temptime = 1
 		elif (token=='hours' and hour) or (token=='hour' and (hour==1 or temptime)):
-			addedtimeadjustment = hour*60 if hour else 60
+			addedtimeadjustment = hour*60 if hour is not None else 60
 			hour = None
 			minute = None
 		elif (token=='minutes' and hour) or (token=='minute' and (hour==1 or temptime)):
-			addedtimeadjustment = hour if hour else 1
+			addedtimeadjustment = hour if hour is not None else 1
 			hour = None
 			minute = None
 		elif token in bells:
@@ -58,7 +58,7 @@ def parse(tokens):
 
 	adjustmentdelta = timedelta(days = dateadjustment, minutes = timeadjustment)
 	adjustmentdelta2 = timedelta(minutes = addedtimeadjustment)
-	# print (hour, minute, timeadjustment)
+	# print (hour, minute, timeadjustment,addedtimeadjustment)
 	then = now.replace(hour = hour if hour is not None else now.hour, minute = minute if minute is not None else now.minute if adjustmentdelta.total_seconds()==0 else 0, second = 0, microsecond = 0) + adjustmentdelta + adjustmentdelta2
 	if then.date()==now.date():
 		if then<now:
