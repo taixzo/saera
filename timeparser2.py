@@ -30,10 +30,10 @@ def parse(tokens):
 
 	for token in tokens:
 		if token.isdigit():
-			if hour is None:
+			if hour is None and addedtimeadjustment is None:
 				hour = int(token)
 			else:
-				if minute is None:
+				if minute is None and addedtimeadjustment is None:
 					minute = int(token)
 		elif token in ['a','an']:
 			temptime = 1
