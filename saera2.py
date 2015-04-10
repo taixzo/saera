@@ -442,6 +442,12 @@ class Saera:
 					return "From "+messages[0]['from']+". "+messages[0]['subject']+". Message: "+messages[0]['message']
 			except ForgottenException:
 				return (" "+result.text+" ").replace(" it "," what ").strip()+"?"
+	def search (self,result):
+		if 'search_engine' in result['outcome']['entities']:
+			search_engine = result['outcome']['entities']['search_engine']
+		else:
+			search_engine = "google"
+		return "I will search for "+result['outcome']['entities']['query']+" on "+search_engine+"."
 	def process(self,result):
 		print (result['outcome']['intent'])
 		self.short_term_memory.tick()
@@ -501,6 +507,8 @@ class Saera:
 			return self.set_home(result)
 		elif result['outcome']['intent']=="who_is":
 			return self.who_is(result)
+		elif result['outcome']['intent']=="search":
+			return self.search(result)
 		elif result['outcome']['intent']=="quit" or result['outcome']['intent']=="good_bye":
 			# sys.exit(0)
 			platform.quit()

@@ -297,7 +297,16 @@ class vPreposition(Variable):
 	def __init__(self):
 		Variable.__init__(self)
 		self.keywords = ['i','you','he','she','it','we','they']
+
+class vSearchEngine(Variable):
+	def __init__(self):
+		Variable.__init__(self)
+		self.keywords = ['google','bing','yahoo','duck','go','wikipedia']
 			
+class vQuery(Variable):
+	def __init__(self):
+		Variable.__init__(self)
+		self.prewords = ['for'] + vSearchEngine().keywords
 	
 
 variables = {'time':vTime(),
@@ -311,7 +320,9 @@ variables = {'time':vTime(),
 			 'distance':vDistance(),
 			 'direction':vDirection(),
 			 'preposition':vPreposition(),
-			 'do_action':vDoAction()}
+			 'do_action':vDoAction(),
+			 'search_engine':vSearchEngine(),
+			 'query':vQuery()}
 
 if __name__=="__main__":
 	# i = Intent()
