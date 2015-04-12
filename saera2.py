@@ -26,10 +26,12 @@ import subprocess
 
 from guessing import Guesser
 
-if sys.version_info[0]:
-	import cmd_hw as platform
+if sys.version_info[0]<3:
+	if sys.version_info[1]<6:
+		import fremantle_hw as platform
+	else:
+		import cmd_hw as platform
 else:
-	#import fremantle_hw as platform
 	#import harmattan_hw as platform
 	# import x86_hw as platform
 	import sailfish_hw as platform
