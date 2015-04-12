@@ -497,7 +497,7 @@ class Saera:
 					return "Where do you live?"
 		bb = (float(loc[3])-.25,float(loc[4])-.25,float(loc[3])+.25,float(loc[4])+.25)
 		trafficdata = json.loads(urllib2.urlopen("http://dev.virtualearth.net/REST/v1/Traffic/Incidents/"+str(bb[0])+","+str(bb[1])+","+str(bb[2])+","+str(bb[3])+"?key=AltIdRJ4KAV9d1U-rE3T0E-OFN66cwd3D1USLS28oVl2lbIRbFcqMZHJZd5DwTTP").read().decode("utf-8"))
-		print trafficdata['resourceSets'][0]
+		print (trafficdata['resourceSets'][0])
 		retmsg = "There "+(('are '+str(trafficdata['resourceSets'][0]['estimatedTotal'])+' ').replace(' 0 ',' no ')+'traffic incidents ').replace('are 1 traffic incidents ','is 1 traffic incident ')+"in the "+loc[1]+" area."
 		if trafficdata['resourceSets'][0]['estimatedTotal']<10:
 			lists = []
