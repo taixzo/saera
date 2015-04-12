@@ -455,6 +455,49 @@ class Saera:
 			search = pygoogle.pygoogle( log_level=log_level, query=result['outcome']['entities']['query'], pages=1, hl='en')
 			return [("I found these results",)]+search.search().items()
 		return "I don't know how to search  "+search_engine+"."
+	def traffic(self, result):
+		if 'location' in result['outcome']['entities']:
+			location = result['outcome']['entities']['location']
+			platform.cur.execute("SELECT * FROM Locations WHERE LocName='"+location+"'")
+			loc = platform.cur.fetchone()
+			if not loc:
+				req = urllib2.urlopen('http://api.geonames.org/searchJSON?q='+location.replace(" ","+")+'&username=taixzo').read().decode("utf-8")
+				locdic = json.loads(req)
+				loc = (0,locdic['geonames'][0]["toponymName"],"",locdic['geonames'][0]["lat"],locdic['geonames'][0]["lng"])
+				tz = json.loads(urllib2.urlopen('http://api.geonames.org/timezoneJSON?lat='+locdic['geonames'][0]["lat"]+'&lng='+locdic['geonames'][0]["lng"]+'&username=taixzo').read().decode("utf-8"))['rawOffset']
+				platform.cur.execute('INSERT INTO Locations (LocName, Zip, Latitude, Longitude, Timezone) VALUES ("'+loc[1]+'", "", '+loc[3]+', '+loc[4]+', '+str(tz)+')')
+				platform.conn.commit()
+		else:
+			platform.cur.execute("SELECT * FROM Variables WHERE VarName='here'")
+			loc = platform.cur.fetchone()
+			if loc:
+				platform.cur.execute("SELECT * FROM Locations WHERE Id="+str(loc[2]))
+				loc = platform.cur.fetchone()
+				here = True
+			else:
+				platform.cur.execute("SELECT * FROM Variables WHERE VarName='home'")
+				loc = platform.cur.fetchone()
+				if loc:
+					platform.cur.execute("SELECT * FROM Locations WHERE Id="+str(loc[2]))
+					loc = platform.cur.fetchone()
+					here = True
+				else:
+					return "Where do you live?"
+		bb = (float(loc[3])-.25,float(loc[4])-.25,float(loc[3])+.25,float(loc[4])+.25)
+		trafficdata = json.loads(urllib2.urlopen("http://dev.virtualearth.net/REST/v1/Traffic/Incidents/"+str(bb[0])+","+str(bb[1])+","+str(bb[2])+","+str(bb[3])+"?key=AltIdRJ4KAV9d1U-rE3T0E-OFN66cwd3D1USLS28oVl2lbIRbFcqMZHJZd5DwTTP").read().decode("utf-8"))
+		print trafficdata['resourceSets'][0]
+		retmsg = "There "+(('are '+str(trafficdata['resourceSets'][0]['estimatedTotal'])+' ').replace(' 0 ',' no ')+'incidents ').replace('are 1 incidents ','is 1 incident ')+"in the "+loc[1]+" area."
+		if trafficdata['resourceSets'][0]['estimatedTotal']<10:
+			lists = []
+			for i in trafficdata['resourceSets'][0]['resources']:
+				if ' between ' in i['description'].lower() and ' and ' in i['description']:
+					endpoints = (i['description'].lower().split(' - ')[0].split(' between ')[1].split(' and '))
+					if tuple(reversed(endpoints)) in lists:
+						continue
+					else:
+						lists.append(endpoints)
+				retmsg+="\n"+i['description']
+		return retmsg
 	def process(self,result):
 		print (result['outcome']['intent'])
 		self.short_term_memory.tick()
@@ -516,6 +559,8 @@ class Saera:
 			return self.who_is(result)
 		elif result['outcome']['intent']=="search":
 			return self.search(result)
+		elif result['outcome']['intent']=="traffic":
+			return self.traffic(result)
 		elif result['outcome']['intent']=="quit" or result['outcome']['intent']=="good_bye":
 			# sys.exit(0)
 			platform.quit()
