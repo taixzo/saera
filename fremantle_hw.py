@@ -71,7 +71,19 @@ def set_alarm(time, message = "alarm"):
 	cookie = alarm.add_event(event)
 
 def set_reminder(time, message, location=None):
-	os.system("echo 'echo \""+message.replace('"','\\"').replace("'","\\'")+"\" | wall' | at "+time.strftime("%H:%M"))
+	event = alarm.Event()
+	event.appid = 'saera'
+	event.message = message
+	event.alarm_time = float(time.strftime("%s"))
+
+	action_stop, action_snooze = event.add_actions(2)
+	action_stop.label = 'Stop'
+	action_stop.flags |= alarm.ACTION_WHEN_RESPONDED | alarm.ACTION_TYPE_NOP
+
+	action_snooze.label = 'Snooze'
+	action_snooze.flags |= alarm.ACTION_WHEN_RESPONDED | alarm.ACTION_TYPE_SNOOZE
+
+	cookie = alarm.add_event(event)
 
 def open_url(widget,url):
 	os.system('dbus-send --system --type=method_call --dest=com.nokia.osso_browser /com/nokia/osso_browser/request com.nokia.osso_browser.load_url string:"'+url+'"')
@@ -90,7 +102,7 @@ def run_text(widget=None,event=None,data=None):
 	res = app.execute_text(text)
 	if isinstance(res,basestring):
 		reslab = Label("<b>"+res+"</b>")
-		reslab.set_use_markup(gtk.TRUE)
+		reslab.set_use_markup(True)
 		reslab.set_alignment(xalign=0.05, yalign=0.5) 
 		app.vbox.pack_start(reslab,False,True,30)
 		reslab.show()
@@ -99,7 +111,7 @@ def run_text(widget=None,event=None,data=None):
 		for i in res:
 			if len(i)==1:
 				rlab = Label("<b>"+i[0]+"</b>")
-				rlab.set_use_markup(gtk.TRUE)
+				rlab.set_use_markup(True)
 				app.vbox.pack_start(rlab,False,True,30)
 			else:
 				rlab = hildon.GtkButton(gtk.HILDON_SIZE_AUTO_WIDTH | gtk.HILDON_SIZE_FINGER_HEIGHT)
@@ -107,7 +119,7 @@ def run_text(widget=None,event=None,data=None):
 				label = rlab.child
 				label.props.wrap = True
 				label.props.width_chars = 40
-				label.set_use_markup(gtk.TRUE)
+				label.set_use_markup(True)
 				rlab.connect("clicked",open_url,i[1])
 				app.vbox.pack_start(rlab,False,True,0)
 			if not reslab:
@@ -137,7 +149,7 @@ def run_app(s):
 
 	input = gtk.Entry()
 	welcome_message = Label("<b>How may I help you?</b>")
-	welcome_message.set_use_markup(gtk.TRUE)
+	welcome_message.set_use_markup(True)
 	welcome_message.set_alignment(xalign=0.05, yalign=0.5) 
 
 	input.connect('activate', run_text)
