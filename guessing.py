@@ -306,7 +306,7 @@ class vSearchEngine(Variable):
 class vQuery(Variable):
 	def __init__(self):
 		Variable.__init__(self)
-		self.prewords = ['for'] + vSearchEngine().keywords
+		self.prewords = ['for'] #+ vSearchEngine().keywords
 	
 
 variables = {'time':vTime(),

@@ -9,6 +9,7 @@ import calendar
 import logging
 import pygoogle
 import wikikit
+import duckduckgo
 import re
 # import urllib2
 try:
@@ -460,6 +461,9 @@ class Saera:
 				return [wikikit.summary(result['outcome']['entities']['query'],sentences=1)]
 			except KeyError:
 				return "Wikipedia doesn't have an entry for "+result['outcome']['entities']['query']+"."
+		elif search_engine=="duckduckgo" or search_engine=="duck duck go" or search_engine=="duck go":
+			# r = duckduckgo.query(result['outcome']['entities']['query'])
+			return duckduckgo.get_zci(result['outcome']['entities']['query'])
 		return "I don't know how to search  "+search_engine+"."
 	def traffic(self, result):
 		if 'location' in result['outcome']['entities']:
