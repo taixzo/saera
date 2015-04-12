@@ -11,6 +11,17 @@ import gobject
 
 import hildon
 from portrait import FremantleRotation
+try:
+	import alarm
+except:
+	class alarm:
+		class Event:
+			pass
+		ACTION_WHEN_RESPONDED = 123
+		ACTION_TYPE_NOP = 0
+		ACTION_TYPE_SNOOZE = 540023
+		ALARM_EVENT_BOOT = 8007
+
 app_name = "Saera"
 app_version = "2.0"
 initial_mode = FremantleRotation.AUTOMATIC
@@ -45,13 +56,22 @@ else:
 
 def set_alarm(time, message = "alarm"):
 	# TODO
-	pass
+	event = alarm.Event()
+	event.appid = 'saera'
+	event.message = message
+	event.alarm_time = float(time.strftime("%s"))
+
+	action_stop, action_snooze = event.add_actions(2)
+	action_stop.label = 'Stop'
+	action_stop.flags |= alarm.ACTION_WHEN_RESPONDED | alarm.ACTION_TYPE_NOP
+
+	action_snooze.label = 'Snooze'
+	action_snooze.flags |= alarm.ACTION_WHEN_RESPONDED | alarm.ACTION_TYPE_SNOOZE
+
+	cookie = alarm.add_event(event)
 
 def set_reminder(time, message, location=None):
 	os.system("echo 'echo \""+message.replace('"','\\"').replace("'","\\'")+"\" | wall' | at "+time.strftime("%H:%M"))
-
-# def run_text(t):
-# 	return app.execute_text(t)
 
 def open_url(widget,url):
 	os.system('dbus-send --system --type=method_call --dest=com.nokia.osso_browser /com/nokia/osso_browser/request com.nokia.osso_browser.load_url string:"'+url+'"')
