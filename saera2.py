@@ -8,6 +8,7 @@ from datetime import datetime, time, timedelta
 import calendar
 import logging
 import pygoogle
+import wikikit
 import re
 # import urllib2
 try:
@@ -453,7 +454,12 @@ class Saera:
 			search_engine = "google"
 		if search_engine=="google":
 			search = pygoogle.pygoogle( log_level=log_level, query=result['outcome']['entities']['query'], pages=1, hl='en')
-			return [("I found these results",)]+search.search().items()
+			return [("I found these results:",)]+search.search().items()
+		elif search_engine=="wikipedia":
+			try:
+				return [wikikit.summary(result['outcome']['entities']['query'],sentences=1)]
+			except KeyError:
+				return "Wikipedia doesn't have an entry for "+result['outcome']['entities']['query']+"."
 		return "I don't know how to search  "+search_engine+"."
 	def traffic(self, result):
 		if 'location' in result['outcome']['entities']:

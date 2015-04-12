@@ -50,7 +50,11 @@ def run_app(s):
 		# try:
 			inp = raw_input("> ")
 			result = run_text(inp)
-			if type(result)==type(""):
+			try:
+				is_string = isinstance(result,basestring)
+			except NameError:
+				is_string = isinstance(result,str)
+			if is_string:
 				print (result)
 			else:
 				for i in result:
