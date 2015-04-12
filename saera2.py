@@ -6,6 +6,8 @@
 from time import timezone
 from datetime import datetime, time, timedelta
 import calendar
+import logging
+import pygoogle
 import re
 # import urllib2
 try:
@@ -33,6 +35,8 @@ else:
 # if not os.path.exists(platform.memory_path):
 
 # 	data = {'username':None}
+
+log_level = logging.INFO
 
 if sys.version < '3':
 	import codecs
@@ -447,7 +451,10 @@ class Saera:
 			search_engine = result['outcome']['entities']['search_engine']
 		else:
 			search_engine = "google"
-		return "I will search for "+result['outcome']['entities']['query']+" on "+search_engine+"."
+		if search_engine=="google":
+			search = pygoogle.pygoogle( log_level=log_level, query=result['outcome']['entities']['query'], pages=1, hl='en')
+			return [("I found these results",)]+search.search().items()
+		return "I don't know how to search  "+search_engine+"."
 	def process(self,result):
 		print (result['outcome']['intent'])
 		self.short_term_memory.tick()

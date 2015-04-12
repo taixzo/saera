@@ -50,7 +50,12 @@ def run_app(s):
 		# try:
 			inp = raw_input("> ")
 			result = run_text(inp)
-			print (result)
+			if type(result)==type(""):
+				print (result)
+			else:
+				for i in result:
+					print (i[0])
+			# print (result)
 		# except Exception as e:
 		# 	print "Error: ", e.message
 		# 	quit()
