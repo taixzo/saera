@@ -59,7 +59,7 @@ def parse(tokens):
 	adjustmentdelta = timedelta(days = dateadjustment, minutes = timeadjustment)
 	adjustmentdelta2 = timedelta(minutes = addedtimeadjustment)
 	# print (hour, minute, timeadjustment,addedtimeadjustment)
-	then = now.replace(hour = hour if hour is not None else now.hour, minute = minute if minute is not None else now.minute if adjustmentdelta.total_seconds()==0 else 0, second = 0, microsecond = 0) + adjustmentdelta + adjustmentdelta2
+	then = now.replace(hour = hour if hour is not None else now.hour, minute = minute if minute is not None else now.minute if adjustmentdelta.days==adjustmentdelta.seconds==0 else 0, second = 0, microsecond = 0) + adjustmentdelta + adjustmentdelta2
 	if then.date()==now.date():
 		if then<now:
 			then = then+timedelta(days=1)

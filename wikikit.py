@@ -3,7 +3,10 @@ try:
 except:
 	import urllib2
 import functools
-import json
+try:
+  import json
+except ImportError:
+  import simplejson as json
 try:
 	import urllib.parse as parse
 except:
@@ -128,7 +131,7 @@ def _wiki_request(params):
     time.sleep(int(wait_time.total_seconds()))
 
   # r = requests.get(API_URL, params=params, headers=headers)
-  if sys.version_info.major == 2:
+  if sys.version_info[0] == 2:
     r = json.loads(urllib2.urlopen(API_URL,parse.urlencode(params)).read().decode("utf-8"))
   else:
     r = json.loads(urllib2.urlopen(API_URL,bytes(parse.urlencode(params),'utf-8')).read().decode("utf-8"))

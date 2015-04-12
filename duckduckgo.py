@@ -4,7 +4,10 @@ try:
 except ImportError:
     import urllib2
     import urllib as parse
-import json as j
+try:
+    import json as j
+except ImportError:
+    import simplejson as j
 import sys
 
 __version__ = 0.242

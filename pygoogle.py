@@ -46,7 +46,7 @@ except ImportError:
     import urllib as request
 import urllib
 import logging
-import argparse
+# import argparse
 
 __author__ = "Kiran Bandla"
 __version__ = "0.2"
@@ -238,23 +238,3 @@ class pygoogle:
     def display_results(self):
         """Prints results (for command line)"""
         self.__search__(True)
-
-def main():
-    parser = argparse.ArgumentParser(description='A simple Google search module for Python')
-    parser.add_argument('-v', '--verbose', dest='verbose', action='store_true', default=False, help='Verbose mode')
-    parser.add_argument('-p', '--pages', dest='pages', action='store', default=1, help='Number of pages to return. Max 10')
-    parser.add_argument('-hl', '--language', dest='language', action='store', default='en', help="language. default is 'en'")
-    parser.add_argument('query', nargs='*', default=None)
-    args = parser.parse_args()
-    query = ' '.join(args.query)
-    log_level = logging.INFO
-    if args.verbose:
-        log_level = logging.DEBUG
-    if not query:
-        parser.print_help()
-        exit()
-    search = pygoogle( log_level=log_level, query=query, pages=args.pages, hl=args.language)
-    search.display_results()
-
-if __name__ == "__main__":
-    main()

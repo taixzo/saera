@@ -8,7 +8,7 @@ import sqlite3
 global app
 app = None
 
-if sys.version_info.major==3:
+if sys.version_info[0]==3:
 	raw_input = input
 
 memory_path = os.getenv('HOME')+'/.saera_memory.db'

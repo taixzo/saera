@@ -26,7 +26,7 @@ import subprocess
 
 from guessing import Guesser
 
-if sys.platform=='darwin':
+if sys.version_info[0]:
 	import cmd_hw as platform
 else:
 	#import fremantle_hw as platform
@@ -141,7 +141,7 @@ class Saera:
 			# platform.set_alarm(calendar.timegm(alarm_time.utctimetuple()))
 			platform.set_alarm(alarm_time)
 			self.short_term_memory.set('time',alarm_time)
-			return "Setting alarm for "+str(alarm_time.hour)+":"+'{0:02d}'.format(alarm_time.minute)+"."
+			return "Setting alarm for "+str(alarm_time.hour)+":"+alarm_time.strftime("%M.")
 		elif 'location' in result['outcome']['entities']:
 			location = result['outcome']['entities']['location']['value']
 			# TODO: location alarms
@@ -150,7 +150,7 @@ class Saera:
 			try:
 				alarm_time = self.short_term_memory.get('time')
 				platform.set_alarm(calendar.timegm(alarm_time.utctimetuple()))
-				return "Setting alarm for "+str(alarm_time.hour)+":"+'{0:02d}'.format(alarm_time.minute)
+				return "Setting alarm for "+str(alarm_time.hour)+":"+alarm_time.strftime("%M.")
 			except ForgottenException:
 				return "What time do you want the alarm set for?"
 	def weather(self,result):
@@ -440,7 +440,7 @@ class Saera:
 						retstr += "From "+message['from']+".\n"+message['subject']+"."+message['content']+"\n\n"
 					return retstr
 			except ForgottenException:
-				return (" "+result.text+" ").replace(" them "," what ").strip()+"?"
+				return (" "+result['text']+" ").replace(" them "," what ").strip()+"?"
 		elif "it" in result['text'].split():
 			try:
 				thingToRead = self.short_term_memory.get('object')
@@ -496,7 +496,7 @@ class Saera:
 		bb = (float(loc[3])-.25,float(loc[4])-.25,float(loc[3])+.25,float(loc[4])+.25)
 		trafficdata = json.loads(urllib2.urlopen("http://dev.virtualearth.net/REST/v1/Traffic/Incidents/"+str(bb[0])+","+str(bb[1])+","+str(bb[2])+","+str(bb[3])+"?key=AltIdRJ4KAV9d1U-rE3T0E-OFN66cwd3D1USLS28oVl2lbIRbFcqMZHJZd5DwTTP").read().decode("utf-8"))
 		print trafficdata['resourceSets'][0]
-		retmsg = "There "+(('are '+str(trafficdata['resourceSets'][0]['estimatedTotal'])+' ').replace(' 0 ',' no ')+'incidents ').replace('are 1 incidents ','is 1 incident ')+"in the "+loc[1]+" area."
+		retmsg = "There "+(('are '+str(trafficdata['resourceSets'][0]['estimatedTotal'])+' ').replace(' 0 ',' no ')+'traffic incidents ').replace('are 1 traffic incidents ','is 1 traffic incident ')+"in the "+loc[1]+" area."
 		if trafficdata['resourceSets'][0]['estimatedTotal']<10:
 			lists = []
 			for i in trafficdata['resourceSets'][0]['resources']:
@@ -547,12 +547,16 @@ class Saera:
 			return self.call_phone(result)
 		elif result['outcome']['intent']=="how_about":
 			print (result)
-			if self.short_term_memory.get('intent')=='alarm':
-				return self.set_alarm(result)
-			elif self.short_term_memory.get('intent')=='weather':
-				return self.weather(result)
-			else:
+			try:
+				if self.short_term_memory.get('intent')=='alarm':
+					return self.set_alarm(result)
+				elif self.short_term_memory.get('intent')=='weather':
+					return self.weather(result)
+				else:
+					return "I'm sorry, what were we talking about?"
+			except ForgottenException:
 				return "I'm sorry, what were we talking about?"
+
 		elif result['outcome']['intent']=="yes_no":
 			return self.yesno(result)
 		elif result['outcome']['intent']=="feeling_query":
