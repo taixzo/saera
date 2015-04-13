@@ -529,6 +529,24 @@ class Saera:
 				return "It's heads."
 			else:
 				return "It's tails."
+	def roll_dice(self,result):
+		print result
+		if 'dice' in result['outcome']['entities'] and result['outcome']['entities']['dice']>1:
+			if 'number' in result['outcome']['entities'] and result['outcome']['entities']['number']>1:
+				rolls = [random.randint(1,result['outcome']['entities']['dice']) for i in range(result['outcome']['entities']['number'])]
+				return "I rolled a "+", a ".join([str(i) for i in rolls[:-1]])+", and a "+str(rolls[-1])+", for a total of "+str(sum(rolls))+"."
+			else:
+				roll = random.randint(1,result['outcome']['entities']['dice'])
+				return "I rolled a "+str(result['outcome']['entities']['dice'])+"-sided die, which came up "+str(roll)+"."
+		elif 'number' in result['outcome']['entities'] and result['outcome']['entities']['number']>1:
+			roll = random.randint(1,result['outcome']['entities']['number'])
+			return "I rolled a "+str(result['outcome']['entities']['number'])+"-sided die, which came up "+str(roll)+"."
+		else:
+			if " pair " in result['text']:
+				rolls = [random.randint(1,6) for i in range(2)]
+				return "I rolled a pair of dice. They came up "+str(rolls[0])+" and "+str(rolls[1])+" for a total of "+str(sum(rolls))+"."
+			roll = random.randint(1,6)
+			return "I rolled a six-sided die, which came up "+str(roll)+"."
 	def process(self,result):
 		print (result['outcome']['intent'])
 		self.short_term_memory.tick()
@@ -598,6 +616,8 @@ class Saera:
 			return self.traffic(result)
 		elif result['outcome']['intent']=="coin_flip":
 			return self.coin_flip(result)
+		elif result['outcome']['intent']=="roll_dice":
+			return self.roll_dice(result)
 		elif result['outcome']['intent']=="quit" or result['outcome']['intent']=="good_bye":
 			# sys.exit(0)
 			platform.quit()

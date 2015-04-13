@@ -142,8 +142,8 @@ class Guesser:
 		for i in best_guess_intent.vars:
 			first = -1
 			last = -1
-			for j in variables[i].keywords:
-				if j in splitstring:
+			for j in splitstring:
+				if j in variables[i].keywords or variables[i].keyfunc(j):
 					first = min(first,splitstring.index(j)) if first >= 0 else splitstring.index(j)
 			if first >= 0:
 				for j in variables[i].assistantkeywords:
@@ -154,12 +154,12 @@ class Guesser:
 							matches = [l for l in indices if l+1 in kindices]
 							if matches:
 								first = min(first,min(matches))
-				for j in variables[i].keywords:
-					if j in splitstring:
+				for j in splitstring:
+					if j in variables[i].keywords or variables[i].keyfunc(j):
 						last = max(last,splitstring.index(j)+1)
 			else:
-				for j in variables[i].prewords:
-					if j in splitstring:
+				for j in splitstring:
+					if j in variables[i].prewords:
 						first = min(first,splitstring.index(j)+1) if first >= 0 else splitstring.index(j)+1
 				if first >= 0:
 					for j in variables[i].postwords:
@@ -184,6 +184,7 @@ class Guesser:
 class Variable:
 	def __init__(self):
 		self.keywords = []
+		self.keyfunc = lambda x: False
 		self.assistantkeywords = []
 		self.prewords = []
 		self.postwords = []
@@ -242,6 +243,7 @@ class  vNumber(Variable):
 	def __init__(self):
 		Variable.__init__(self)
 		self.keywords = ['zero','oh','one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve','thirteen','fourteen','fifteen','sixteen','seventeen','eighteen','nineteen','twenty','thirty','forty','fifty','sixty','seventy','eighty','ninety','hundred','thousand']
+		self.keyfunc = lambda x: x.isdigit()
 	def parse(self,words):
 		units = [
 			"zero", "one", "two", "three", "four", "five", "six", "seven", "eight",
@@ -261,6 +263,9 @@ class  vNumber(Variable):
 
 		current = result = 0
 		for word in words:
+			if word.isdigit():
+				result = int(word)
+				break
 			if word not in numwords:
 			  raise Exception("Illegal word: " + word)
 
@@ -272,6 +277,12 @@ class  vNumber(Variable):
 
 		return result + current
 
+class vDice(Variable):
+	def __init__(self):
+		Variable.__init__(self)
+		self.keyfunc = lambda x: x.startswith('d') and x[1:].isdigit()
+	def parse(self,words):
+		return int(words[0][1:])
 
 class vContact(Variable):
 	def __init__(self):
@@ -349,6 +360,7 @@ class vQuery(Variable):
 
 variables = {'time':vTime(),
 			 'digits':vDigits(),
+			 'dice':vDice(),
 			 'number':vNumber(),
 			 'contact':vContact(),
 			 'name':vName(),
