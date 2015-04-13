@@ -76,9 +76,10 @@ class Memory:
 
 import math, sys
 
-def is_day(lon):
+def is_day(lon,dt=None):
 	sin,cos,pi = math.sin,math.cos,math.pi
-	dt = datetime.now()
+	if dt is None:
+		dt = datetime.now()
 	longit = float(lon)
 
 	gamma = 2 * pi / 365 * (dt.timetuple().tm_yday - 1 + float(dt.hour - 12) / 24)
@@ -158,6 +159,7 @@ class Saera:
 			except ForgottenException:
 				return "What time do you want the alarm set for?"
 	def weather(self,result):
+		print (result)
 		self.short_term_memory.set('intent','weather')
 		here = False
 		if 'location' in result['outcome']['entities']:
@@ -194,7 +196,12 @@ class Saera:
 			# location = 'New York'
 		try:
 			# self.short_term_memory.set('location',location)
-			f = urllib2.urlopen('http://api.wunderground.com/api/0a02b434d9bf118f/geolookup/conditions/q/'+str(loc[3])+','+str(loc[4])+'.json').read()
+			if 'time' in result['outcome']['entities']:
+				is_time = True
+				f = urllib2.urlopen('http://api.wunderground.com/api/0a02b434d9bf118f/hourly/geolookup/conditions/q/'+str(loc[3])+','+str(loc[4])+'.json').read()
+			else:
+				is_time = False
+				f = urllib2.urlopen('http://api.wunderground.com/api/0a02b434d9bf118f/geolookup/conditions/q/'+str(loc[3])+','+str(loc[4])+'.json').read()
 			# DAMMIT SAILFISH WHY DO YOU HATE THE INTERNET
 			# req  = subprocess.Popen(["curl",
 									   # 'http://api.wunderground.com/api/0a02b434d9bf118f/geolookup/conditions/q/'+loc[0]+','+loc[1]+'.json'], stdout=subprocess.PIPE).communicate()[0]
@@ -203,57 +210,112 @@ class Saera:
 		json_string = f.decode("utf-8")
 		parsed_json = json.loads(json_string)
 		location = parsed_json['location']['city']
-		temp_f = parsed_json['current_observation']['temp_f']
-		feelslike_f = float(parsed_json['current_observation']['feelslike_f'])
-		wind_string = parsed_json['current_observation']['wind_string']
-		try:
-			precip = float(parsed_json['current_observation']['precip_1hr_in'])
-		except ValueError:
-			precip = 0
-		weather = parsed_json['current_observation']['weather'].lower()
+		if is_time:
+			fcst = [i for i in parsed_json['hourly_forecast'] if int(i['FCTTIME']['hour'])==result['outcome']['entities']['time'].hour][0]
+			temp_f = fcst['temp']['english']
+			feelslike_f = float(fcst['feelslike']['english'])
+			wind_speed = int(fcst['wspd']['english'])
+			wind_string = "calm" if wind_speed<3 else str(wind_speed)+" mph "+fcst['wdir']['dir']
+			weather = fcst['condition'].lower()
+			pop = int(fcst['pop'])
+			hour = str(result['outcome']['entities']['time'].hour)
+		else:
+			temp_f = parsed_json['current_observation']['temp_f']
+			feelslike_f = float(parsed_json['current_observation']['feelslike_f'])
+			wind_string = parsed_json['current_observation']['wind_string']
+			weather = parsed_json['current_observation']['weather'].lower()
+			try:
+				precip = float(parsed_json['current_observation']['precip_1hr_in'])
+			except ValueError:
+				precip = 0
+			
 		# if 'weather' in result['outcome']['entities']:
 			# if result['outcome']['entities']['weather']['value'] == "rain":
 		if "rain" in result['text']:
-			if precip>0.3:
-				return "Yes, it's really pouring."
-			elif precip>0.1:
-				return "Yes, it's raining."
-			elif precip>0 or "rain" in weather:
-				return "Maybe it's drizzling a little."
+			if is_time:
+				if pop>60:
+					return "Yes, it will definitely be raining at "+hour+"."
+				elif pop>40:
+					return "Yes, it will probably rain."
+				elif pop>15:
+					return "It might rain; there's a "+str(pop)+"% chance of rain at "+hour+"."
+				else:
+					return "No, it will be "+weather+" at "+hour+"."
 			else:
-				return "No, it's "+weather+"."
+				if precip>0.3:
+					return "Yes, it's really pouring."
+				elif precip>0.1:
+					return "Yes, it's raining."
+				elif precip>0 or "rain" in weather:
+					return "Maybe it's drizzling a little."
+				else:
+					return "No, it's "+weather+"."
 		# elif result['outcome']['entities']['weather']['value'] == 'sun':
 		elif 'sun' in result['text']:
-			if "sun" in weather or "clear" in weather:
-				if is_day(float(loc[4])):
-					return "Yes, it's sunny in "+loc[1]+"!"
+			if is_time:
+				if "sun" in weather or "clear" in weather:
+					if is_day(float(loc[4]),time):
+						return "Yes, it will be sunny"+(" in "+loc[1]+" at "+hour+"." if not here else " at "+hour+".")
+					else:
+						now = datetime.now()
+						return "No, the sun will be down at "+str((now.hour-1)%12+1 if True else now.hour)+":"+str(now.minute).zfill(2)+(" in "+loc[1]+"." if not here else ".")
+				elif "scattered clouds" in weather:
+					if is_day(float(loc[4]),time):
+						return "Yes, with scattered clouds."
+					else:
+						return "There will be a few clouds, and it will be night in "+loc[1]+" at "+hour+"."
 				else:
-					now = datetime.now()
-					return "It would be sunny if the sun were still up. It is "+str((now.hour-1)%12+1 if True else now.hour)+":"+str(now.minute).zfill(2)+(" in "+loc[1]+"." if not here else ".")
-			elif "scattered clouds" in weather:
-				if is_day(float(loc[1])):
-					return "Yes, with scattered clouds."
-				else:
-					return "There's a few clouds, and it's night in "+loc[1]+"."
+					return "No, the weather in "+loc[1]+" will be "+weather+" at "+hour+"."
 			else:
-				return "No, the weather in "+loc[1]+" is "+weather+"."
+				if "sun" in weather or "clear" in weather:
+					if is_day(float(loc[4])):
+						return "Yes, it's sunny in "+loc[1]+"!"
+					else:
+						now = datetime.now()
+						return "It would be sunny if the sun were still up. It is "+str((now.hour-1)%12+1 if True else now.hour)+":"+str(now.minute).zfill(2)+(" in "+loc[1]+"." if not here else ".")
+				elif "scattered clouds" in weather:
+					if is_day(float(loc[4])):
+						return "Yes, with scattered clouds."
+					else:
+						return "There's a few clouds, and it's night in "+loc[1]+"."
+				else:
+					return "No, the weather in "+loc[1]+" is "+weather+"."
 		if 'temperature' in result['outcome']['entities']:
 			if result['outcome']['entities']['temperature']['value'] == "cold":
-				if abs(temp_f-feelslike_f)<5:
-					if temp_f<40:
-						return "Yes, it's "+str(int(round(temp_f)))+u("° in ")+loc[1]+"."
-					elif temp_f<60:
-						return "It's sort of cold; the temperature in "+loc[1]+" is "+str(int(round(temp_f)))+u("°.")
+				if is_time:
+					if abs(temp_f-feelslike_f)<5:
+						if temp_f<40:
+							return "Yes, it will be "+str(int(round(temp_f)))+u("° in ")+loc[1]+"."
+						elif temp_f<60:
+							return "It will be sort of cold; the temperature in "+loc[1]+" is supposed to be "+str(int(round(temp_f)))+u("°.")
+						else:
+							return "No, it will be "+str(int(round(temp_f)))+u("° in ")+loc[1]+"."
 					else:
-						return "No, it's "+str(int(round(temp_f)))+u("° in ")+loc[1]+"."
+						if feelslike_f<40:
+							return "Yes, it will be "+str(int(round(temp_f)))+u("° in ")+loc[1]+" but with the wind chill it will feel like "+str(int(round(feelslike_f)))+u("°.")
+						elif feelslike_f<60:
+							return "It will be sort of cold; the temperature in "+loc[1]+" will be "+str(int(round(temp_f)))+u("° but it will feel like ")+str(int(round(feelslike_f)))+u("°.")
+						else:
+							return "No, it will be "+str(int(round(temp_f)))+u("° in ")+loc[1]+" but it will feel like "+str(int(round(feelslike_f)))+u("°.")
 				else:
-					if feelslike_f<40:
-						return "Yes, it's "+str(int(round(temp_f)))+u("° in ")+loc[1]+" but it feels like "+str(int(round(feelslike_f)))+u("°.")
-					elif feelslike_f<60:
-						return "It's sort of cold; the temperature in "+loc[1]+" is "+str(int(round(temp_f)))+u("° but it feels like ")+str(int(round(feelslike_f)))+u("°.")
+					if abs(temp_f-feelslike_f)<5:
+						if temp_f<40:
+							return "Yes, it's "+str(int(round(temp_f)))+u("° in ")+loc[1]+"."
+						elif temp_f<60:
+							return "It's sort of cold; the temperature in "+loc[1]+" is "+str(int(round(temp_f)))+u("°.")
+						else:
+							return "No, it's "+str(int(round(temp_f)))+u("° in ")+loc[1]+"."
 					else:
-						return "No, it's "+str(int(round(temp_f)))+u("° in ")+loc[1]+" but it feels like "+str(int(round(feelslike_f)))+u("°.")
-		return "The weather in "+loc[1]+" is "+weather+", and "+str(int(round(temp_f)))+u("°.")
+						if feelslike_f<40:
+							return "Yes, it's "+str(int(round(temp_f)))+u("° in ")+loc[1]+" but it feels like "+str(int(round(feelslike_f)))+u("°.")
+						elif feelslike_f<60:
+							return "It's sort of cold; the temperature in "+loc[1]+" is "+str(int(round(temp_f)))+u("° but it feels like ")+str(int(round(feelslike_f)))+u("°.")
+						else:
+							return "No, it's "+str(int(round(temp_f)))+u("° in ")+loc[1]+" but it feels like "+str(int(round(feelslike_f)))+u("°.")
+		if is_time:
+			return "The weather in "+loc[1]+" will be "+weather+" and "+str(int(round(temp_f)))+u("°. at ")+hour+"."
+		else:
+			return "The weather in "+loc[1]+" is "+weather+", and "+str(int(round(temp_f)))+u("°.")
 	def call_phone(self, result):
 		if 'phone_number' in result['outcome']['entities']:
 			num = result['outcome']['entities']['phone_number']['value']
