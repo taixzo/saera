@@ -186,13 +186,13 @@ def is_playing():
 
 
 def pause():
-	pass
+	os.system('dbus-send --dest=com.nokia.mafw.renderer.Mafw-Gst-Renderer-Plugin.gstrenderer /com/nokia/mafw/renderer/gstrenderer com.nokia.mafw.renderer.pause')
 
 def play():
-	pass
+	os.system('dbus-send --dest=com.nokia.mafw.renderer.Mafw-Gst-Renderer-Plugin.gstrenderer /com/nokia/mafw/renderer/gstrenderer com.nokia.mafw.renderer.play')
 
 def call_phone(num):
-	pass
+	os.system('dbus-send --system --type=method_call --print-reply --dest=com.nokia.csd.Call /com/nokia/csd/call com.nokia.csd.Call.CreateWith string:"'+num+'" uint32:0')
 
 def get_unread_email():
 	return []
