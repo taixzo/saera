@@ -215,7 +215,7 @@ class vTime(Variable):
 						 'yesterday',
 						 'morning',
 						 'noon',
-						 'afternoon'
+						 'afternoon',
 						 'evening',
 						 'night',
 						 'midnight',
