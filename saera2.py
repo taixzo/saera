@@ -11,6 +11,8 @@ import pygoogle
 import wikikit
 import duckduckgo
 import re
+import math
+import random
 # import urllib2
 try:
 	import urllib.request as urllib2
@@ -510,6 +512,23 @@ class Saera:
 						lists.append(endpoints)
 				retmsg+="\n"+i['description']
 		return retmsg
+	def coin_flip(self,result):
+		if 'number' in result['outcome']['entities'] and result['outcome']['entities']['number']>1:
+			coins = []
+			for i in range(result['outcome']['entities']['number']):
+				coins.append(round(random.random()))
+			heads = sum(coins)
+			if heads==len(coins):
+				return "I flipped "+str(result['outcome']['entities']['number'])+" coins. They're all heads."
+			elif heads==0:
+				return "I flipped "+str(result['outcome']['entities']['number'])+" coins. They're all tails."
+			else:
+				return "I flipped "+str(result['outcome']['entities']['number'])+" coins. "+str(int(heads))+" were heads and "+str(int(len(coins)-heads))+" were tails."
+		else:
+			if random.random()>0.5:
+				return "It's heads."
+			else:
+				return "It's tails."
 	def process(self,result):
 		print (result['outcome']['intent'])
 		self.short_term_memory.tick()
@@ -577,6 +596,8 @@ class Saera:
 			return self.search(result)
 		elif result['outcome']['intent']=="traffic":
 			return self.traffic(result)
+		elif result['outcome']['intent']=="coin_flip":
+			return self.coin_flip(result)
 		elif result['outcome']['intent']=="quit" or result['outcome']['intent']=="good_bye":
 			# sys.exit(0)
 			platform.quit()

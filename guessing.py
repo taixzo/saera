@@ -15,32 +15,32 @@ REQUIRED = 1
 VARIABLE = 2
 
 def levenshtein(seq1, seq2):
-    oneago = None
-    thisrow = list(range(1, len(seq2) + 1)) + [0]
-    for x in range(len(seq1)):
-        twoago, oneago, thisrow = oneago, thisrow, [0] * len(seq2) + [x + 1]
-        for y in range(len(seq2)):
-            # delcost = oneago[y] + 1
-            # delcost = oneago[y] + (1 if seq2[y][1]==REQUIRED else 0.5)
-            delcost = oneago[y] + (0.5 if seq2[y][1]==REQUIRED else 0.25)
-            # addcost = thisrow[y - 1] + 1
-            addcost = thisrow[y - 1] + (1 if seq2[y][1]==REQUIRED else 0.5)
-            if seq2[y][1]==REQUIRED:
-            	subcost = oneago[y - 1] + (seq1[x] != seq2[y][0])
-            else:
-            	if seq2[y][1]==VARIABLE and seq1[x] in variables[seq2[y][0]].keywords:
-            		subcost = oneago[y - 1]
-            	elif seq2[y][1]==VARIABLE:
-            		subcost = oneago[y - 1] + variables[seq2[y][0]].sensitivity
-            	else:
-            		subcost = oneago[y - 1] + (seq1[x] != seq2[y][0]) * 0.5
-            # subcost = oneago[y - 1] + (seq1[x] != seq2[y][0])*(1 if seq2[y][1]==REQUIRED else 0.5)
-            thisrow[y] = min(delcost, addcost, subcost)
-    return thisrow[len(seq2) - 1]
+	oneago = None
+	thisrow = list(range(1, len(seq2) + 1)) + [0]
+	for x in range(len(seq1)):
+		twoago, oneago, thisrow = oneago, thisrow, [0] * len(seq2) + [x + 1]
+		for y in range(len(seq2)):
+			# delcost = oneago[y] + 1
+			# delcost = oneago[y] + (1 if seq2[y][1]==REQUIRED else 0.5)
+			delcost = oneago[y] + (0.5 if seq2[y][1]==REQUIRED else 0.25)
+			# addcost = thisrow[y - 1] + 1
+			addcost = thisrow[y - 1] + (1 if seq2[y][1]==REQUIRED else 0.5)
+			if seq2[y][1]==REQUIRED:
+				subcost = oneago[y - 1] + (seq1[x] != seq2[y][0])
+			else:
+				if seq2[y][1]==VARIABLE and seq1[x] in variables[seq2[y][0]].keywords:
+					subcost = oneago[y - 1]
+				elif seq2[y][1]==VARIABLE:
+					subcost = oneago[y - 1] + variables[seq2[y][0]].sensitivity
+				else:
+					subcost = oneago[y - 1] + (seq1[x] != seq2[y][0]) * 0.5
+			# subcost = oneago[y - 1] + (seq1[x] != seq2[y][0])*(1 if seq2[y][1]==REQUIRED else 0.5)
+			thisrow[y] = min(delcost, addcost, subcost)
+	return thisrow[len(seq2) - 1]
 
 # lists have no .rindex() method
 def listRightIndex(alist, value):
-    return len(alist) - alist[-1::-1].index(value) -1
+	return len(alist) - alist[-1::-1].index(value) -1
 
 class Intent:
 	def __init__(self,name):
@@ -238,6 +238,41 @@ class  vDigits(Variable):
 		Variable.__init__(self)
 		self.keywords = ['one','two','three','four','five','six','seven','eight','nine','zero','oh','nought']
 
+class  vNumber(Variable):
+	def __init__(self):
+		Variable.__init__(self)
+		self.keywords = ['zero','oh','one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve','thirteen','fourteen','fifteen','sixteen','seventeen','eighteen','nineteen','twenty','thirty','forty','fifty','sixty','seventy','eighty','ninety','hundred','thousand']
+	def parse(self,words):
+		units = [
+			"zero", "one", "two", "three", "four", "five", "six", "seven", "eight",
+			"nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen",
+			"sixteen", "seventeen", "eighteen", "nineteen",
+		]
+
+		tens = ["", "", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety"]
+
+		scales = ["hundred", "thousand", "million", "billion", "trillion"]
+
+		numwords = {}
+		numwords["and"] = (1, 0)
+		for idx, word in enumerate(units):    numwords[word] = (1, idx)
+		for idx, word in enumerate(tens):     numwords[word] = (1, idx * 10)
+		for idx, word in enumerate(scales):   numwords[word] = (10 ** (idx * 3 or 2), 0)
+
+		current = result = 0
+		for word in words:
+			if word not in numwords:
+			  raise Exception("Illegal word: " + word)
+
+			scale, increment = numwords[word]
+			current = current * scale + increment
+			if scale > 100:
+				result += current
+				current = 0
+
+		return result + current
+
+
 class vContact(Variable):
 	def __init__(self):
 		Variable.__init__(self)
@@ -314,6 +349,7 @@ class vQuery(Variable):
 
 variables = {'time':vTime(),
 			 'digits':vDigits(),
+			 'number':vNumber(),
 			 'contact':vContact(),
 			 'name':vName(),
 			 'thing':vThing(),
