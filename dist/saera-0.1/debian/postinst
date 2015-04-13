@@ -1,9 +1,0 @@
-#!/bin/sh
-#DEBHELPER#
-
-echo "generating *.pyc files"
-# generate *.pyc files to speed up startup
-# also, after changing the permissions user ran python cant create them
-python -m compileall /opt/saera
-
-exit 0

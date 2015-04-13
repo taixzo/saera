@@ -1,9 +1,0 @@
-#!/bin/bash
-
-if [ -h /usr/share/pocketsphinx]
-then
-	true	
-else
-	mv /usr/share/pocketsphinx /opt/pocketsphinx
-	ln -s /opt/pocketsphinx /usr/share/pocketsphinx
-fi

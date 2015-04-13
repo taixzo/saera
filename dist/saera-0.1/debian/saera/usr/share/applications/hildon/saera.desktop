@@ -1,8 +1,0 @@
-[Desktop Entry]
-Encoding=UTF-8
-Name=Saera
-Comment=Voice control
-Exec=python /opt/saera/saera.py
-Terminal=false
-Type=Application
-
