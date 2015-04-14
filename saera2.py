@@ -527,7 +527,7 @@ class Saera:
 			search_engine = "google"
 		if search_engine=="google":
 			search = pygoogle.pygoogle( log_level=log_level, query=result['outcome']['entities']['query'], pages=1, hl='en')
-			return [("I found these results:",)]+search.search().items()
+			return [("I found these results:",)]+list(search.search().items())
 		elif search_engine=="wikipedia":
 			try:
 				return [wikikit.summary(result['outcome']['entities']['query'],sentences=1)]
@@ -598,7 +598,6 @@ class Saera:
 			else:
 				return "It's tails."
 	def roll_dice(self,result):
-		print result
 		if 'dice' in result['outcome']['entities'] and result['outcome']['entities']['dice']>1:
 			if 'number' in result['outcome']['entities'] and result['outcome']['entities']['number']>1:
 				rolls = [random.randint(1,result['outcome']['entities']['dice']) for i in range(result['outcome']['entities']['number'])]
