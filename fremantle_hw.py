@@ -160,8 +160,8 @@ def run_app(s):
 	# buttona.connect_object("clicked", Widget.destroy, window)
 	# welcome_message.connect_object("clicked", Widget.destroy, window)
 	pannable_area.add_with_viewport(vbox)
-	bigvbox.pack_start(input,False,True,5)
 	bigvbox.pack_start(pannable_area,True,True,0)
+	bigvbox.pack_start(input,False,True,5)
 
 	vbox.pack_start(welcome_message,False,True,30)
 	window.add(bigvbox)

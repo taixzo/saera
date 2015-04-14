@@ -147,5 +147,13 @@ class MailFolder:
 				self.messages[i] = email.message_from_file(open(os.getenv("HOME")+"/.qmf/mail/"+i))
 
 def speak(string):
-	os.system('espeak --stdout -v +f2 "' + string.replace(":00"," o'clock").replace("\n",". ") + '" | gst-launch-0.10 -v fdsrc ! wavparse ! audioconvert ! alsasink &')
+	try:
+		is_string = isinstance(string,basestring)
+	except NameError:
+		is_string = isinstance(string,str)
+	if is_string:
+		spoken_str = string
+	else:
+		spoken_str = '\n'.join([i[0] for i in string])
+	os.system('espeak --stdout -v +f2 "' + spoken_str.replace(":00"," o'clock").replace("\n",". ") + '" | gst-launch-0.10 -v fdsrc ! wavparse ! audioconvert ! alsasink &')
 	return string
