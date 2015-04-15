@@ -24,6 +24,7 @@ except ImportError:
 	import simplejson as json
 
 import sys
+import platform as pfm
 import subprocess
 
 from guessing import Guesser
@@ -35,7 +36,10 @@ if sys.version_info[0]<3:
 		except ImportError:
 			import cmd_hw as platform
 	else:
-		import cmd_hw as platform
+		if pfm.linux_distribution()[0].lower()=='ubuntu':
+			import ubuntu_hw as platform
+		else:
+			import cmd_hw as platform
 else:
 	#import harmattan_hw as platform
 	# import x86_hw as platform
