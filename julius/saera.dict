@@ -1,0 +1,53 @@
+0	[<s>]	sil
+1	[</s>]	sil
+2	[PHONE]	f ow n
+2	[CALL]	k ao l
+3	[DIAL]	d ay ax l
+4	[STEVE]	s t iy v
+4	[YOUNG]	y ah ng
+4	[BOB]	b aa b
+4	[JOHN]	jh aa n
+5	[FIVE]	f ay v
+5	[FOUR]	f ao r
+5	[NINE]	n ay n
+5	[EIGHT]	ey t
+5	[OH]	ow
+5	[ONE]	w ah n
+5	[SEVEN]	s eh v ax n
+5	[SIX]	s ih k s
+5	[THREE]	th r iy
+5	[TWO]	t uw
+5	[ZERO]	z ih r ow
+6	[TEN]	t eh n
+6	[ELEVEN]	ix l eh v ax n
+6	[TWELVE]	t w eh l v
+7	[TEN]	t eh n
+7	[ELEVEN]	ix l eh v ax n
+7	[TWELVE]	t w eh l v
+7	[THIRTEEN]	th er t iy n
+7	[EIGHTEEN]	ey t iy n
+7	[NINETEEN]	n ay n t iy n
+8	[HALF]	hh ae f
+9	[PAST]	p ae s t
+9	[AFTER]	ae f t er
+9	[TO]	t uw
+10	[THIRTY]	th er dx iy
+11	[SET]	s eh t
+12	[ALARM]	ax l ao r m
+13	[WAKE]	w ey k
+14	[ME]	m iy
+15	[AT]	ae t
+15	[FOR]	f ao r
+16	[FLIP]	f l ih p
+17	[A]	ax
+18	[COIN]	k oy n
+18	[COINS]	k oy n z
+19	[WHAT]	w ah t
+19	[WHO]	hh uw
+20	[EMAIL]	ix m ey l
+20	[EMAILS]	ix m ey l s
+21	[DO]	d uw
+22	[I]	ay
+23	[HAVE]	hh ae v
+24	[SAERA]	s eh r ax
+25	[QUIT]	k w ih t

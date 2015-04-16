@@ -1,0 +1,102 @@
+% NS_B
+<s>        sil
+
+% NS_E
+</s>        sil
+
+% CALL
+PHONE        f ow n
+CALL        k ao l
+
+% DIAL
+DIAL        d ay ax l
+
+% NAME
+STEVE	   s t iy v 
+YOUNG      y ah ng
+BOB        b aa b
+JOHN       jh aa n
+
+% DIGIT
+FIVE       f ay v
+FOUR       f ao r
+NINE       n ay n
+EIGHT      ey t
+OH         ow
+ONE        w ah n
+SEVEN      s eh v ax n
+SIX        s ih k s
+THREE      th r iy
+TWO        t uw
+ZERO       z ih r ow
+
+% BIGHOUR
+TEN        t eh n
+ELEVEN     ix l eh v ax n
+TWELVE     t w eh l v
+
+% NUMBER
+TEN        t eh n
+ELEVEN     ix l eh v ax n
+TWELVE     t w eh l v
+THIRTEEN   th er t iy n
+EIGHTEEN   ey t iy n
+NINETEEN   n ay n t iy n
+
+% BELL
+HALF       hh ae f
+
+% DIR
+PAST       p ae s t
+AFTER      ae f t er
+TO         t uw
+
+% TENS
+THIRTY     th er dx iy
+
+% SET
+SET        s eh t
+
+% N_ALARM
+ALARM      ax l ao r m
+
+% WAKE
+WAKE       w ey k
+
+% ME
+ME         m iy
+
+% PREPOSITION
+AT         ae t
+FOR        f ao r
+
+% V_FLIP
+FLIP       f l ih p
+
+% A
+A          ax
+
+% N_COIN
+COIN       k oy n
+COINS      k oy n z
+
+% QUESTION
+WHAT       w ah t
+WHO        hh uw
+
+% EMAILS
+EMAIL      ix m ey l
+EMAILS     ix m ey l s
+
+% DO
+DO         d uw
+
+% I
+I          ay
+
+% HAVE
+HAVE       hh ae v
+
+% SAERA
+SAERA      s eh r ax
+
