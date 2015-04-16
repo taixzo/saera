@@ -25,6 +25,7 @@ def parse(tokens):
 	minute = None
 	temptime = None
 
+	minutetimeadjustment = 0
 	timeadjustment = 0
 	addedtimeadjustment = 0
 	dateadjustment = 0
@@ -47,9 +48,10 @@ def parse(tokens):
 			hour = None
 			minute = None
 		elif token in bells:
-			timeadjustment = bells[token]
+			minutetimeadjustment = bells[token]
 		elif token in signs and timeadjustment!=0:
-			timeadjustment = abs(timeadjustment)*signs[token] # double negatives should not cancel out
+			timeadjustment = abs(minutetimeadjustment)*signs[token] # double negatives should not cancel out
+			minutetimeadjustment = 0
 		elif token in days:
 			dateadjustment = days[token]
 		elif token in signs and dateadjustment!=0:
@@ -58,6 +60,8 @@ def parse(tokens):
 			dateadjustment += (weekdays[token]-now.weekday()+7) % 7
 		elif token in daytimes:
 			hour = daytimes[token]
+	if minutetimeadjustment:
+		addedtimeadjustment = minutetimeadjustment
 
 	adjustmentdelta = timedelta(days = dateadjustment, minutes = timeadjustment)
 	adjustmentdelta2 = timedelta(minutes = addedtimeadjustment)
