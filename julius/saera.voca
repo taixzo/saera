@@ -63,6 +63,26 @@ thirty     th er dx iy
 forty      f ao r dx iy
 fifty      f ih f t iy
 
+% TIME_OF_DAY
+morning    m ao r n ix ng
+noon       n uw n
+afternoon  ae f t er n uw n
+evening    iy v n ix ng
+night      n ay t
+
+% DAY
+today      t ax d ey
+tomorrow   t ax m aa r ow
+sunday     s ah n d ey
+monday     m ah n d iy
+tuesday    t uw z d iy
+wednesday  w eh n z d iy
+thursday   th er z d ey
+saturday   s ae dx er dx iy
+
+% ABOUT
+about      ax b aw t
+
 % SET
 set        s eh t
 
@@ -91,6 +111,9 @@ a          ax
 % N_COIN
 coin       k oy n
 coins      k oy n z
+
+% ON
+on         aa n
 
 % QUESTION
 what       w ah t
@@ -232,12 +255,137 @@ sunny     s ah n iy
 raining   r ey n ix ng
 windy     w ay n d iy
 
+% WEATHER
+weather   w eh dh er
+
+% LIKE
+like      l ay k
+
+% WILL
+will      w ih l
+
+% AT
+at        ae t
+
+% WEATHER_ACTION
+rain      r ey n
+snow      s n ow
+
 % LOCATION_NAME
-York      y ao r k
 London    l ah n d ax n
+Shanghai    sh ae ng hh ay
+Beijing     b ey zh ih ng
+Istanbul    ih s t aa n b uw l
+Moscow      m aa s k ow
+Seoul       s ow l
+Shenzhen    sh eh n zh eh n
+Delhi       d eh l iy
+Tokyo       t ow k iy ow
+London      l ah n d ax n
+Cairo       k ay r ow
+Johannesburg jh ow hh ae n ix s b er g
+Bangkok     b ae ng k aa k
+Athens      ae th ax n z
+Toronto     t er aa n t ow
+Sydney      s ih d n iy
+Ankara      ae ng k er ax
+Melbourne   m eh l b er n
+Alexandria  ae l ax g z ae n d r iy ax
+Singapore   s ih ng ax p ao r
+Berlin      b er l ih n
+Madrid      m ax d r ih d
+Nairobi     n ay r ow b iy
+Xiamen      z iy ey m ax n
+Casablanca  k ae s ax b l ae ng k ax
+Izmir       ih z m ih r
+Chicago     sh ax k aa g ow
+Osaka       ow s aa k ax
+Rome        r ow m
+Paris       p eh r ix s
+Houston     hh y uw s t ax n
+Dubai       d uw b ay
+Perth       p er th
+Vienna      v iy eh n ax
+Budapest    b uw dx ax p eh s t
+Hamburg     hh ae m b er g
+Warsaw      w ao r s ao
+Barcelona   b aa r s ix l ow n ax
+Philadelphia f ih l ax d eh l f iy ax
+Phoenix     f iy n ix k s
+Stockholm   s t aa k hh ow l m
+Munich      m y uw n ix k
+Prague      p r aa g
+Milan       m ax l aa n
+Adelaide    ae dx ax l ey d
+Dallas      d ae l ax s
+Copenhagen  k ow p ax n hh ey g ax n
+Birmingham  b er m ix ng hh ae m
+Calgary     k ae l g er iy
+Antalya     ae n t ax l y aa
+Ottawa      aa dx ax w aa
+Marseille   m aa r s ay l
+Austin      ao s t ax n
+Jacksonville jh ae k s ax n v ih l
+Indianapolis ih n d iy ax n ae p ax l ix s
+Valencia    v ax l eh n s iy ax
+Glasgow     g l ae s k ow
+Amsterdam   ae m s t er d ae m
+Columbus    k ax l ah m b ax s
+Charlotte   sh aa r l ax t
+Detroit     d ix t r oy t
+Memphis     m eh m f ax s
+Boston      b aa s t ax n
+Denver      d eh n v er
+Washington  w aa sh ix ng t ax n
+Nashville   n ae sh v ix l
+Baltimore   b ao l t ax m ao r
+Seattle     s iy ae dx ax l
+Louisville  l uw iy v ih l
+Helsinki    hh eh l s ix ng k iy
+Vancouver   v ae n k uw v er
+Portland    p ao r t l ax n d
+Milwaukee   m ix l w ao k iy
+Edinburgh   eh d ax n b er ow
+Malaga      m ae l ax g ax
+Albuquerque ae l b ax k er k iy
+Bristol     b r ih s t ax l
+Dublin      d ah b l ix n
+Manchester  m ae n ch eh s t er
+Lyon        l ay ax n
+Sacramento  s ae k r ax m eh n t ow
+Toulouse    t uw l uw z
+Nice        n ay s
+Alicante    ae l ax k aa n t eh
+Venice      v eh n ax s
+Frankfurt   f r ae ng k f er t
+Philadelphia f ih l ax d eh l f iy ax
+Rochester   r aa ch eh s t er
+Syracuse    s ih r ax k y uw z
+Buffalo     b ah f ax l ow
+Miami       m ay ae m iy
+
+% LOC_TWOPART
+York        y ao r k
+Petersburg  p iy dx er z b er g
+Angeles     ae n jh ax l ix s
+Diego       d ix ey g ow
+Antonio     ae n t ow n iy ow
+José        hh ow z ey
+Francisco   f r ae n s ih s k ow
+Vegas       v ey g ax s
 
 % LOC_PREFIX
-New       n uw
-Las       l aa s
-Los       l ow s
-Santa     s ae n t ax
+New        n uw
+Las        l aa s
+Los        l ow s
+Santa      s ae n t ax
+Saint      s ey n t
+
+% LOC_CITY
+Mexico     m eh k s ax k ow
+Guatemala  g w aa t ax m ao l ax
+Oklahoma   ow k l ax hh ow m ax
+Kansas     k ae n z ax s
+
+% LOC_SUFFIX
+City       s ih dx iy

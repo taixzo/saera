@@ -41,76 +41,200 @@
 10	[thirty]	th er dx iy
 10	[forty]	f ao r dx iy
 10	[fifty]	f ih f t iy
-11	[set]	s eh t
-12	[alarm]	ax l ao r m
-13	[wake]	w ey k
-14	[me]	m iy
-15	[my]	m ay
-16	[at]	ae t
-16	[for]	f ao r
-17	[flip]	f l ih p
-18	[a]	ax
-19	[coin]	k oy n
-19	[coins]	k oy n z
-20	[what]	w ah t
-20	[who]	hh uw
-21	[unread]	ax n r eh d
-21	[new]	n uw
-22	[email]	ix m ey l
-22	[emails]	ix m ey l s
-23	[do]	d uw
-24	[I]	ay
-25	[Im]	ay m
-26	[you]	y uw
-27	[have]	hh ae v
-28	[Saera]	s eh r ax
-29	[quit]	k w ih t
-29	[bye]	b ay
-30	[read]	r iy d
-31	[check]	ch eh k
-32	[any]	eh n iy
-33	[how]	hh aw
-34	[are]	aa r
-35	[doing]	d uw ix ng
-35	[feeling]	f iy l ix ng
-36	[hello]	hh ax l ow
-36	[hi]	ay
-37	[pause]	p ah z
-37	[stop]	s t aa p
-38	[playing]	p l ey ix ng
-39	[play]	p l ey
-40	[the]	th ax
-41	[music]	m y uw z ix k
-41	[song]	s ao ng
-42	[take]	t ey k
-43	[picture]	p ih k ch er
-43	[photo]	f ow t ow
-44	[roll]	r ow l
-45	[dice]	d ay s
-45	[die]	d ay
-46	[pair]	p eh r
-47	[of]	ah v
-48	[d]	d iy
-49	[live]	l ih v
-50	[come]	k ah m
-51	[it]	ih t
-52	[is]	ih z
-53	[in]	ih n
-54	[from]	f r ah m
-55	[what]	w ah t
-56	[home]	hh ow m
-57	[this]	dh ih s
-58	[test]	t eh s t
-59	[testing]	t eh s t ix ng
-60	[time]	t ay m
-61	[cold]	k ow l d
-61	[hot]	hh aa t
-61	[sunny]	s ah n iy
-61	[raining]	r ey n ix ng
-61	[windy]	w ay n d iy
-62	[York]	y ao r k
-62	[London]	l ah n d ax n
-63	[New]	n uw
-63	[Las]	l aa s
-63	[Los]	l ow s
-63	[Santa]	s ae n t ax
+11	[morning]	m ao r n ix ng
+11	[noon]	n uw n
+11	[afternoon]	ae f t er n uw n
+11	[evening]	iy v n ix ng
+11	[night]	n ay t
+12	[today]	t ax d ey
+12	[tomorrow]	t ax m aa r ow
+12	[sunday]	s ah n d ey
+12	[monday]	m ah n d iy
+12	[tuesday]	t uw z d iy
+12	[wednesday]	w eh n z d iy
+12	[thursday]	th er z d ey
+12	[saturday]	s ae dx er dx iy
+13	[about]	ax b aw t
+14	[set]	s eh t
+15	[alarm]	ax l ao r m
+16	[wake]	w ey k
+17	[me]	m iy
+18	[my]	m ay
+19	[at]	ae t
+19	[for]	f ao r
+20	[flip]	f l ih p
+21	[a]	ax
+22	[coin]	k oy n
+22	[coins]	k oy n z
+23	[on]	aa n
+24	[what]	w ah t
+24	[who]	hh uw
+25	[unread]	ax n r eh d
+25	[new]	n uw
+26	[email]	ix m ey l
+26	[emails]	ix m ey l s
+27	[do]	d uw
+28	[I]	ay
+29	[Im]	ay m
+30	[you]	y uw
+31	[have]	hh ae v
+32	[Saera]	s eh r ax
+33	[quit]	k w ih t
+33	[bye]	b ay
+34	[read]	r iy d
+35	[check]	ch eh k
+36	[any]	eh n iy
+37	[how]	hh aw
+38	[are]	aa r
+39	[doing]	d uw ix ng
+39	[feeling]	f iy l ix ng
+40	[hello]	hh ax l ow
+40	[hi]	ay
+41	[pause]	p ah z
+41	[stop]	s t aa p
+42	[playing]	p l ey ix ng
+43	[play]	p l ey
+44	[the]	th ax
+45	[music]	m y uw z ix k
+45	[song]	s ao ng
+46	[take]	t ey k
+47	[picture]	p ih k ch er
+47	[photo]	f ow t ow
+48	[roll]	r ow l
+49	[dice]	d ay s
+49	[die]	d ay
+50	[pair]	p eh r
+51	[of]	ah v
+52	[d]	d iy
+53	[live]	l ih v
+54	[come]	k ah m
+55	[it]	ih t
+56	[is]	ih z
+57	[in]	ih n
+58	[from]	f r ah m
+59	[what]	w ah t
+60	[home]	hh ow m
+61	[this]	dh ih s
+62	[test]	t eh s t
+63	[testing]	t eh s t ix ng
+64	[time]	t ay m
+65	[cold]	k ow l d
+65	[hot]	hh aa t
+65	[sunny]	s ah n iy
+65	[raining]	r ey n ix ng
+65	[windy]	w ay n d iy
+66	[weather]	w eh dh er
+67	[like]	l ay k
+68	[will]	w ih l
+69	[at]	ae t
+70	[rain]	r ey n
+70	[snow]	s n ow
+71	[London]	l ah n d ax n
+71	[Shanghai]	sh ae ng hh ay
+71	[Beijing]	b ey zh ih ng
+71	[Istanbul]	ih s t aa n b uw l
+71	[Moscow]	m aa s k ow
+71	[Seoul]	s ow l
+71	[Shenzhen]	sh eh n zh eh n
+71	[Delhi]	d eh l iy
+71	[Tokyo]	t ow k iy ow
+71	[London]	l ah n d ax n
+71	[Cairo]	k ay r ow
+71	[Johannesburg]	jh ow hh ae n ix s b er g
+71	[Bangkok]	b ae ng k aa k
+71	[Athens]	ae th ax n z
+71	[Toronto]	t er aa n t ow
+71	[Sydney]	s ih d n iy
+71	[Ankara]	ae ng k er ax
+71	[Melbourne]	m eh l b er n
+71	[Alexandria]	ae l ax g z ae n d r iy ax
+71	[Singapore]	s ih ng ax p ao r
+71	[Berlin]	b er l ih n
+71	[Madrid]	m ax d r ih d
+71	[Nairobi]	n ay r ow b iy
+71	[Xiamen]	z iy ey m ax n
+71	[Casablanca]	k ae s ax b l ae ng k ax
+71	[Izmir]	ih z m ih r
+71	[Chicago]	sh ax k aa g ow
+71	[Osaka]	ow s aa k ax
+71	[Rome]	r ow m
+71	[Paris]	p eh r ix s
+71	[Houston]	hh y uw s t ax n
+71	[Dubai]	d uw b ay
+71	[Perth]	p er th
+71	[Vienna]	v iy eh n ax
+71	[Budapest]	b uw dx ax p eh s t
+71	[Hamburg]	hh ae m b er g
+71	[Warsaw]	w ao r s ao
+71	[Barcelona]	b aa r s ix l ow n ax
+71	[Philadelphia]	f ih l ax d eh l f iy ax
+71	[Phoenix]	f iy n ix k s
+71	[Stockholm]	s t aa k hh ow l m
+71	[Munich]	m y uw n ix k
+71	[Prague]	p r aa g
+71	[Milan]	m ax l aa n
+71	[Adelaide]	ae dx ax l ey d
+71	[Dallas]	d ae l ax s
+71	[Copenhagen]	k ow p ax n hh ey g ax n
+71	[Birmingham]	b er m ix ng hh ae m
+71	[Calgary]	k ae l g er iy
+71	[Antalya]	ae n t ax l y aa
+71	[Ottawa]	aa dx ax w aa
+71	[Marseille]	m aa r s ay l
+71	[Austin]	ao s t ax n
+71	[Jacksonville]	jh ae k s ax n v ih l
+71	[Indianapolis]	ih n d iy ax n ae p ax l ix s
+71	[Valencia]	v ax l eh n s iy ax
+71	[Glasgow]	g l ae s k ow
+71	[Amsterdam]	ae m s t er d ae m
+71	[Columbus]	k ax l ah m b ax s
+71	[Charlotte]	sh aa r l ax t
+71	[Detroit]	d ix t r oy t
+71	[Memphis]	m eh m f ax s
+71	[Boston]	b aa s t ax n
+71	[Denver]	d eh n v er
+71	[Washington]	w aa sh ix ng t ax n
+71	[Nashville]	n ae sh v ix l
+71	[Baltimore]	b ao l t ax m ao r
+71	[Seattle]	s iy ae dx ax l
+71	[Louisville]	l uw iy v ih l
+71	[Helsinki]	hh eh l s ix ng k iy
+71	[Vancouver]	v ae n k uw v er
+71	[Portland]	p ao r t l ax n d
+71	[Milwaukee]	m ix l w ao k iy
+71	[Edinburgh]	eh d ax n b er ow
+71	[Malaga]	m ae l ax g ax
+71	[Albuquerque]	ae l b ax k er k iy
+71	[Bristol]	b r ih s t ax l
+71	[Dublin]	d ah b l ix n
+71	[Manchester]	m ae n ch eh s t er
+71	[Lyon]	l ay ax n
+71	[Sacramento]	s ae k r ax m eh n t ow
+71	[Toulouse]	t uw l uw z
+71	[Nice]	n ay s
+71	[Alicante]	ae l ax k aa n t eh
+71	[Venice]	v eh n ax s
+71	[Frankfurt]	f r ae ng k f er t
+71	[Philadelphia]	f ih l ax d eh l f iy ax
+71	[Rochester]	r aa ch eh s t er
+71	[Syracuse]	s ih r ax k y uw z
+71	[Buffalo]	b ah f ax l ow
+71	[Miami]	m ay ae m iy
+72	[York]	y ao r k
+72	[Petersburg]	p iy dx er z b er g
+72	[Angeles]	ae n jh ax l ix s
+72	[Diego]	d ix ey g ow
+72	[Antonio]	ae n t ow n iy ow
+72	[José]	hh ow z ey
+72	[Francisco]	f r ae n s ih s k ow
+72	[Vegas]	v ey g ax s
+73	[New]	n uw
+73	[Las]	l aa s
+73	[Los]	l ow s
+73	[Santa]	s ae n t ax
+73	[Saint]	s ey n t
+74	[Mexico]	m eh k s ax k ow
+74	[Guatemala]	g w aa t ax m ao l ax
+74	[Oklahoma]	ow k l ax hh ow m ax
+74	[Kansas]	k ae n z ax s
+75	[City]	s ih dx iy
