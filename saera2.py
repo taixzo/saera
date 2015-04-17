@@ -46,7 +46,10 @@ else:
 	try:
 		import sailfish_hw as platform
 	except ImportError:
-		import cmd_hw as platform
+		if pfm.linux_distribution()[0].lower()=='ubuntu':
+			import ubuntu_hw as platform
+		else:
+			import cmd_hw as platform
 
 # if not os.path.exists(platform.memory_path):
 
@@ -57,7 +60,11 @@ log_level = logging.INFO
 if sys.version < '3':
 	import codecs
 	def u(x):
-		return codecs.unicode_escape_decode(x)[0]
+		# return codecs.unicode_escape_decode(x)[0]
+		try:
+			return str(x)
+		except:
+			return codecs.unicode_escape_decode(x)[0]
 else:
 	def u(x):
 		return x
@@ -701,6 +708,9 @@ def initialize():
 
 def run_text(t):
 	return platform.speak(platform.app.execute_text(t))
+
+def run_voice():
+	return platform.listen()
 
 def run_processed_text(t):
 	return platform.app.process(json.loads(t))

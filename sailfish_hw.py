@@ -1,11 +1,14 @@
 #! /usr/bin/end python
 
 import pyotherside
-import os
+import os, sys
 import email
 import subprocess
 import sqlite3
 from datetime import datetime, timedelta
+import pyjulius
+import queue as Queue
+import time
 
 import ast # for safely parsing timed stuff
 
@@ -36,6 +39,43 @@ else:
 
 mailconn = sqlite3.connect('/home/nemo/.qmf/database/qmailstore.db')
 mailcur = mailconn.cursor()
+
+f = __file__.split('sailfish_hw.py')[0]
+jproc = subprocess.Popen([f+'julius/julius','-module','-gram',f+'julius/saera','-h',f+'julius/hmmdefs','-hlist',f+'julius/tiedlist','-input','mic','-tailmargin','800'],stdout=subprocess.PIPE)
+client = pyjulius.Client('localhost',10500)
+print ('Connecting to pyjulius server')
+while True:
+	try:
+		client.connect()
+		break
+	except pyjulius.ConnectionError:
+		sys.stdout.write('.')
+		time.sleep(2)
+sys.stdout.write('..Connected\n')
+client.start()
+
+def listen():
+	print ("Listening...")
+	# purge message queue
+	while 1:
+		try:
+			client.results.get(False)
+		except Queue.Empty:
+			break
+	time.sleep(0.5)
+	while 1:
+		try:
+			result = client.results.get(False)
+			print (repr(result))
+			if isinstance(result,pyjulius.Sentence):
+				print ("SENTENCE")
+				print (dir(result), " ".join([i.word for i in result.words]), result.score)
+				break
+		except Queue.Empty:
+			continue
+	res = " ".join([i.word.lower() for i in result.words])
+	res = res[0].upper()+res[1:]
+	return res
 
 class timed:
 	alarms = []

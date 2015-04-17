@@ -29,6 +29,7 @@
 */
 
 import QtQuick 2.0
+import QtMultimedia 5.0
 import Sailfish.Silica 1.0
 import io.thp.pyotherside 1.0
 
@@ -123,12 +124,34 @@ Page {
         }
     }
 
-    // IconButton {
-    //     id: btn
-    //     anchors.bottom: parent.bottom
-    //     anchors.horizontalCenter: parent.horizontalCenter
-    //     icon.source: "image://theme/icon-l-mute-mic"
-    // }
+    SoundEffect {
+        id: playSound
+        source: "resources/Slick.wav"
+    }
+
+    IconButton {
+        id: btn
+        anchors.bottom: inputfield.top
+        anchors.horizontalCenter: parent.horizontalCenter
+        icon.source: "image://theme/icon-m-mic"
+        onClicked: {
+          playSound.play()
+          py.call('saera2.run_voice',[],function(res) {
+            listModel.append({value: res, who: "me"});
+            py.call('saera2.run_text', [res], function(result){
+                if (typeof(result)=="string") {
+                  listModel.append({value: result, who: "saera"});
+                } else {
+                  for (var i in result) {
+                    listModel.append({value: result[i], who: "saera"});
+                  }
+                }
+                messages.scrollToBottom();
+            });
+            messages.scrollToBottom();
+          })
+        }
+    }
 }
 
 
