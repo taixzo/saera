@@ -5,101 +5,239 @@
 </s>        sil
 
 % CALL
-PHONE        f ow n
-CALL        k ao l
+phone        f ow n
+call        k ao l
 
 % DIAL
-DIAL        d ay ax l
+dial        d ay ax l
 
 % NAME
-STEVE	   s t iy v 
-YOUNG      y ah ng
-BOB        b aa b
-JOHN       jh aa n
+steve	   s t iy v 
+young      y ah ng
+bob        b aa b
+john       jh aa n
 
 % DIGIT
-FIVE       f ay v
-FOUR       f ao r
-NINE       n ay n
-EIGHT      ey t
-OH         ow
-ONE        w ah n
-SEVEN      s eh v ax n
-SIX        s ih k s
-THREE      th r iy
-TWO        t uw
-ZERO       z ih r ow
+five       f ay v
+four       f ao r
+nine       n ay n
+eight      ey t
+oh         ow
+one        w ah n
+seven      s eh v ax n
+six        s ih k s
+three      th r iy
+two        t uw
+zero       z ih r ow
 
 % BIGHOUR
-TEN        t eh n
-ELEVEN     ix l eh v ax n
-TWELVE     t w eh l v
+ten        t eh n
+eleven     ix l eh v ax n
+twelve     t w eh l v
 
 % NUMBER
-TEN        t eh n
-ELEVEN     ix l eh v ax n
-TWELVE     t w eh l v
-THIRTEEN   th er t iy n
-EIGHTEEN   ey t iy n
-NINETEEN   n ay n t iy n
+ten        t eh n
+eleven     ix l eh v ax n
+twelve     t w eh l v
+thirteen   th er t iy n
+fourteen   f ao r t iy n
+fifteen    f ix f t iy n
+sixteen    s ix k s t iy n
+seventeen  s eh v ax n t iy n
+eighteen   ey t iy n
+nineteen   n ay n t iy n
 
 % BELL
-HALF       hh ae f
+half       hh ae f
+quarter    k w ao r dx er
 
 % DIR
-PAST       p ae s t
-AFTER      ae f t er
-TO         t uw
+past       p ae s t
+after      ae f t er
+to         t uw
+till       t ih l
 
 % TENS
-THIRTY     th er dx iy
+twenty     t w eh n t iy
+thirty     th er dx iy
+forty      f ao r dx iy
+fifty      f ih f t iy
 
 % SET
-SET        s eh t
+set        s eh t
 
 % N_ALARM
-ALARM      ax l ao r m
+alarm      ax l ao r m
 
 % WAKE
-WAKE       w ey k
+wake       w ey k
 
 % ME
-ME         m iy
+me         m iy
+
+% MY
+my         m ay
 
 % PREPOSITION
-AT         ae t
-FOR        f ao r
+at         ae t
+for        f ao r
 
 % V_FLIP
-FLIP       f l ih p
+flip       f l ih p
 
 % A
-A          ax
+a          ax
 
 % N_COIN
-COIN       k oy n
-COINS      k oy n z
+coin       k oy n
+coins      k oy n z
 
 % QUESTION
-WHAT       w ah t
-WHO        hh uw
+what       w ah t
+who        hh uw
+
+% UNREAD
+unread     ax n r eh d
+new        n uw
 
 % EMAILS
-EMAIL      ix m ey l
-EMAILS     ix m ey l s
+email      ix m ey l
+emails     ix m ey l s
 
 % DO
-DO         d uw
+do         d uw
 
 % I
 I          ay
 
+% IM
+Im        ay m
+
+% YOU
+you        y uw
+
 % HAVE
-HAVE       hh ae v
+have       hh ae v
 
 % SAERA
-SAERA      s eh r ax
+Saera      s eh r ax
 
 % QUIT
-QUIT       k w ih t
+quit       k w ih t
+bye        b ay
 
+% READ
+read       r iy d
+
+% CHECK
+check      ch eh k
+
+% ANY
+any        eh n iy
+
+% HOW
+how       hh aw
+
+% ARE
+are       aa r
+
+% DOING
+doing     d uw ix ng
+feeling   f iy l ix ng
+
+% HELLO
+hello     hh ax l ow
+hi        ay
+
+% PAUSE
+pause     p ah z
+stop      s t aa p
+
+% PLAYING
+playing   p l ey ix ng
+
+% PLAY
+play      p l ey
+
+% THE
+the       th ax
+
+% MUSIC
+music     m y uw z ix k
+song      s ao ng
+
+% TAKE
+take      t ey k
+
+% PICTURE
+picture   p ih k ch er
+photo     f ow t ow
+
+% ROLL
+roll      r ow l
+
+% DICE
+dice      d ay s
+die       d ay
+
+% PAIR
+pair      p eh r
+
+% OF
+of        ah v
+
+% D
+d         d iy
+
+% LIVE
+live      l ih v
+
+% COME
+come      k ah m
+
+% IT
+it        ih t
+
+% IS
+is        ih z
+
+% IN
+in        ih n
+
+% FROM
+from      f r ah m
+
+% WHAT
+what      w ah t
+
+% HOME
+home      hh ow m
+
+% THIS
+this      dh ih s
+
+% TEST
+test      t eh s t
+
+% TESTING
+testing   t eh s t ix ng
+
+% TIME
+time      t ay m
+
+% WEATHER_DESC
+cold      k ow l d
+hot       hh aa t
+sunny     s ah n iy
+raining   r ey n ix ng
+windy     w ay n d iy
+
+% LOCATION_NAME
+York      y ao r k
+London    l ah n d ax n
+
+% LOC_PREFIX
+New       n uw
+Las       l aa s
+Los       l ow s
+Santa     s ae n t ax

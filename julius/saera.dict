@@ -1,53 +1,116 @@
 0	[<s>]	sil
 1	[</s>]	sil
-2	[PHONE]	f ow n
-2	[CALL]	k ao l
-3	[DIAL]	d ay ax l
-4	[STEVE]	s t iy v
-4	[YOUNG]	y ah ng
-4	[BOB]	b aa b
-4	[JOHN]	jh aa n
-5	[FIVE]	f ay v
-5	[FOUR]	f ao r
-5	[NINE]	n ay n
-5	[EIGHT]	ey t
-5	[OH]	ow
-5	[ONE]	w ah n
-5	[SEVEN]	s eh v ax n
-5	[SIX]	s ih k s
-5	[THREE]	th r iy
-5	[TWO]	t uw
-5	[ZERO]	z ih r ow
-6	[TEN]	t eh n
-6	[ELEVEN]	ix l eh v ax n
-6	[TWELVE]	t w eh l v
-7	[TEN]	t eh n
-7	[ELEVEN]	ix l eh v ax n
-7	[TWELVE]	t w eh l v
-7	[THIRTEEN]	th er t iy n
-7	[EIGHTEEN]	ey t iy n
-7	[NINETEEN]	n ay n t iy n
-8	[HALF]	hh ae f
-9	[PAST]	p ae s t
-9	[AFTER]	ae f t er
-9	[TO]	t uw
-10	[THIRTY]	th er dx iy
-11	[SET]	s eh t
-12	[ALARM]	ax l ao r m
-13	[WAKE]	w ey k
-14	[ME]	m iy
-15	[AT]	ae t
-15	[FOR]	f ao r
-16	[FLIP]	f l ih p
-17	[A]	ax
-18	[COIN]	k oy n
-18	[COINS]	k oy n z
-19	[WHAT]	w ah t
-19	[WHO]	hh uw
-20	[EMAIL]	ix m ey l
-20	[EMAILS]	ix m ey l s
-21	[DO]	d uw
-22	[I]	ay
-23	[HAVE]	hh ae v
-24	[SAERA]	s eh r ax
-25	[QUIT]	k w ih t
+2	[phone]	f ow n
+2	[call]	k ao l
+3	[dial]	d ay ax l
+4	[steve]	s t iy v
+4	[young]	y ah ng
+4	[bob]	b aa b
+4	[john]	jh aa n
+5	[five]	f ay v
+5	[four]	f ao r
+5	[nine]	n ay n
+5	[eight]	ey t
+5	[oh]	ow
+5	[one]	w ah n
+5	[seven]	s eh v ax n
+5	[six]	s ih k s
+5	[three]	th r iy
+5	[two]	t uw
+5	[zero]	z ih r ow
+6	[ten]	t eh n
+6	[eleven]	ix l eh v ax n
+6	[twelve]	t w eh l v
+7	[ten]	t eh n
+7	[eleven]	ix l eh v ax n
+7	[twelve]	t w eh l v
+7	[thirteen]	th er t iy n
+7	[fourteen]	f ao r t iy n
+7	[fifteen]	f ix f t iy n
+7	[sixteen]	s ix k s t iy n
+7	[seventeen]	s eh v ax n t iy n
+7	[eighteen]	ey t iy n
+7	[nineteen]	n ay n t iy n
+8	[half]	hh ae f
+8	[quarter]	k w ao r dx er
+9	[past]	p ae s t
+9	[after]	ae f t er
+9	[to]	t uw
+9	[till]	t ih l
+10	[twenty]	t w eh n t iy
+10	[thirty]	th er dx iy
+10	[forty]	f ao r dx iy
+10	[fifty]	f ih f t iy
+11	[set]	s eh t
+12	[alarm]	ax l ao r m
+13	[wake]	w ey k
+14	[me]	m iy
+15	[my]	m ay
+16	[at]	ae t
+16	[for]	f ao r
+17	[flip]	f l ih p
+18	[a]	ax
+19	[coin]	k oy n
+19	[coins]	k oy n z
+20	[what]	w ah t
+20	[who]	hh uw
+21	[unread]	ax n r eh d
+21	[new]	n uw
+22	[email]	ix m ey l
+22	[emails]	ix m ey l s
+23	[do]	d uw
+24	[I]	ay
+25	[Im]	ay m
+26	[you]	y uw
+27	[have]	hh ae v
+28	[Saera]	s eh r ax
+29	[quit]	k w ih t
+29	[bye]	b ay
+30	[read]	r iy d
+31	[check]	ch eh k
+32	[any]	eh n iy
+33	[how]	hh aw
+34	[are]	aa r
+35	[doing]	d uw ix ng
+35	[feeling]	f iy l ix ng
+36	[hello]	hh ax l ow
+36	[hi]	ay
+37	[pause]	p ah z
+37	[stop]	s t aa p
+38	[playing]	p l ey ix ng
+39	[play]	p l ey
+40	[the]	th ax
+41	[music]	m y uw z ix k
+41	[song]	s ao ng
+42	[take]	t ey k
+43	[picture]	p ih k ch er
+43	[photo]	f ow t ow
+44	[roll]	r ow l
+45	[dice]	d ay s
+45	[die]	d ay
+46	[pair]	p eh r
+47	[of]	ah v
+48	[d]	d iy
+49	[live]	l ih v
+50	[come]	k ah m
+51	[it]	ih t
+52	[is]	ih z
+53	[in]	ih n
+54	[from]	f r ah m
+55	[what]	w ah t
+56	[home]	hh ow m
+57	[this]	dh ih s
+58	[test]	t eh s t
+59	[testing]	t eh s t ix ng
+60	[time]	t ay m
+61	[cold]	k ow l d
+61	[hot]	hh aa t
+61	[sunny]	s ah n iy
+61	[raining]	r ey n ix ng
+61	[windy]	w ay n d iy
+62	[York]	y ao r k
+62	[London]	l ah n d ax n
+63	[New]	n uw
+63	[Las]	l aa s
+63	[Los]	l ow s
+63	[Santa]	s ae n t ax
