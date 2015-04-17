@@ -71,7 +71,7 @@ while True:
 	except pyjulius.ConnectionError:
 		sys.stdout.write('.')
 		time.sleep(2)
-sys.stdout.write('\n')
+sys.stdout.write('..Connected\n')
 client.start()
 
 def set_alarm(time, message = "alarm"):
