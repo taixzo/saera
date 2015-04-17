@@ -41,7 +41,7 @@ mailconn = sqlite3.connect('/home/nemo/.qmf/database/qmailstore.db')
 mailcur = mailconn.cursor()
 
 f = __file__.split('sailfish_hw.py')[0]
-jproc = subprocess.Popen([f+'julius/julius','-module','-gram',f+'julius/saera','-h',f+'julius/hmmdefs','-hlist',f+'julius/tiedlist','-input','mic','-tailmargin','800'],stdout=subprocess.PIPE)
+jproc = subprocess.Popen([f+'julius/julius.arm','-module','-gram',f+'julius/saera','-h',f+'julius/hmmdefs','-hlist',f+'julius/tiedlist','-input','mic','-tailmargin','800'],stdout=subprocess.PIPE)
 client = pyjulius.Client('localhost',10500)
 print ('Connecting to pyjulius server')
 while True:
