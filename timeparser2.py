@@ -49,7 +49,7 @@ def parse(tokens):
 			minute = None
 		elif token in bells:
 			minutetimeadjustment = bells[token]
-		elif token in signs and timeadjustment!=0:
+		elif token in signs and minutetimeadjustment!=0:
 			timeadjustment = abs(minutetimeadjustment)*signs[token] # double negatives should not cancel out
 			minutetimeadjustment = 0
 		elif token in days:

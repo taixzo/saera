@@ -4,12 +4,20 @@ import os, sys
 import email
 import subprocess
 import sqlite3
-import gtk
-import gobject
-import appindicator
 import pyjulius
+try:
+	import appindicator
+	import gtk
+	import gobject
+except ImportError:
+	from gi.repository import AppIndicator as appindicator
+	from gi.repository import Gtk as gtk
+	from gi.repository import GLib as gobject
 import time
-import Queue
+try:
+	import Queue
+except ImportError:
+	import queue as Queue
 
 try:
 	import keybinder # requires package python-keybinder
@@ -53,7 +61,7 @@ else:
 	conn.row_factory = sqlite3.Row
 	cur = conn.cursor()
 
-subprocess.Popen(['julius/julius -module -gram julius/saera -h julius/hmmdefs -input mic'],shell=True,stdout=subprocess.PIPE)
+jproc = subprocess.Popen(['julius/julius','-module','-gram','julius/saera','-h','julius/hmmdefs','-hlist','julius/tiedlist','-input','mic','-tailmargin','800'],stdout=subprocess.PIPE)
 client = pyjulius.Client('localhost',10500)
 print ('Connecting to pyjulius server')
 while True:
@@ -82,29 +90,41 @@ def open_text_input(widget):
 	message.run()
 
 def pulse(onoff):
-	ind.set_status([appindicator.STATUS_ACTIVE,appindicator.STATUS_ATTENTION][onoff])
+	try:
+		ind.set_status([appindicator.STATUS_ACTIVE,appindicator.STATUS_ATTENTION][onoff])
+	except AttributeError:
+		ind.set_status([appindicator.IndicatorStatus.ACTIVE,appindicator.IndicatorStatus.ATTENTION][onoff])
 	# gobject.timeout_add(500,pulse, not onoff)
 
 def getSpeech(widget=None,data=None):
-	ind.set_status(appindicator.STATUS_ATTENTION)
-	subprocess.Popen(['canberra-gtk-play --file=/usr/share/sounds/ubuntu/notifications/Slick.ogg'],shell=True,stdout=subprocess.PIPE)
-	print "Listening..."
+	try:
+		ind.set_status(appindicator.STATUS_ATTENTION)
+	except AttributeError:
+		ind.set_status(appindicator.IndicatorStatus.ATTENTION)
+	subprocess.Popen(['canberra-gtk-play --file=resources/Slick.ogg'],shell=True,stdout=subprocess.PIPE)
+	print ("Listening...")
 	time.sleep(0.5)
 	# Clear queue
-	client.results.get(False)
+	try:
+		client.results.get(False)
+	except Queue.Empty:
+		pass
 	pulse(True)
 	while 1:
 		pulse(int(time.time()*2)%2==0)
 		try:
 			result = client.results.get(False)
-			print repr(result)
+			print (repr(result))
 			if isinstance(result,pyjulius.Sentence):
-				print "SENTENCE"
-				print dir(result), " ".join([i.word for i in result.words]), result.score
+				print ("SENTENCE")
+				print (dir(result), " ".join([i.word for i in result.words]), result.score)
 				break
 		except Queue.Empty:
 			continue
-	ind.set_status(appindicator.STATUS_ACTIVE)
+	try:
+		ind.set_status(appindicator.STATUS_ACTIVE)
+	except AttributeError:
+		ind.set_status(appindicator.IndicatorStatus.ACTIVE)
 	result = run_text(" ".join([i.word.lower() for i in result.words]))
 	try:
 		is_string = isinstance(result,basestring)
@@ -124,12 +144,12 @@ def getSpeech(widget=None,data=None):
 def getTrigger():
 	while True:
 		try:
-			result = client.results.get(True,0.7)
-			if isinstance(result,pyjulius.Sentence) and len(result.words)==1 and result.words[0].word=="SAERA" and result.words[0].confidence>0.7:
+			result = client.results.get(True,0.5)
+			if isinstance(result,pyjulius.Sentence) and len(result.words)==1 and result.words[0].word=="Saera" and result.words[0].confidence>0.7:
 				getSpeech()
 				return
 		except Queue.Empty:
-			gobject.timeout_add(1000,getTrigger)
+			gobject.timeout_add(200,getTrigger)
 			return
 
 def getText(widget=None,data=None):
@@ -175,11 +195,17 @@ def run_app(s):
 	app = s
 
 	global ind
-	ind = appindicator.Indicator("new-gmail-indicator",
+	try:
+		ind = appindicator.Indicator("new-gmail-indicator",
                                            "xfce4-mixer-record",
                                            appindicator.CATEGORY_APPLICATION_STATUS)
+		ind.set_status(appindicator.STATUS_ACTIVE)
+	except AttributeError:
+		ind = appindicator.Indicator.new("new-gmail-indicator",
+                                           "xfce4-mixer-record",
+                                           appindicator.IndicatorCategory.APPLICATION_STATUS)
+		ind.set_status(appindicator.IndicatorStatus.ACTIVE)
 	ind.set_attention_icon("xfce4-mixer-no-record")
-	ind.set_status(appindicator.STATUS_ACTIVE)
 
 	menu = gtk.Menu()
 	speech_item = gtk.MenuItem("Speak")
@@ -189,7 +215,7 @@ def run_app(s):
 	enter_item.connect("activate", getText)
 	enter_item.show()
 	quit_item = gtk.MenuItem("Quit")
-	quit_item.connect("activate", lambda x: (client.stop(),client.disconnect(),sys.exit()))
+	quit_item.connect("activate", lambda x: (client.stop(),client.disconnect(),client.join(),jproc.terminate(),sys.exit()))
 	quit_item.show()
 	menu.append(speech_item)
 	menu.append(enter_item)
@@ -202,7 +228,7 @@ def run_app(s):
 		gobject.timeout_add(1000,getTrigger)
 		gtk.main()
 	except Exception as e:
-		print "Error: ",e.message
+		print ("Error: ",e.message)
 	finally:
 		client.stop()
 
@@ -235,8 +261,12 @@ def speak(string):
 	return string
 
 def quit():
+	subprocess.Popen(['notify-send',"Bye!"])
+	os.system('espeak -v +f2 "Bye!"')
 	print ("Bye!")
 	conn.close()
 	client.stop()
 	client.disconnect()
+	client.join()
+	jproc.terminate()
 	sys.exit(0)
