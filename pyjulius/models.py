@@ -18,6 +18,12 @@
 __all__ = ['Sentence', 'Word']
 
 
+
+try:
+    uc = unicode
+except NameError:
+    uc = lambda x, y: x.decode("UTF-8")
+
 class Sentence(object):
     """A recognized sentence
 
@@ -54,7 +60,7 @@ class Sentence(object):
         return "<Sentence(%.2f, %r)>" % (self.score, self.words)
 
     def __unicode__(self):
-        return u' '.join([unicode(w) for w in self.words])
+        return u' '.join([uc(w) for w in self.words])
 
     def __str__(self):
         return str(self.__unicode__())
@@ -90,7 +96,10 @@ class Word(object):
         :param string encoding: encoding of the xml
 
         """
-        word = unicode(xml.get('WORD'), encoding)
+        try:    
+            word = uc(xml.get('WORD'), encoding)
+        except:
+            word = xml.get('WORD')
         confidence = float(xml.get('CM'))
         return cls(word, confidence)
 

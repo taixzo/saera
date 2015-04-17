@@ -40,6 +40,10 @@ CONNECTED = 1
 #: Disconnected client state
 DISCONNECTED = 2
 
+try:
+    uc = unicode
+except NameError:
+    uc = lambda x, y: x.decode("UTF-8")
 
 class Client(threading.Thread):
     """Threaded Client to connect to a julius module server
@@ -89,18 +93,18 @@ class Client(threading.Thread):
         self.encoding = encoding
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.state = DISCONNECTED
-        self._stop = False
+        self._do_stop = False
         self.results = Queue.Queue()
         self.modelize = modelize
 
     def stop(self):
         """Stop the thread"""
-        self._stop = True
+        self._do_stop = True
 
     def run(self):
         """Start listening to the server"""
         logger.info(u'Started listening')
-        while not self._stop:
+        while not self._do_stop:
             xml = self._readxml()
 
             # Exit on invalid XML
@@ -164,14 +168,14 @@ class Client(threading.Thread):
 
         """
         line = ''
-        while not self._stop:
+        while not self._do_stop:
             readable, _, __ = select.select([self.sock], [], [], 0.5)
             if not readable:
                 continue
-            data = readable[0].recv(1)
+            data = uc(readable[0].recv(1),self.encoding)
             if data == '\n':
                 break
-            line += unicode(data, self.encoding)
+            line += data
         return line
 
     def _readblock(self):
@@ -182,7 +186,7 @@ class Client(threading.Thread):
 
         """
         block = ''
-        while not self._stop:
+        while not self._do_stop:
             line = self._readline()
             if line == '.':
                 break
