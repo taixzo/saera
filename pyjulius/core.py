@@ -19,7 +19,10 @@ from exceptions import ConnectionError
 from models import Sentence
 from pyjulius.exceptions import SendTimeoutError
 from xml.etree.ElementTree import XML, ParseError
-import Queue
+try:
+    import Queue
+except ImportError:
+    import queue as Queue
 import logging
 import re
 import select
