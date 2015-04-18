@@ -706,6 +706,9 @@ def initialize():
 	s = Saera()
 	platform.run_app(s)
 
+def quit():
+	platform.quit()
+
 def run_text(t):
 	return platform.speak(platform.app.execute_text(t))
 

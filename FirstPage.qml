@@ -37,6 +37,33 @@ import io.thp.pyotherside 1.0
 Page {
     id: page
 
+    function speak() {
+      playSound.play()
+      py.call('saera2.run_voice',[],function(res) {
+        listModel.append({value: res, who: "me"});
+        py.call('saera2.run_text', [res], function(result){
+            if (typeof(result)=="string") {
+              listModel.append({value: result, who: "saera"});
+            } else {
+              for (var i in result) {
+                listModel.append({value: result[i], who: "saera"});
+              }
+            }
+            // messages.scrollToBottom();
+        });
+        // messages.scrollToBottom();
+      })
+    }
+
+
+    Component.onCompleted: {
+      mainWindow.selectedCountChanged.connect(page.speak)
+    }
+
+    Component.onDestruction: {
+      py.call('saera2.quit', [],function(result){})
+    }
+
     Python {
          id:py
          Component.onCompleted: {
@@ -98,7 +125,6 @@ Page {
             height: Theme.itemSizeSmall + t.lineCount*(t.font.pixelSize-1)
 
             Component.onCompleted: {
-                console.log("This prints just fine!")
                 messages.scrollToBottom()
             }
         }
@@ -141,21 +167,7 @@ Page {
         anchors.horizontalCenter: parent.horizontalCenter
         icon.source: "image://theme/icon-m-mic"
         onClicked: {
-          playSound.play()
-          py.call('saera2.run_voice',[],function(res) {
-            listModel.append({value: res, who: "me"});
-            py.call('saera2.run_text', [res], function(result){
-                if (typeof(result)=="string") {
-                  listModel.append({value: result, who: "saera"});
-                } else {
-                  for (var i in result) {
-                    listModel.append({value: result[i], who: "saera"});
-                  }
-                }
-                // messages.scrollToBottom();
-            });
-            // messages.scrollToBottom();
-          })
+          speak()
         }
     }
 }

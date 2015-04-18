@@ -41,6 +41,15 @@ mailconn = sqlite3.connect('/home/nemo/.qmf/database/qmailstore.db')
 mailcur = mailconn.cursor()
 
 f = __file__.split('sailfish_hw.py')[0]
+
+# terminate any pre-existing julius processes
+p = subprocess.Popen(['ps', '-A'], stdout=subprocess.PIPE)
+out, err = p.communicate()
+for line in out.decode('UTF-8').splitlines():
+	if 'julius.arm' in line:
+		pid = int(line.split(None, 1)[0])
+		os.kill(pid, 9)
+
 jproc = subprocess.Popen([f+'julius/julius.arm','-module','-gram',f+'julius/saera','-h',f+'julius/hmmdefs','-hlist',f+'julius/tiedlist','-input','mic','-tailmargin','800','-rejectshort','600'],stdout=subprocess.PIPE)
 client = pyjulius.Client('localhost',10500)
 print ('Connecting to pyjulius server')
@@ -202,3 +211,10 @@ def speak(string):
 		spoken_str = '\n'.join([i[0] for i in string])
 	os.system('espeak --stdout -v +f2 "' + spoken_str.replace(":00"," o'clock").replace("\n",". ") + '" | gst-launch-0.10 -v fdsrc ! wavparse ! audioconvert ! alsasink &')
 	return string
+
+def quit():
+	conn.close()
+	client.stop()
+	client.disconnect()
+	client.join()
+	jproc.terminate()
