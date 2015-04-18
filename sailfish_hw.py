@@ -41,7 +41,7 @@ mailconn = sqlite3.connect('/home/nemo/.qmf/database/qmailstore.db')
 mailcur = mailconn.cursor()
 
 f = __file__.split('sailfish_hw.py')[0]
-jproc = subprocess.Popen([f+'julius/julius.arm','-module','-gram',f+'julius/saera','-h',f+'julius/hmmdefs','-hlist',f+'julius/tiedlist','-input','mic','-tailmargin','800'],stdout=subprocess.PIPE)
+jproc = subprocess.Popen([f+'julius/julius.arm','-module','-gram',f+'julius/saera','-h',f+'julius/hmmdefs','-hlist',f+'julius/tiedlist','-input','mic','-tailmargin','800','-rejectshort','600'],stdout=subprocess.PIPE)
 client = pyjulius.Client('localhost',10500)
 print ('Connecting to pyjulius server')
 while True:
@@ -57,19 +57,24 @@ client.start()
 def listen():
 	print ("Listening...")
 	# purge message queue
+	client.send("TERMINATE\n")
+	time.sleep(0.6)
+	client.send("RESUME\n")
 	while 1:
 		try:
 			client.results.get(False)
 		except Queue.Empty:
 			break
-	time.sleep(0.5)
+	print ("Message queue Empty")
 	while 1:
 		try:
 			result = client.results.get(False)
-			print (repr(result))
 			if isinstance(result,pyjulius.Sentence):
 				print ("SENTENCE")
 				print (dir(result), " ".join([i.word for i in result.words]), result.score)
+				break
+			elif result.tag=="RECOGFAIL":
+				result.words = ['*mumble*']
 				break
 		except Queue.Empty:
 			continue
