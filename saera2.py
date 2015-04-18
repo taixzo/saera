@@ -229,7 +229,7 @@ class Saera:
 		location = parsed_json['location']['city']
 		if is_time:
 			fcst = [i for i in parsed_json['hourly_forecast'] if int(i['FCTTIME']['hour'])==result['outcome']['entities']['time'].hour][0]
-			temp_f = fcst['temp']['english']
+			temp_f = int(fcst['temp']['english'])
 			feelslike_f = float(fcst['feelslike']['english'])
 			wind_speed = int(fcst['wspd']['english'])
 			wind_string = "calm" if wind_speed<3 else str(wind_speed)+" mph "+fcst['wdir']['dir']
@@ -237,7 +237,7 @@ class Saera:
 			pop = int(fcst['pop'])
 			hour = str(result['outcome']['entities']['time'].hour)
 		else:
-			temp_f = parsed_json['current_observation']['temp_f']
+			temp_f = int(parsed_json['current_observation']['temp_f'])
 			feelslike_f = float(parsed_json['current_observation']['feelslike_f'])
 			wind_string = parsed_json['current_observation']['wind_string']
 			weather = parsed_json['current_observation']['weather'].lower()
