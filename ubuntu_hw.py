@@ -61,7 +61,7 @@ else:
 	conn.row_factory = sqlite3.Row
 	cur = conn.cursor()
 
-jproc = subprocess.Popen(['julius/julius.x64','-module','-gram','julius/saera','-h','julius/hmmdefs','-hlist','julius/tiedlist','-input','mic','-tailmargin','800'],stdout=subprocess.PIPE)
+jproc = subprocess.Popen(['julius/julius.x64','-module','-gram','julius/saera','-h','julius/hmmdefs','-hlist','julius/tiedlist','-input','mic','-tailmargin','800','-rejectshort','400'],stdout=subprocess.PIPE)
 client = pyjulius.Client('localhost',10500)
 print ('Connecting to pyjulius server')
 while True:
