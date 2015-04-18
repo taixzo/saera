@@ -1,4 +1,4 @@
-#! /usr/bin/end python
+#! /usr/bin/env python
 
 import pyotherside
 import os, sys
