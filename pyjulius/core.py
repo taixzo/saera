@@ -158,7 +158,10 @@ class Client(threading.Thread):
         _, writable, __ = select.select([], [self.sock], [], timeout)
         if not writable:
             raise SendTimeoutError()
-        writable[0].send(command)
+        try:
+            writable[0].send(command)
+        except TypeError:
+            writable[0].send(bytes(command,'UTF-8'))
 
     def _readline(self):
         """Read a line from the server. Data is read from the socket until a character ``\n`` is found
