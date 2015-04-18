@@ -34,6 +34,7 @@ def parse(tokens):
 		if token.isdigit():
 			if hour is None and addedtimeadjustment == 0:
 				hour = int(token)
+				minute = minute or 0
 			else:
 				if minute is None and addedtimeadjustment == 0:
 					minute = int(token)
