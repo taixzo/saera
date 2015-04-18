@@ -138,7 +138,6 @@ Page {
         width: parent.width
         label: "Text field"
         placeholderText: "Type here"
-        horizontalAlignment: textAlignment
         EnterKey.onClicked: {
             parent.focus = true;
             listModel.append({value: text, who: "me"})
