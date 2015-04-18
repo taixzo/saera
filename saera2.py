@@ -699,6 +699,8 @@ class Saera:
 		elif result['outcome']['intent']=="quit" or result['outcome']['intent']=="good_bye":
 			# sys.exit(0)
 			platform.quit()
+		elif result['outcome']['intent']=="restart":
+			platform.restart()
 		else:
 			print (result)
 

@@ -5,6 +5,8 @@ import email
 import subprocess
 import sqlite3
 import pyjulius
+import dbus
+import dbus.glib
 try:
 	import appindicator
 	import gtk
@@ -38,6 +40,8 @@ else:
 
 if sys.version_info[0]==3:
 	raw_input = input
+
+session_bus = dbus.SessionBus()
 
 memory_path = os.getenv('HOME')+'/.saera_memory.db'
 if not os.path.exists(memory_path):
@@ -233,14 +237,27 @@ def run_app(s):
 		client.stop()
 
 def is_playing():
-	return False
+	if session_bus.name_has_owner('org.mpris.MediaPlayer2.rhythmbox'):
+		proxy = session_bus.get_object('org.mpris.MediaPlayer2.rhythmbox', '/org/mpris/MediaPlayer2')
+		props = dbus.Interface(proxy, 'org.freedesktop.DBus.Properties')
+		if props.Get('org.mpris.MediaPlayer2.Player', 'PlaybackStatus') == "Playing":
+			return 'Playing'
+		else:
+			return 'Paused'
+	return 'Not open'
 
 
 def pause():
-	pass
-
+	if session_bus.name_has_owner('org.mpris.MediaPlayer2.rhythmbox'):
+		proxy = session_bus.get_object('org.mpris.MediaPlayer2.rhythmbox', '/org/mpris/MediaPlayer2')
+		player = dbus.Interface(proxy, 'org.mpris.MediaPlayer2.Player')
+		player.Pause()
+		
 def play():
-	pass
+	if session_bus.name_has_owner('org.mpris.MediaPlayer2.rhythmbox'):
+		proxy = session_bus.get_object('org.mpris.MediaPlayer2.rhythmbox', '/org/mpris/MediaPlayer2')
+		player = dbus.Interface(proxy, 'org.mpris.MediaPlayer2.Player')
+		player.Play()
 
 def call_phone(num):
 	pass
@@ -270,3 +287,13 @@ def quit():
 	client.join()
 	jproc.terminate()
 	sys.exit(0)
+
+def restart():
+	subprocess.Popen(['notify-send',"Restarting..."])
+	os.system('espeak -v +f2 "Restarting."')
+	print ("Restarting...")
+	conn.close()
+	client.disconnect()
+	client.join()
+	jproc.terminate()
+	os.execv('/usr/bin/python', ('python',os.path.dirname(os.path.abspath(__file__))+'/saera2.py'))
