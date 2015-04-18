@@ -58,8 +58,9 @@ Page {
             flickable: messages
         }
         anchors.top: parent.top
-        anchors.bottom: inputfield.top
-        anchors.bottomMargin: Theme.paddingLarge
+        anchors.bottom: btn.top
+        // anchors.bottomMargin: Theme.paddingLarge
+        anchors.bottomMargin: 100
 
         width: parent.width
 //        height: parent.height
@@ -95,6 +96,11 @@ Page {
                 color: who=="me" ? Theme.secondaryHighlightColor : Theme.highlightColor
             }
             height: Theme.itemSizeSmall + t.lineCount*(t.font.pixelSize-1)
+
+            Component.onCompleted: {
+                console.log("This prints just fine!")
+                messages.scrollToBottom()
+            }
         }
     }
 
@@ -118,7 +124,7 @@ Page {
                     listModel.append({value: result[i], who: "saera"});
                   }
                 }
-                messages.scrollToBottom();
+                // messages.scrollToBottom();
             });
             text = "";
         }
@@ -146,9 +152,9 @@ Page {
                     listModel.append({value: result[i], who: "saera"});
                   }
                 }
-                messages.scrollToBottom();
+                // messages.scrollToBottom();
             });
-            messages.scrollToBottom();
+            // messages.scrollToBottom();
           })
         }
     }
