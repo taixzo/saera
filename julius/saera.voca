@@ -80,6 +80,10 @@ wednesday  w eh n z d iy
 thursday   th er z d ey
 saturday   s ae dx er dx iy
 
+% TIME_UNITS
+hours      aw er z
+minutes    m ih n ax t s
+
 % ABOUT
 about      ax b aw t
 
@@ -98,9 +102,10 @@ me         m iy
 % MY
 my         m ay
 
-% PREPOSITION
+% PREPOSITION_B
 at         ae t
 for        f ao r
+in         ix n
 
 % V_FLIP
 flip       f l ih p
@@ -230,6 +235,9 @@ is        ih z
 % IN
 in        ih n
 
+% TO
+to        t uw
+
 % FROM
 from      f r ah m
 
@@ -273,6 +281,9 @@ at        ae t
 % WEATHER_ACTION
 rain      r ey n
 snow      s n ow
+
+% REMIND
+remind    r ix m ay n d
 
 % LOCATION_NAME
 London    l ah n d ax n
@@ -392,3 +403,54 @@ Kansas     k ae n z ax s
 
 % LOC_SUFFIX
 City       s ih dx iy
+
+% VERB_INTRANS
+eat        iy t
+shower     sh aw er
+
+% VERB_TRANS
+play       p l ey
+make       m ey k
+write      r ay t
+eat        iy t
+get        g eh t
+do         d uw
+
+% VERB_TRANS_2OBJ
+put        p uh t
+take       t ey k
+
+% NOUN
+wash       w aa sh
+food       f uw d
+dinner     d ih n er
+supper     s ah p er
+guitar     g ih t ax
+piano      p iy ae n ow
+washer     w aa sh ax
+dryer      d r ay er
+
+% ARTICLE
+a          ax
+an         ae n
+the        dh ax
+the        dh iy
+
+% PREPOSITION
+in         ix n
+into       ix n t uw
+on         aa n
+at         ae t
+for        f ao r
+with       w ih dh
+from       f r ah m
+
+% PREP_PHRASE1
+out        aw t
+in         ix n
+on         aa n
+next       n eh k s t
+
+% PREP_PHRASE2
+of         ah v
+to         t uw
