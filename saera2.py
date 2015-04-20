@@ -510,9 +510,12 @@ class Saera:
 	def reminder(self,result):
 		print (result)
 		if 'do_action' in result['outcome']['entities']:
+			reminder = (" "+result['outcome']['entities']['do_action']+" ").replace(" my "," your^ ").replace(" me "," you^ ").replace(" you "," me^ ").replace(" your "," my ").replace("^","").strip()
 			if 'time' in result['outcome']['entities']:
-				platform.set_reminder(result['outcome']['entities']['time'],result['outcome']['entities']['do_action'])
-				return 'I will remind you to '+result['outcome']['entities']['do_action']+' at '+result['outcome']['entities']['time'].strftime("%H:%M.")
+				platform.set_reminder(result['outcome']['entities']['time'],reminder)
+				return 'I will remind you to '+reminder+' at '+result['outcome']['entities']['time'].strftime("%H:%M.")
+			else:
+				return "When should I remind you to "+reminder+"?"
 		else:
 			return 'No idea what to remind you of'
 	def read_out(self,result):
