@@ -253,6 +253,7 @@
 81	[eat]	iy t
 81	[get]	g eh t
 81	[do]	d uw
+81	[call]	k ao l
 82	[put]	p uh t
 82	[take]	t ey k
 83	[wash]	w aa sh
@@ -263,6 +264,12 @@
 83	[piano]	p iy ae n ow
 83	[washer]	w aa sh ax
 83	[dryer]	d r ay er
+83	[mom]	m aa m
+83	[mother]	m ah dh er
+83	[dad]	d ae d
+83	[father]	f aa dh er
+83	[sister]	s ih s t er
+83	[brother]	b r ah dh er
 84	[a]	ax
 84	[an]	ae n
 84	[the]	dh ax
@@ -280,3 +287,10 @@
 86	[next]	n eh k s t
 87	[of]	ah v
 87	[to]	t uw
+88	[my]	m ay
+88	[your]	y ao r
+88	[his]	hh ih z
+88	[her]	hh er
+88	[its]	ih t s
+88	[our]	aw er
+88	[their]	dh eh r

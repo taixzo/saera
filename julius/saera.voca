@@ -416,6 +416,7 @@ write      r ay t
 eat        iy t
 get        g eh t
 do         d uw
+call       k ao l
 
 % VERB_TRANS_2OBJ
 put        p uh t
@@ -430,6 +431,12 @@ guitar     g ih t ax
 piano      p iy ae n ow
 washer     w aa sh ax
 dryer      d r ay er
+mom        m aa m
+mother     m ah dh er
+dad        d ae d
+father     f aa dh er
+sister     s ih s t er
+brother    b r ah dh er
 
 % ARTICLE
 a          ax
@@ -455,3 +462,12 @@ next       n eh k s t
 % PREP_PHRASE2
 of         ah v
 to         t uw
+
+% POSESSIVE_PRONOUN
+my         m ay
+your       y ao r
+his        hh ih z
+her        hh er
+its        ih t s
+our        aw er
+their      dh eh r
