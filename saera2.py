@@ -339,10 +339,10 @@ class Saera:
 			num = result['outcome']['entities']['phone_number']['value']
 			platform.call_phone(num)
 			return "Calling "+num
-		elif 'digit' in result['outcome']['entities']:
+		elif 'digits' in result['outcome']['entities']:
 			num = ''.join([{'zero':'0','oh':'0','naught':'0','one':'1','two':'2','three':'3','four':'4','five':'5','six':'6','seven':'7',
 							'eight':'8','nine':'9','ten':'10','eleven':'11','twelve':'12','thirteen':'13','fourteen':'14','fifteen':'15',
-							'sixteen':'16','seventeen':'17','eighteen':'18','nineteen':'19','hundred':'00'}[i['value']] for i in result['outcome']['entities']['digit']])
+							'sixteen':'16','seventeen':'17','eighteen':'18','nineteen':'19','hundred':'00'}[i] for i in result['outcome']['entities']['digits'].split()])
 			platform.call_phone(num)
 			return "Calling "+num
 		else:
