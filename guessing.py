@@ -347,6 +347,11 @@ class vPreposition(Variable):
 		Variable.__init__(self)
 		self.keywords = ['i','you','he','she','it','we','they']
 
+class vPosessive_Preposition(Variable):
+	def __init__(self):
+		Variable.__init__(self)
+		self.keywords = ['my','your','his','her','its','our','their']
+
 class vSearchEngine(Variable):
 	def __init__(self):
 		Variable.__init__(self)
@@ -371,6 +376,7 @@ variables = {'time':vTime(),
 			 'distance':vDistance(),
 			 'direction':vDirection(),
 			 'preposition':vPreposition(),
+			 'posessive_preposition':vPosessive_Preposition(),
 			 'do_action':vDoAction(),
 			 'search_engine':vSearchEngine(),
 			 'query':vQuery()}

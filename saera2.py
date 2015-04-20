@@ -435,6 +435,8 @@ class Saera:
 		return "Where is "+result['outcome']['entities']['location']
 	def who_is(self,result):
 		conjugations = {'I':'am','you':'are','he':'is','she':'is','it':'is','we':'are','they':'are'}
+		if 'posessive_preposition' in result['outcome']['entities']:
+			result['outcome']['entities']['preposition'] = {"my":"i","your":"you","his":"he","her":"she","our":"we","their":"they"}[result['outcome']['entities']['posessive_preposition']]
 		if 'preposition' in result['outcome']['entities']:
 			who = result['outcome']['entities']['preposition']
 			who = 'you' if who=='i' else 'I' if who=='you' else who
