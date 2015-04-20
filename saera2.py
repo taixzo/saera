@@ -126,6 +126,7 @@ class Saera:
 			# 				}
 			# 			}
 			# 		}
+		string = string.replace('.','').replace(',','').replace('!','').replace('?','')
 		result = self.guesser.guess(string)
 			# result = self.w.get_message(string, context={"timezone":"America/New_York"})
 		# except:
