@@ -137,7 +137,8 @@ class Guesser:
 			if guesses[i][0]<best_guess:
 				best_guess = guesses[i][0]
 				best_guess_intent = guesses[i][1]
-		splitstring = string.split()
+		splitstring_oc = string.split()
+		splitstring = string.lower().split()
 		outvars = {}
 		for i in best_guess_intent.vars:
 			first = -1
@@ -171,7 +172,7 @@ class Guesser:
 					if last==-1:
 						last = len(splitstring)
 			if last >= 0:
-				outvars[i] = variables[i].parse(splitstring[first:last])
+				outvars[i] = variables[i].parse(splitstring_oc[first:last])
 		# return (best_guess, best_guess_intent.name, string)
 		return {
 				'text':string,
