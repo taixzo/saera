@@ -62,11 +62,11 @@ while True:
 		time.sleep(2)
 sys.stdout.write('..Connected\n')
 client.start()
+client.send("TERMINATE\n")
 
 def listen():
 	print ("Listening...")
 	# purge message queue
-	client.send("TERMINATE\n")
 	time.sleep(0.6)
 	client.send("RESUME\n")
 	while 1:
@@ -89,6 +89,7 @@ def listen():
 			continue
 	res = " ".join([i.word.lower() for i in result.words])
 	res = res[0].upper()+res[1:]
+	client.send("TERMINATE\n")
 	return res
 
 class timed:
