@@ -38,6 +38,7 @@ Page {
     id: page
 
     function speak() {
+      mainWindow.activate()
       playSound.play()
       py.call('saera2.run_voice',[],function(res) {
         listModel.append({value: res, who: "me"});
@@ -58,6 +59,7 @@ Page {
 
     Component.onCompleted: {
       mainWindow.selectedCountChanged.connect(page.speak)
+      mainWindow.textSelectedCountChanged.connect(inputfield.forceActiveFocus)
     }
 
     Component.onDestruction: {
