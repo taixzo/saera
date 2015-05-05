@@ -40,9 +40,11 @@ Page {
     function speak() {
       mainWindow.activate()
       playSound.play()
+      busyIndicator.running = true;
       py.call('saera2.run_voice',[],function(res) {
         listModel.append({value: res, who: "me"});
         py.call('saera2.run_text', [res], function(result){
+            busyIndicator.running = false;
             if (typeof(result)=="string") {
               listModel.append({value: result, who: "saera"});
             } else {
@@ -142,8 +144,10 @@ Page {
         placeholderText: "Type here"
         EnterKey.onClicked: {
             parent.focus = true;
+            busyIndicator.running = true;
             listModel.append({value: text, who: "me"})
             py.call('saera2.run_text', [text], function(result){
+                busyIndicator.running = false;
                 if (typeof(result)=="string") {
                   listModel.append({value: result, who: "saera"});
                 } else {
@@ -170,6 +174,14 @@ Page {
         onClicked: {
           speak()
         }
+    }
+
+    BusyIndicator {
+      id: busyIndicator
+      anchors.centerIn: btn
+      running: false
+      color: Theme.primaryColor
+      size: BusyIndicatorSize.Large
     }
 }
 
