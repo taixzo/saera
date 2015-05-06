@@ -702,6 +702,8 @@ class Saera:
 			return self.coin_flip(result)
 		elif result['outcome']['intent']=="roll_dice":
 			return self.roll_dice(result)
+		elif result['outcome']['intent']=="mumble":
+			return "Sorry, I didn't understand that."
 		elif result['outcome']['intent']=="quit" or result['outcome']['intent']=="good_bye":
 			# sys.exit(0)
 			platform.quit()
