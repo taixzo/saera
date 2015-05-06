@@ -727,6 +727,18 @@ def run_voice():
 
 def run_processed_text(t):
 	return platform.app.process(json.loads(t))
+
+def activate():
+	if not platform.app:
+		return ""
+	platform.cur.execute("SELECT * FROM Variables WHERE VarName='last_activated'")
+	row = platform.cur.fetchone()
+	platform.cur.execute('INSERT OR REPLACE INTO Variables (ID, VarName, Value) VALUES ((SELECT ID FROM Variables WHERE VarName = "last_activated"), "last_activated", "'+datetime.now().isoformat()+'");')
+	platform.conn.commit()
+	if row and datetime.strptime( row["Value"], "%Y-%m-%dT%H:%M:%S.%f" ).date()>=datetime.now().date():
+		return ""
+	else:
+		return platform.speak("Good morning! "+platform.app.weather({'outcome':{'entities':{}},'text':''}) )
 	
 if __name__=="__main__":
 	initialize()

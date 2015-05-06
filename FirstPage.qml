@@ -58,10 +58,27 @@ Page {
       })
     }
 
+    function activate_morning() {
+      if (applicationActive) {
+        py.call('saera2.activate',[],function(result){
+          busyIndicator.running = false;
+            if (typeof(result)=="string") {
+              if (result != "") {
+                listModel.append({value: result, who: "saera", link: false});
+              }
+            } else {
+              for (var i in result) {
+                listModel.append({value: result[i][0], who: "saera", link: result[i][1]});
+              }
+            }
+        })
+      }
+    }
 
     Component.onCompleted: {
       mainWindow.selectedCountChanged.connect(page.speak)
       mainWindow.textSelectedCountChanged.connect(inputfield.forceActiveFocus)
+      mainWindow.onApplicationActiveChanged.connect(page.activate_morning)
     }
 
     Component.onDestruction: {
