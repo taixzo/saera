@@ -42,14 +42,14 @@ Page {
       playSound.play()
       busyIndicator.running = true;
       py.call('saera2.run_voice',[],function(res) {
-        listModel.append({value: res, who: "me"});
+        listModel.append({value: res, who: "me", link: false});
         py.call('saera2.run_text', [res], function(result){
             busyIndicator.running = false;
             if (typeof(result)=="string") {
-              listModel.append({value: result, who: "saera"});
+              listModel.append({value: result, who: "saera", link: false});
             } else {
               for (var i in result) {
-                listModel.append({value: result[i], who: "saera"});
+                listModel.append({value: result[i][0], who: "saera", link: result[i][1]});
               }
             }
             // messages.scrollToBottom();
@@ -99,16 +99,6 @@ Page {
         model: ListModel {
             id: listModel
             ListElement { value: "How can I help you?"; who: "saera" }
-//            ListElement { value: "Hello Saera"; who: "me" }
-//            ListElement { value: "Hello!"; who: "saera" }
-//            ListElement { value: "What's the weather like in New York City, do I need an umbrella?"; who: "me" }
-//            ListElement { value: "The weather in New York City is heavy rain, and 39°."; who: "saera" }
-//            ListElement { value: "What about in Washington?"; who: "me" }
-//            ListElement { value: "The weather in Washington is clear, and 50°."; who: "saera" }
-//            ListElement { value: "Ok. Wake me tomorrow at nine."; who: "me" }
-//            ListElement { value: "Setting alarm for 9:00."; who: "saera" }
-//            ListElement { value: "What about in Philadelphia?"; who: "me" }
-//            ListElement { value: "The weather in Philadelphia is clear, and 50°."; who: "saera" }
         }
         delegate: Item {
             width: ListView.view.width
@@ -125,8 +115,9 @@ Page {
                 width: parent.width - 2 * Theme.paddingLarge
                 horizontalAlignment: who=="me" ? Text.AlignRight : Text.AlignLeft
                 color: who=="me" ? Theme.secondaryHighlightColor : Theme.highlightColor
+                // backgroundColor: link ? Theme.BackgroundColorA : undefined
             }
-            height: Theme.itemSizeSmall + t.lineCount*(t.font.pixelSize-1)
+            height: t.lineCount*(t.font.pixelSize-1) + Theme.itemSizeSmall
 
             Component.onCompleted: {
                 messages.scrollToBottom()
@@ -145,14 +136,14 @@ Page {
         EnterKey.onClicked: {
             parent.focus = true;
             busyIndicator.running = true;
-            listModel.append({value: text, who: "me"})
+            listModel.append({value: text, who: "me", link: false})
             py.call('saera2.run_text', [text], function(result){
                 busyIndicator.running = false;
                 if (typeof(result)=="string") {
-                  listModel.append({value: result, who: "saera"});
+                  listModel.append({value: result, who: "saera", link: false});
                 } else {
                   for (var i in result) {
-                    listModel.append({value: result[i], who: "saera"});
+                    listModel.append({value: result[i][0], who: "saera", link: result[i][1]});
                   }
                 }
                 // messages.scrollToBottom();
