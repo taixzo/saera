@@ -15,6 +15,10 @@ import ast # for safely parsing timed stuff
 global app
 app = None
 
+class MicroMock(object):
+	def __init__(self, **kwargs):
+		self.__dict__.update(kwargs)
+
 memory_path = os.getenv('HOME')+'/.saera_memory.db'
 if not os.path.exists(memory_path):
 	conn = sqlite3.connect(memory_path)
@@ -83,7 +87,8 @@ def listen():
 				print (dir(result), " ".join([i.word for i in result.words]), result.score)
 				break
 			elif result.tag=="RECOGFAIL":
-				result.words = ['*mumble*']
+				# result.words = ['*mumble*']
+				result = MicroMock(words=[MicroMock(word='*mumble*')])
 				break
 		except Queue.Empty:
 			continue
