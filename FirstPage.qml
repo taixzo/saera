@@ -93,7 +93,10 @@ Page {
 //             addImportPath('/opt/sdk/saera/usr/share/saera/qml/pages');
 
              importModule('saera2', function() {
-                call('saera2.initialize', [], function(result){});
+                call('saera2.initialize', [], function(result){
+                  btn.icon.source = "image://theme/icon-m-mic"
+                  page.activate_morning()
+                });
              });
          }
          onError: console.log('Python error: ' + traceback)
@@ -178,7 +181,8 @@ Page {
         id: btn
         anchors.bottom: inputfield.top
         anchors.horizontalCenter: parent.horizontalCenter
-        icon.source: "image://theme/icon-m-mic"
+        // icon.source: "image://theme/icon-m-mic"
+        icon.source: "image://theme/icon-l-mute-mic"
         onClicked: {
           speak()
         }
