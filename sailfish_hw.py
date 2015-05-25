@@ -71,8 +71,18 @@ client.start()
 client.send("TERMINATE\n")
 
 detected = False
+daemons_running = True
 
-def watch_proximity():
+def pause_daemons():
+	global daemons_running
+	daemons_running = False
+
+def resume_daemons():
+	global daemons_running
+	daemons_running = True
+	e.set()
+
+def watch_proximity(e):
 	global detected
 	while True:
 		prox_detect = open("/sys/devices/virtual/input/input10/prx_detect").read()
@@ -80,9 +90,15 @@ def watch_proximity():
 			detected = True
 			print ("Detected proximity input")
 			pyotherside.send('start')
+		if not daemons_running:
+			print ('Application unfocused.')
+			e.wait()
+			e.clear()
+			print ('Application focused.')
 		time.sleep(1)
 
-prox_thread = threading.Thread(target=watch_proximity)
+e = threading.Event()
+prox_thread = threading.Thread(target=watch_proximity, args=(e,))
 prox_thread.start()
 
 def listen():

@@ -728,6 +728,16 @@ def run_voice():
 def run_processed_text(t):
 	return platform.app.process(json.loads(t))
 
+def pause_daemons():
+	if not platform.app:
+		return ""
+	return platform.pause_daemons()
+
+def resume_daemons():
+	if not platform.app:
+		return ""
+	return platform.resume_daemons()
+
 def activate():
 	if not platform.app:
 		return ""

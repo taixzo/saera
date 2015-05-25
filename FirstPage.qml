@@ -60,6 +60,7 @@ Page {
 
     function activate_morning() {
       if (applicationActive) {
+        py.call('saera2.resume_daemons',[],function(result){})
         py.call('saera2.activate',[],function(result){
           busyIndicator.running = false;
             if (typeof(result)=="string") {
@@ -72,6 +73,8 @@ Page {
               }
             }
         })
+      } else {
+        py.call('saera2.pause_daemons',[],function(result){})
       }
     }
 
