@@ -10,6 +10,7 @@ import pyjulius
 import queue as Queue
 import time
 import random
+import threading
 
 import ast # for safely parsing timed stuff
 
@@ -68,6 +69,21 @@ while True:
 sys.stdout.write('..Connected\n')
 client.start()
 client.send("TERMINATE\n")
+
+detected = False
+
+def watch_proximity():
+	global detected
+	while True:
+		prox_detect = open("/sys/devices/virtual/input/input10/prx_detect").read()
+		if bool(int(prox_detect)) and not detected:
+			detected = True
+			print ("Detected proximity input")
+			pyotherside.send('start')
+		time.sleep(1)
+
+prox_thread = threading.Thread(target=watch_proximity)
+prox_thread.start()
 
 def listen():
 	print ("Listening...")
@@ -235,6 +251,7 @@ class MailFolder:
 				self.messages[i] = email.message_from_file(open(os.getenv("HOME")+"/.qmf/mail/"+i))
 
 def speak(string):
+	global detected
 	try:
 		is_string = isinstance(string,basestring)
 	except NameError:
@@ -244,6 +261,7 @@ def speak(string):
 	else:
 		spoken_str = '\n'.join([i[0] for i in string])
 	os.system('espeak --stdout -v +f2 "' + spoken_str.replace(":00"," o'clock").replace("\n",". ") + '" | gst-launch-0.10 -v fdsrc ! wavparse ! audioconvert ! alsasink &')
+	detected = False
 	return string
 
 def quit():

@@ -98,6 +98,7 @@ Page {
                   page.activate_morning()
                 });
              });
+             setHandler('start',page.speak)
          }
          onError: console.log('Python error: ' + traceback)
     }
@@ -196,5 +197,3 @@ Page {
       size: BusyIndicatorSize.Large
     }
 }
-
-
