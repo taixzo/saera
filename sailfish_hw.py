@@ -276,7 +276,7 @@ def speak(string):
 		spoken_str = string
 	else:
 		spoken_str = '\n'.join([i[0] for i in string])
-	os.system('espeak --stdout -v +f2 "' + spoken_str.replace(":00"," o'clock").replace("\n",". ") + '" | gst-launch-0.10 -v fdsrc ! wavparse ! audioconvert ! alsasink &')
+	os.system('espeak --stdout -v +f2 "' + spoken_str.replace(":00"," o'clock").replace("\n",". ") + '" | gst-launch-0.10 -q fdsrc ! wavparse ! audioconvert ! alsasink &')
 	detected = False
 	return string
 
