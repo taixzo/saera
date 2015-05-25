@@ -246,7 +246,7 @@ class Saera:
 				precip = float(parsed_json['current_observation']['precip_1hr_in'])
 			except ValueError:
 				precip = 0
-			
+
 		# if 'weather' in result['outcome']['entities']:
 			# if result['outcome']['entities']['weather']['value'] == "rain":
 		if "rain" in result['text']:
@@ -407,7 +407,7 @@ class Saera:
 		# platform.cur.execute('INSERT OR REPLACE INTO Variables (ID, VarName, Value) VALUES ((SELECT ID FROM Variables WHERE VarName = "name"), "name", "'+result['outcome']['entities']['name']+'");')
 		# platform.conn.commit()
 		# return "Ok, from now on I'll refer to you as "+result['outcome']['entities']['name']
-		# loc = 
+		# loc =
 		platform.cur.execute("SELECT * FROM Locations WHERE LocName='"+result['outcome']['entities']['location']+"'")
 		locs = platform.cur.fetchall()
 		if locs:
@@ -657,7 +657,7 @@ class Saera:
 				return "Nothing is playing."
 		elif result['outcome']['intent']=="play":
 			p = platform.is_playing()
-			if p=="Paused":
+			if p=="Paused" or p=="Stopped" or p=="Off":
 				platform.play()
 				return "Done!"
 			elif p=="Playing":
@@ -739,7 +739,6 @@ def activate():
 		return ""
 	else:
 		return platform.speak("Good morning! "+platform.app.weather({'outcome':{'entities':{}},'text':''}) )
-	
+
 if __name__=="__main__":
 	initialize()
-

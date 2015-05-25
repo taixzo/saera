@@ -9,6 +9,7 @@ from datetime import datetime, timedelta
 import pyjulius
 import queue as Queue
 import time
+import random
 
 import ast # for safely parsing timed stuff
 
@@ -148,7 +149,7 @@ def is_playing():
 								"org.freedesktop.DBus.Properties.Get",
 								"org.mpris.MediaPlayer2.Player",
 								"PlaybackStatus"], stdout=subprocess.PIPE).communicate()
-	return "Playing" if "Playing" in result[0].decode("UTF-8") else "Paused" if "Paused" in result[0].decode("UTF-8") else "Stopped"
+	return "Playing" if "Playing" in result[0].decode("UTF-8") else "Paused" if "Paused" in result[0].decode("UTF-8") else "Off" if not result[0] else "Stopped"
 
 
 def pause():
@@ -164,7 +165,34 @@ def pause():
 	print (result)
 
 def play():
-	result = subprocess.Popen(["gdbus",
+	if is_playing() in ("Playing", "Paused"):
+		result = subprocess.Popen(["gdbus",
+								"call",
+								"-e",
+								"-d",
+								"org.mpris.MediaPlayer2.jolla-mediaplayer",
+								"-o",
+								"/org/mpris/MediaPlayer2",
+								"-m",
+								"org.mpris.MediaPlayer2.Player.Play"], stdout=subprocess.PIPE).communicate()
+
+	else:
+		if is_playing() == "Off":
+			os.system("jolla-mediaplayer &")
+			time.sleep(8) # for the media player to finish launching
+		files = subprocess.Popen("find /home/nemo/Music/ -type f -name \*.mp3", shell=True, stdout=subprocess.PIPE).communicate()[0].splitlines()
+		f = random.choice(files)
+		result = subprocess.Popen(["gdbus",
+									"call",
+									"-e",
+									"-d",
+									"org.mpris.MediaPlayer2.jolla-mediaplayer",
+									"-o",
+									"/org/mpris/MediaPlayer2",
+									"-m",
+									"org.mpris.MediaPlayer2.Player.OpenUri",
+									"file://"+f.decode('utf-8')], stdout=subprocess.PIPE).communicate()
+		subprocess.Popen(["gdbus",
 								"call",
 								"-e",
 								"-d",
