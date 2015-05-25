@@ -1,6 +1,9 @@
 eSpeak Julius
+O@r-'   er
 aI@     ay ax
 aU@     aw er
+O@r     ao r
+nkI     ng k iy
 tS      ch
 dZ      jh
 @L      ax l
@@ -27,6 +30,7 @@ eI      ey
 OI      oy
 aU      aw
 oU      ow
+tt      t
 b       b
 d       d
 f       f
