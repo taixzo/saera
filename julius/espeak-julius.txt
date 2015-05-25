@@ -1,0 +1,67 @@
+eSpeak Julius
+aI@     ay ax
+aU@     aw er
+tS      ch
+dZ      jh
+@L      ax l
+@2      ax
+@5      uw
+@r      er
+3:      er
+3r      er
+aa      ae
+a#      ax
+A:      aa
+A@      aa r
+e@      eh r
+I2      ix
+i:      iy
+i@      ih
+u:      uw
+U@      uh r
+O:      ao
+O@      ao r
+o@      ao r
+aI      ay
+eI      ey
+OI      oy
+aU      aw
+oU      ow
+b       b
+d       d
+f       f
+g       g
+h       hh
+k       k
+l       l
+m       m
+n       n
+N       ng
+p       p
+r       r
+s       s
+S       sh
+Z       zh
+t       t
+T       th
+D       dh
+v       v
+j       y
+w       w
+z       z
+@       ax
+3       er
+a       ae
+E       eh
+I       ih
+i       iy
+0       aa
+V       ah
+U       uh
+'
+,
+;
+:
+-
+!
+_
