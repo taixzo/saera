@@ -45,7 +45,7 @@ def e2j(string):
             return "ERROR: Could not translate "+original_result+" - remaining text: "+result
     return out
 
-def create_grammar(stringlist):
+def create_grammar(stringlist, gramname):
     voca = """% NS_B
 <s>        sil
 
@@ -105,9 +105,9 @@ play      p l ey"""
     voca = voca.replace('ih \n','iy \n').replace(' n k ',' ng k ')
     if not os.path.exists('/home/nemo/.saera'):
         os.mkdir('/home/nemo/.saera')
-    open('/home/nemo/.saera/musictitles.grammar','w').write(gram)
-    open('/home/nemo/.saera/musictitles.voca','w').write(voca)
-    os.system('./julius/ARM/mkdfa.pl /home/nemo/.saera/musictitles')
+    open('/home/nemo/.saera/'+gramname+'.grammar','w').write(gram)
+    open('/home/nemo/.saera/'+gramname+'.voca','w').write(voca)
+    os.system('./julius/ARM/mkdfa.pl /home/nemo/.saera/'+gramname)
     return gram, voca
 
 if __name__=="__main__":

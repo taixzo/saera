@@ -88,7 +88,7 @@ if not os.path.exists('/home/nemo/.saera/musictitles.grammar'):
 	if not os.path.exists('/home/nemo/.saera'):
 		os.mkdir('/home/nemo/.saera')
 	regen_music()
-	espeak2julius.create_grammar(lst)
+	espeak2julius.create_grammar(lst, 'musictitles')
 else:
 	regen_music()
 

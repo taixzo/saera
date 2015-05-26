@@ -631,6 +631,20 @@ class Saera:
 				return "I rolled a pair of dice. They came up "+str(rolls[0])+" and "+str(rolls[1])+" for a total of "+str(sum(rolls))+"."
 			roll = random.randint(1,6)
 			return "I rolled a six-sided die, which came up "+str(roll)+"."
+	def play(self, result):
+		print(result)
+		if 'song' in result['outcome']['entities']:
+			platform.play(result['outcome']['entities']['song'].lower())
+			return "Ok!"
+		else:
+			p = platform.is_playing()
+			if p=="Paused" or p=="Stopped" or p=="Off":
+				platform.play()
+				return "Done!"
+			elif p=="Playing":
+				return "Already playing!"
+			else:
+				return "Play what?"
 	def process(self,result):
 		print (result['outcome']['intent'])
 		self.short_term_memory.tick()
@@ -656,14 +670,8 @@ class Saera:
 			else:
 				return "Nothing is playing."
 		elif result['outcome']['intent']=="play":
-			p = platform.is_playing()
-			if p=="Paused" or p=="Stopped" or p=="Off":
-				platform.play()
-				return "Done!"
-			elif p=="Playing":
-				return "Already playing!"
-			else:
-				return "Play what?"
+			return self.play(result)
+
 		elif result['outcome']['intent']=="email":
 			return self.email(result)
 		elif result['outcome']['intent']=="call":
