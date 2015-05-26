@@ -12,6 +12,7 @@ import time
 import random
 import threading
 import espeak2julius
+import re
 from ID3 import ID3
 
 import ast # for safely parsing timed stuff
@@ -58,18 +59,30 @@ for line in out.decode('UTF-8').splitlines():
 		pid = int(line.split(None, 1)[0])
 		os.kill(pid, 9)
 
-lst = []
-files = subprocess.Popen("find /home/nemo/Music/ -type f -name \*.mp3", shell=True, stdout=subprocess.PIPE).communicate()[0].splitlines()[:40]
-for file in files:
-	id3info = ID3(file)
-	if id3info.has_tag:
-		lst.append(id3info.title.decode('utf-8'))
-	else:
-		continue
-print (lst)
-print (espeak2julius.create_grammar(lst))
+def regen_music():
+	lst = []
+	regex = re.compile('[^a-zA-Z ]')
+	files = subprocess.Popen("find /home/nemo/Music/ -type f -name \*.mp3", shell=True, stdout=subprocess.PIPE).communicate()[0].splitlines()[:40]
+	for file in files:
+		id3info = ID3(file)
+		if id3info.has_tag:
+			lst.append(id3info.title.decode('utf-8'))
+		else:
+			name = os.path.split(file)[1].decode('utf-8').split('.')[0]
+			if name.count(' - ')==1:
+				artist, name = name.split(' - ')
+			name = regex.sub('', name).strip()
+			if name:
+				lst.append(name)
+			continue
+	espeak2julius.create_grammar(lst)
 
-jproc = subprocess.Popen([f+'julius/julius.arm','-module','-gram',f+'julius/saera', '-gram', '/tmp/saera/musictitles','-h',f+'julius/hmmdefs','-hlist',f+'julius/tiedlist','-input','mic','-tailmargin','800','-rejectshort','600'],stdout=subprocess.PIPE)
+if not os.path.exists('/home/nemo/.saera/musictitles.grammar'):
+	if not os.path.exists('/home/nemo/.saera'):
+		os.mkdir('/home/nemo/.saera')
+	regen_music()
+
+jproc = subprocess.Popen([f+'julius/julius.arm','-module','-gram',f+'julius/saera', '-gram', '/home/nemo/.saera/musictitles','-h',f+'julius/hmmdefs','-hlist',f+'julius/tiedlist','-input','mic','-tailmargin','800','-rejectshort','600'],stdout=subprocess.PIPE)
 # jproc = subprocess.Popen([f+'julius/julius.arm','-module','-gram','/tmp/saera/musictitles','-h',f+'julius/hmmdefs','-hlist',f+'julius/tiedlist','-input','mic','-tailmargin','800','-rejectshort','600'],stdout=subprocess.PIPE)
 client = pyjulius.Client('localhost',10500)
 print ('Connecting to pyjulius server')

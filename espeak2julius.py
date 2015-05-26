@@ -18,7 +18,7 @@ triphones = open ('julius/tiedlist').read()
 d = collections.OrderedDict()
 
 # substitutions = {'ix':'iy', 'r': 'er', 'er':'r', 'n':'ng','ey':'ay','aa':'ax','ax':'ae','ih':'ax','eh':'ix','z':'s','jh':'ch','aw':'ow'}
-substitutions = {'ix':'iy', 'r': 'er', 'er':'r', 'n':'ng','ey':'ay','aa':'ax','ax':'ae','ih':'ix','eh':'ix','z':'s','jh':'ch','aw':'ow','ey':'ix'}
+substitutions = {'ix':'iy', 'r': 'er', 'er':'r', 'n':'ng','ey':'ay','aa':'ax','ax':'ae','ih':'ix','eh':'ix','z':'s','jh':'ch','aw':'ow','ey':'ix', 'uw':'ow'}
 
 for i in syllconv:
     splitline = re.split("  +",i)
@@ -101,11 +101,11 @@ play      p l ey"""
         voca += tvoca
         gram += tgram
     voca = voca.replace('ih \n','iy \n').replace(' n k ',' ng k ')
-    if not os.path.exists('/tmp/saera'):
-        os.mkdir('/tmp/saera')
-    open('/tmp/saera/musictitles.grammar','w').write(gram)
-    open('/tmp/saera/musictitles.voca','w').write(voca)
-    os.system('./julius/ARM/mkdfa.pl /tmp/saera/musictitles')
+    if not os.path.exists('/home/nemo/.saera'):
+        os.mkdir('/home/nemo/.saera')
+    open('/home/nemo/.saera/musictitles.grammar','w').write(gram)
+    open('/home/nemo/.saera/musictitles.voca','w').write(voca)
+    os.system('./julius/ARM/mkdfa.pl /home/nemo/.saera/musictitles')
     return gram, voca
 
 if __name__=="__main__":
