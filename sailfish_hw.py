@@ -14,6 +14,10 @@ import threading
 import espeak2julius
 import re
 from ID3 import ID3
+try:
+	import urllib.parse as parse
+except:
+	import urllib as parse
 
 import ast # for safely parsing timed stuff
 
@@ -59,14 +63,16 @@ for line in out.decode('UTF-8').splitlines():
 		pid = int(line.split(None, 1)[0])
 		os.kill(pid, 9)
 
+song_title_map = {}
+lst = []
 def regen_music():
-	lst = []
 	regex = re.compile('[^a-zA-Z ]')
 	files = subprocess.Popen("find /home/nemo/Music/ -type f -name \*.mp3", shell=True, stdout=subprocess.PIPE).communicate()[0].splitlines()[:40]
 	for file in files:
 		id3info = ID3(file)
 		if id3info.has_tag:
 			lst.append(id3info.title.decode('utf-8'))
+			song_title_map[id3info.title.decode('utf-8').lower()] = file
 		else:
 			name = os.path.split(file)[1].decode('utf-8').split('.')[0]
 			if name.count(' - ')==1:
@@ -74,12 +80,16 @@ def regen_music():
 			name = regex.sub('', name).strip()
 			if name:
 				lst.append(name)
+				song_title_map[name.lower()] = file
 			continue
-	espeak2julius.create_grammar(lst)
+	print (song_title_map)
 
 if not os.path.exists('/home/nemo/.saera/musictitles.grammar'):
 	if not os.path.exists('/home/nemo/.saera'):
 		os.mkdir('/home/nemo/.saera')
+	regen_music()
+	espeak2julius.create_grammar(lst)
+else:
 	regen_music()
 
 jproc = subprocess.Popen([f+'julius/julius.arm','-module','-gram',f+'julius/saera', '-gram', '/home/nemo/.saera/musictitles','-h',f+'julius/hmmdefs','-hlist',f+'julius/tiedlist','-input','mic','-tailmargin','800','-rejectshort','600'],stdout=subprocess.PIPE)
@@ -223,8 +233,8 @@ def pause():
 								"org.mpris.MediaPlayer2.Player.Pause"], stdout=subprocess.PIPE).communicate()
 	print (result)
 
-def play():
-	if is_playing() in ("Playing", "Paused"):
+def play(song=None):
+	if is_playing() in ("Playing", "Paused") and song is None:
 		result = subprocess.Popen(["gdbus",
 								"call",
 								"-e",
@@ -239,8 +249,13 @@ def play():
 		if is_playing() == "Off":
 			os.system("jolla-mediaplayer &")
 			time.sleep(8) # for the media player to finish launching
-		files = subprocess.Popen("find /home/nemo/Music/ -type f -name \*.mp3", shell=True, stdout=subprocess.PIPE).communicate()[0].splitlines()
-		f = random.choice(files)
+		print(song)
+		if song is not None and song in song_title_map:
+			f = song_title_map[song].decode('utf-8')
+		else:
+			files = subprocess.Popen("find /home/nemo/Music/ -type f -name \*.mp3", shell=True, stdout=subprocess.PIPE).communicate()[0].splitlines()
+			f = random.choice(files).decode('utf-8')
+		print ("file://"+f)
 		result = subprocess.Popen(["gdbus",
 									"call",
 									"-e",
@@ -250,7 +265,7 @@ def play():
 									"/org/mpris/MediaPlayer2",
 									"-m",
 									"org.mpris.MediaPlayer2.Player.OpenUri",
-									"file://"+f.decode('utf-8')], stdout=subprocess.PIPE).communicate()
+									"file://"+parse.quote(f)], stdout=subprocess.PIPE).communicate()
 		subprocess.Popen(["gdbus",
 								"call",
 								"-e",

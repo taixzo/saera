@@ -299,20 +299,25 @@ class vLocation(Variable):
 
 #################################
 class vName(Variable):			#
-	def __init__(self):	
+	def __init__(self):
 		Variable.__init__(self)		#
 		self.keywords = []		#
 		self.prewords = ['am','me','is','named']		#
 class vThing(Variable):			#
-	def __init__(self):	
+	def __init__(self):
 		Variable.__init__(self)		#
 		self.keywords = []		#
 		self.prewords = ['is','are']		#
 class vHome(Variable):			#
-	def __init__(self):	
+	def __init__(self):
 		Variable.__init__(self)		#
 		self.keywords = []		#
 #################################
+
+class vSong(Variable):
+	def __init__(self):
+		Variable.__init__(self)
+		self.prewords = 'play'
 
 class vFood(Variable):
 	def __init__(self):
@@ -357,12 +362,12 @@ class vSearchEngine(Variable):
 	def __init__(self):
 		Variable.__init__(self)
 		self.keywords = ['google','bing','yahoo','duck','go','wikipedia']
-			
+
 class vQuery(Variable):
 	def __init__(self):
 		Variable.__init__(self)
 		self.prewords = ['for'] #+ vSearchEngine().keywords
-	
+
 
 variables = {'time':vTime(),
 			 'digits':vDigits(),
@@ -380,7 +385,8 @@ variables = {'time':vTime(),
 			 'posessive_preposition':vPosessive_Preposition(),
 			 'do_action':vDoAction(),
 			 'search_engine':vSearchEngine(),
-			 'query':vQuery()}
+			 'query':vQuery(),
+			 'song':vSong()}
 
 if __name__=="__main__":
 	# i = Intent()
@@ -420,4 +426,3 @@ if __name__=="__main__":
 
 	while True:
 		print (g.guess(raw_input("> ")))
-
