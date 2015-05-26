@@ -11,9 +11,11 @@ def log(s, level):
     if loglevel>=level:
         print (s)
 
-syllconv = open('julius/espeak-julius.txt').read().splitlines()[1:]
+f = __file__.split('espeak2julius.py')[0]
 
-triphones = open ('julius/tiedlist').read()
+syllconv = open(f+'julius/espeak-julius.txt').read().splitlines()[1:]
+
+triphones = open (f+'julius/tiedlist').read()
 
 d = collections.OrderedDict()
 
