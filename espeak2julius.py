@@ -123,7 +123,8 @@ text       t eh k s t
                         break
                 pronunciation = ' '.join(tpro)
             if tobreak: break
-            tvoca += "\n\n% W_"+str(i)+"_"+str(index)+"\n"+words[index].lower().ljust(10)+' '+pronunciation
+            w = words[index].capitalize() if gramtype=="contacts" else words[index].lower()
+            tvoca += "\n\n% W_"+str(i)+"_"+str(index)+"\n"+w.ljust(10)+' '+pronunciation
             tgram += " W_"+str(i)+"_"+str(index)
             if index==0 and len(c)>1:
                 voca += tvoca
