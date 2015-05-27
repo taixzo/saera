@@ -67,22 +67,41 @@ song_title_map = {}
 lst = []
 def regen_music():
 	regex = re.compile('[^a-zA-Z ]')
-	files = subprocess.Popen("find /home/nemo/Music/ -type f -name \*.mp3", shell=True, stdout=subprocess.PIPE).communicate()[0].splitlines()[:40]
-	for file in files:
-		id3info = ID3(file)
-		if id3info.has_tag:
-			lst.append(id3info.title.decode('utf-8'))
-			song_title_map[id3info.title.decode('utf-8').lower()] = file
-		else:
-			name = os.path.split(file)[1].decode('utf-8').split('.')[0]
-			if name.count(' - ')==1:
-				artist, name = name.split(' - ')
-			name = regex.sub('', name).strip()
-			if name:
-				lst.append(name)
-				song_title_map[name.lower()] = file
-			continue
-	print (song_title_map)
+	# files = subprocess.Popen("find /home/nemo/Music/ -type f -name \*.mp3", shell=True, stdout=subprocess.PIPE).communicate()[0].splitlines()[:40]
+	# for file in files:
+	# 	id3info = ID3(file)
+	# 	if id3info.has_tag:
+	# 		lst.append(id3info.title.decode('utf-8'))
+	# 		song_title_map[id3info.title.decode('utf-8').lower()] = file
+	# 	else:
+	# 		name = os.path.split(file)[1].decode('utf-8').split('.')[0]
+	# 		if name.count(' - ')==1:
+	# 			artist, name = name.split(' - ')
+	# 		name = regex.sub('', name).strip()
+	# 		if name:
+	# 			lst.append(name)
+	# 			song_title_map[name.lower()] = file
+	# 		continue
+	tlist = subprocess.Popen('tracker-sparql -q "SELECT ?title ?artist ?url \
+	WHERE { ?song a nmm:MusicPiece . ?song nie:title ?title . ?song nmm:performer ?aName . ?aName nmm:artistName ?artist . \
+	?song nie:url ?url . }"', shell=True, stdout=subprocess.PIPE).communicate()[0].splitlines()[1:]
+	for line in tlist:
+		if not line: continue
+		l = line.decode('utf-8').split(", file://")
+		file = l[-1]
+		# tracker-sparql uses commas in results and doesn't escape them. As there
+		# seems to be no workaround, we assume that all URLs are file:// urls and
+		# no artists contain commas.
+		index_of_last_comma = l[0].rindex(',')
+		artist = l[0][index_of_last_comma+1:]
+		title = l[0][:index_of_last_comma]
+		if title.count(' - ')==1:
+			name_artist, title = title.split(' - ')
+		title = regex.sub('', title).strip()
+		lst.append(title)
+		print (title)
+		song_title_map[title.lower()] = file
+
 
 if not os.path.exists('/home/nemo/.cache/saera/musictitles.grammar'):
 	if not os.path.exists('/home/nemo/.cache/saera'):
