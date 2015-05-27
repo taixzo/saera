@@ -84,15 +84,15 @@ def regen_music():
 			continue
 	print (song_title_map)
 
-if not os.path.exists('/home/nemo/.saera/musictitles.grammar'):
-	if not os.path.exists('/home/nemo/.saera'):
-		os.mkdir('/home/nemo/.saera')
+if not os.path.exists('/home/nemo/.cache/saera/musictitles.grammar'):
+	if not os.path.exists('/home/nemo/.cache/saera'):
+		os.mkdir('/home/nemo/.cache/saera')
 	regen_music()
 	espeak2julius.create_grammar(lst, 'musictitles')
 else:
 	regen_music()
 
-jproc = subprocess.Popen([f+'julius/julius.arm','-module','-gram',f+'julius/saera', '-gram', '/home/nemo/.saera/musictitles','-h',f+'julius/hmmdefs','-hlist',f+'julius/tiedlist','-input','mic','-tailmargin','800','-rejectshort','600'],stdout=subprocess.PIPE)
+jproc = subprocess.Popen([f+'julius/julius.arm','-module','-gram',f+'julius/saera', '-gram', '/home/nemo/.cache/saera/musictitles','-h',f+'julius/hmmdefs','-hlist',f+'julius/tiedlist','-input','mic','-tailmargin','800','-rejectshort','600'],stdout=subprocess.PIPE)
 # jproc = subprocess.Popen([f+'julius/julius.arm','-module','-gram','/tmp/saera/musictitles','-h',f+'julius/hmmdefs','-hlist',f+'julius/tiedlist','-input','mic','-tailmargin','800','-rejectshort','600'],stdout=subprocess.PIPE)
 client = pyjulius.Client('localhost',10500)
 print ('Connecting to pyjulius server')
@@ -251,11 +251,11 @@ def play(song=None):
 			time.sleep(8) # for the media player to finish launching
 		print(song)
 		if song is not None and song in song_title_map:
-			f = song_title_map[song].decode('utf-8')
+			f = song_title_map[song]
 		else:
 			files = subprocess.Popen("find /home/nemo/Music/ -type f -name \*.mp3", shell=True, stdout=subprocess.PIPE).communicate()[0].splitlines()
-			f = random.choice(files).decode('utf-8')
-		print ("file://"+f)
+			f = parse.quote(random.choice(files).decode('utf-8'))
+		print ("Playing file://"+f)
 		result = subprocess.Popen(["gdbus",
 									"call",
 									"-e",
@@ -265,7 +265,7 @@ def play(song=None):
 									"/org/mpris/MediaPlayer2",
 									"-m",
 									"org.mpris.MediaPlayer2.Player.OpenUri",
-									"file://"+parse.quote(f)], stdout=subprocess.PIPE).communicate()
+									"file://"+f], stdout=subprocess.PIPE).communicate()
 		subprocess.Popen(["gdbus",
 								"call",
 								"-e",

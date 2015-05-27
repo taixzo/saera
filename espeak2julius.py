@@ -103,11 +103,12 @@ play      p l ey"""
         voca += tvoca
         gram += tgram
     voca = voca.replace('ih \n','iy \n').replace(' n k ',' ng k ')
-    if not os.path.exists('/home/nemo/.saera'):
-        os.mkdir('/home/nemo/.saera')
-    open('/home/nemo/.saera/'+gramname+'.grammar','w').write(gram)
-    open('/home/nemo/.saera/'+gramname+'.voca','w').write(voca)
-    os.system('./julius/ARM/mkdfa.pl /home/nemo/.saera/'+gramname)
+    if not os.path.exists('/home/nemo/.cache/saera'):
+        os.mkdir('/home/nemo/.cache/saera')
+    open('/home/nemo/.cache/saera/'+gramname+'.grammar','w').write(gram)
+    open('/home/nemo/.cache/saera/'+gramname+'.voca','w').write(voca)
+    os.system(f+'julius/ARM/mkdfa.pl /home/nemo/.cache/saera/'+gramname)
+    print (f+'julius/ARM/mkdfa.pl /home/nemo/.cache/saera/'+gramname)
     return gram, voca
 
 if __name__=="__main__":
