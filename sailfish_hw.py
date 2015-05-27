@@ -118,8 +118,6 @@ def regen_contacts():
 				print (fulls[-1])
 			else:
 				print (firsts[-1])
-	print (rows)
-	espeak2julius.create_grammar(fulls, 'contacts', 'contacts')
 
 if not os.path.exists('/home/nemo/.cache/saera/musictitles.dfa'):
 	if not os.path.exists('/home/nemo/.cache/saera'):
@@ -129,7 +127,13 @@ if not os.path.exists('/home/nemo/.cache/saera/musictitles.dfa'):
 else:
 	regen_music()
 
-regen_contacts()
+if not os.path.exists('/home/nemo/.cache/saera/contacts.dfa'):
+	if not os.path.exists('/home/nemo/.cache/saera'):
+		os.mkdir('/home/nemo/.cache/saera')
+	regen_contacts()
+	espeak2julius.create_grammar(lst, 'contacts', 'contacts')
+else:
+	regen_contacts()
 
 jproc = subprocess.Popen([f+'julius/julius.arm','-module','-gram',f+'julius/saera', '-gram', '/home/nemo/.cache/saera/musictitles','-h',f+'julius/hmmdefs','-hlist',f+'julius/tiedlist','-input','mic','-tailmargin','800','-rejectshort','600'],stdout=subprocess.PIPE)
 # jproc = subprocess.Popen([f+'julius/julius.arm','-module','-gram','/tmp/saera/musictitles','-h',f+'julius/hmmdefs','-hlist',f+'julius/tiedlist','-input','mic','-tailmargin','800','-rejectshort','600'],stdout=subprocess.PIPE)
