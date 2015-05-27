@@ -18,6 +18,7 @@ try:
 	import urllib.parse as parse
 except:
 	import urllib as parse
+import guessing
 
 import ast # for safely parsing timed stuff
 
@@ -102,22 +103,38 @@ def regen_music():
 		print (title)
 		song_title_map[title.lower()] = file
 
+contacts = {}
+firstnames = {}
+
 def regen_contacts():
 	firsts = []
 	fulls = []
 	ccon = sqlite3.connect('/home/nemo/.local/share/system/Contacts/qtcontacts-sqlite/contacts.db')
 	cur = ccon.cursor()
-	cur.execute('SELECT lowerFirstName, lowerLastName from Contacts')
+	cur.execute('SELECT lowerFirstName, lowerLastName, hasPhoneNumber, contactId from Contacts')
 	rows = cur.fetchall()
-	for row in rows:
-		first, last = row
+	for first, last, hasPhoneNumber, contactId in rows:
 		if first is not None and first.isalpha():
 			firsts.append(first)
+			guessing.variables['contact'].keywords.append(first)
 			if last is not None and last.isalpha():
 				fulls.append(first+' '+last)
+				contacts[first+' '+last] = {'hasPhoneNumber':hasPhoneNumber, 'contactId':contactId}
+				firstnames[first] = first+' '+last
+				guessing.variables['contact'].keywords.append(last)
 				print (fulls[-1])
 			else:
+				contacts[first] = {'hasPhoneNumber':hasPhoneNumber, 'contactId':contactId}
+				firstnames[first] = first
 				print (firsts[-1])
+	cur.execute('SELECT Contacts.contactId, PhoneNumbers.phoneNumber from Contacts, PhoneNumbers where Contacts.contactId = PhoneNumbers.contactId')
+	rows = cur.fetchall()
+	for contactId, phoneNumber in rows:
+		if contactId in [contacts[i]['contactId'] for i in contacts]:
+			for i in contacts:
+				if contacts[i]['contactId'] == contactId:
+					contacts[i]['phoneNumber'] = phoneNumber
+					break
 
 if not os.path.exists('/home/nemo/.cache/saera/musictitles.dfa'):
 	if not os.path.exists('/home/nemo/.cache/saera'):
@@ -135,7 +152,7 @@ if not os.path.exists('/home/nemo/.cache/saera/contacts.dfa'):
 else:
 	regen_contacts()
 
-jproc = subprocess.Popen([f+'julius/julius.arm','-module','-gram',f+'julius/saera', '-gram', '/home/nemo/.cache/saera/musictitles','-h',f+'julius/hmmdefs','-hlist',f+'julius/tiedlist','-input','mic','-tailmargin','800','-rejectshort','600'],stdout=subprocess.PIPE)
+jproc = subprocess.Popen([f+'julius/julius.arm','-module','-gram',f+'julius/saera', '-gram', '/home/nemo/.cache/saera/musictitles', '-gram', '/home/nemo/.cache/saera/contacts','-h',f+'julius/hmmdefs','-hlist',f+'julius/tiedlist','-input','mic','-tailmargin','800','-rejectshort','600'],stdout=subprocess.PIPE)
 # jproc = subprocess.Popen([f+'julius/julius.arm','-module','-gram','/tmp/saera/musictitles','-h',f+'julius/hmmdefs','-hlist',f+'julius/tiedlist','-input','mic','-tailmargin','800','-rejectshort','600'],stdout=subprocess.PIPE)
 client = pyjulius.Client('localhost',10500)
 print ('Connecting to pyjulius server')
@@ -332,6 +349,29 @@ def call_phone(num):
 								"com.jolla.voicecall.ui.dial",
 								"'"+num+"'"], stdout=subprocess.PIPE).communicate()
 	return "true" in result[0].decode("UTF-8")
+
+def call_contact(contact):
+	if contact.lower() in contacts:
+		c = contacts[contact.lower()]
+	elif contact.lower() in firstnames:
+		c = contacts[firstnames[contact.lower()]]
+	else:
+		raise NameError
+	if c['hasPhoneNumber']:
+		print ("Calling "+c['phoneNumber'])
+		result = subprocess.Popen(["gdbus",
+									"call",
+									"-e",
+									"-d",
+									"com.jolla.voicecall.ui",
+									"-o",
+									"/",
+									"-m",
+									"com.jolla.voicecall.ui.dial",
+									"'"+c['phoneNumber']+"'"], stdout=subprocess.PIPE).communicate()
+		return "true" in result[0].decode("UTF-8")
+	else:
+		raise AttributeError
 
 def get_unread_email():
 	mailconn.execute("VACUUM") # to move messages from the WAL into the main database

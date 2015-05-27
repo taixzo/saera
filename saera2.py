@@ -345,6 +345,14 @@ class Saera:
 							'sixteen':'16','seventeen':'17','eighteen':'18','nineteen':'19','hundred':'00'}[i] for i in result['outcome']['entities']['digits'].split()])
 			platform.call_phone(num)
 			return "Calling "+num
+		elif 'contact' in result['outcome']['entities']:
+			try:
+				platform.call_contact(result['outcome']['entities']['contact'])
+			except NameError:
+				return "I don't know who "+result['outcome']['entities']['contact']+" is."
+			except AttributeError:
+				return result['outcome']['entities']['contact']+" doesn't have a phone number."
+			return 'Calling '+result['outcome']['entities']['contact']+"."
 		else:
 			return "What number should I call?"
 	def yesno(self,result):
