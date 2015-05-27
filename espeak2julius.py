@@ -20,7 +20,7 @@ triphones = open (f+'julius/tiedlist').read()
 d = collections.OrderedDict()
 
 # substitutions = {'ix':'iy', 'r': 'er', 'er':'r', 'n':'ng','ey':'ay','aa':'ax','ax':'ae','ih':'ax','eh':'ix','z':'s','jh':'ch','aw':'ow'}
-substitutions = {'ix':'iy', 'r': 'er', 'er':'r', 'n':'ng','ey':'ay','aa':'ax','ax':'ae','ih':'ix','eh':'ix','z':'s','jh':'ch','aw':'ow','ey':'ix', 'uw':'ow'}
+substitutions = {'ix':'iy', 'r': 'er', 'er':'r', 'n':'ng','ey':'ay','aa':'ax','ax':'ae','ih':'ix','eh':'ix','z':'s','jh':'ch','aw':'ow','ey':'ix', 'uw':'ow', 'dh':'th'}
 
 for i in syllconv:
     splitline = re.split("  +",i)
@@ -45,8 +45,9 @@ def e2j(string):
             return "ERROR: Could not translate "+original_result+" - remaining text: "+result
     return out
 
-def create_grammar(stringlist, gramname):
-    voca = """% NS_B
+def create_grammar(stringlist, gramname, gramtype):
+    if gramtype=='songtitles':
+        voca = """% NS_B
 <s>        sil
 
 % NS_E
@@ -54,12 +55,26 @@ def create_grammar(stringlist, gramname):
 
 % PLAY
 play      p l ey"""
-    gram = "S : NS_B PLAY TITLE NS_E\n\n"
+        gram = "S : NS_B PLAY TITLE NS_E\n\n"
+    elif gramtype=='contacts':
+        voca = """% NS_B
+<s>        sil
+
+% NS_E
+</s>        sil
+
+% CALL
+call       k ao l
+
+% TEXT
+text       t eh k s t
+"""
+        gram = "S : NS_B CALL NAME NS_E\nS : NS_B CALL FIRSTNAME NS_E\nS : NS_B TEXT NAME NS_E\nS : NS_B TEXT FIRSTNAME NS_E\n\n"
     for i, string in enumerate(stringlist):
-        words = string.replace('(','').replace(')','').replace('[','').replace(']','').replace('/',' ').replace('-',' ').split()
+        words = string.replace('(','').replace(')','').replace('[','').replace(']','').replace('/',' ').replace('-',' ').strip().split()
         c = [e2j(word) for word in words]
         tvoca = ""
-        tgram = "\nTITLE:"
+        tgram = {'songtitles':"\nTITLE:",'contacts':'\nFIRSTNAME:'}[gramtype]
         for index, pronunciation in enumerate(c):
             tobreak = False
             tpro = pronunciation.split(' ')
@@ -100,6 +115,8 @@ play      p l ey"""
             if tobreak: break
             tvoca += "\n\n% W_"+str(i)+"_"+str(index)+"\n"+words[index].lower().ljust(10)+' '+pronunciation
             tgram += " W_"+str(i)+"_"+str(index)
+            if index==0 and len(c)>1:
+                tgram += "\nNAME: W_"+str(i)+"_"+str(index)
         voca += tvoca
         gram += tgram
     voca = voca.replace('ih \n','iy \n').replace(' n k ',' ng k ')

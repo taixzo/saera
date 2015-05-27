@@ -119,12 +119,13 @@ def regen_contacts():
 			else:
 				print (firsts[-1])
 	print (rows)
+	espeak2julius.create_grammar(fulls, 'contacts', 'contacts')
 
 if not os.path.exists('/home/nemo/.cache/saera/musictitles.grammar'):
 	if not os.path.exists('/home/nemo/.cache/saera'):
 		os.mkdir('/home/nemo/.cache/saera')
 	regen_music()
-	espeak2julius.create_grammar(lst, 'musictitles')
+	espeak2julius.create_grammar(lst, 'musictitles', 'songtitles')
 else:
 	regen_music()
 
