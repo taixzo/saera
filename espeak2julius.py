@@ -19,6 +19,9 @@ triphones = open (f+'julius/tiedlist').read()
 
 d = collections.OrderedDict()
 
+jd = open (f+'julius/dict').read().splitlines()
+jdict = dict([(i.split('[')[0].strip(), i.split(']')[-1].replace('sp','').strip()) for i in jd])
+
 # substitutions = {'ix':'iy', 'r': 'er', 'er':'r', 'n':'ng','ey':'ay','aa':'ax','ax':'ae','ih':'ax','eh':'ix','z':'s','jh':'ch','aw':'ow'}
 substitutions = {'ix':'iy', 'r': 'er', 'er':'r', 'n':'ng','ey':'ay','aa':'ax','ax':'ae','ih':'ix','eh':'ix','z':'s','jh':'ch','aw':'ow','ey':'ix', 'uw':'ow', 'dh':'th'}
 
@@ -72,7 +75,14 @@ text       t eh k s t
         gram = "S : NS_B CALL NAME NS_E\nS : NS_B CALL FIRSTNAME NS_E\nS : NS_B TEXT NAME NS_E\nS : NS_B TEXT FIRSTNAME NS_E\n\n"
     for i, string in enumerate(stringlist):
         words = string.replace('(','').replace(')','').replace('[','').replace(']','').replace('/',' ').replace('-',' ').strip().split()
-        c = [e2j(word) for word in words]
+        c = []
+        for word in words:
+            if word.upper() in jdict:
+                print ("Found "+word.upper()+" in dict")
+                c.append(jdict[word.upper()])
+            else:
+                c.append(e2j(word))
+        # c = [e2j(word) for word in words]
         tvoca = ""
         tgram = {'songtitles':"\nTITLE:",'contacts':'\nFIRSTNAME:'}[gramtype]
         for index, pronunciation in enumerate(c):
