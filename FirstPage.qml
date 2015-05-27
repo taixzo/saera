@@ -37,6 +37,7 @@ import io.thp.pyotherside 1.0
 Page {
     id: page
 
+
     function speak() {
       mainWindow.activate()
       playSound.play()
@@ -78,10 +79,17 @@ Page {
       }
     }
 
+    function load_msg(msg) {
+        loadingText.text = msg
+    }
+
     Component.onCompleted: {
       mainWindow.selectedCountChanged.connect(page.speak)
       mainWindow.textSelectedCountChanged.connect(inputfield.forceActiveFocus)
       mainWindow.onApplicationActiveChanged.connect(page.activate_morning)
+      messages.visible = false
+      inputfield.visible = false
+      btn.visible = false
     }
 
     Component.onDestruction: {
@@ -98,10 +106,16 @@ Page {
              importModule('saera2', function() {
                 call('saera2.initialize', [], function(result){
                   btn.icon.source = "image://theme/icon-m-mic"
+                  messages.visible = true
+                  inputfield.visible = true
+                  btn.visible = true
+                  loadingIndicator.running = false
+                  loadingText.visible = false
                   page.activate_morning()
                 });
              });
              setHandler('start',page.speak)
+             setHandler('load_msg', page.load_msg)
          }
          onError: console.log('Python error: ' + traceback)
     }
@@ -198,5 +212,21 @@ Page {
       running: false
       color: Theme.primaryColor
       size: BusyIndicatorSize.Large
+    }
+
+    BusyIndicator {
+      id: loadingIndicator
+      anchors.centerIn: page
+      running: true
+      color: Theme.primaryColor
+      size: BusyIndicatorSize.Large
+
+    }
+    Text {
+      id: loadingText
+      anchors.top: loadingIndicator.bottom
+      anchors.horizontalCenter: loadingIndicator.horizontalCenter
+      text: "Loading"
+      color: Theme.highlightColor
     }
 }

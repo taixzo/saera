@@ -136,6 +136,7 @@ def regen_contacts():
 					contacts[i]['phoneNumber'] = phoneNumber
 					break
 
+pyotherside.send('load_msg','Loading music titles...')
 if not os.path.exists('/home/nemo/.cache/saera/musictitles.dfa'):
 	if not os.path.exists('/home/nemo/.cache/saera'):
 		os.mkdir('/home/nemo/.cache/saera')
@@ -144,6 +145,7 @@ if not os.path.exists('/home/nemo/.cache/saera/musictitles.dfa'):
 else:
 	regen_music()
 
+pyotherside.send('load_msg','Loading contacts...')
 if not os.path.exists('/home/nemo/.cache/saera/contacts.dfa'):
 	if not os.path.exists('/home/nemo/.cache/saera'):
 		os.mkdir('/home/nemo/.cache/saera')
@@ -152,6 +154,7 @@ if not os.path.exists('/home/nemo/.cache/saera/contacts.dfa'):
 else:
 	regen_contacts()
 
+pyotherside.send('load_msg','Initializing speech recognition...')
 jproc = subprocess.Popen([f+'julius/julius.arm','-module','-gram',f+'julius/saera', '-gram', '/home/nemo/.cache/saera/musictitles', '-gram', '/home/nemo/.cache/saera/contacts','-h',f+'julius/hmmdefs','-hlist',f+'julius/tiedlist','-input','mic','-tailmargin','800','-rejectshort','600'],stdout=subprocess.PIPE)
 # jproc = subprocess.Popen([f+'julius/julius.arm','-module','-gram','/tmp/saera/musictitles','-h',f+'julius/hmmdefs','-hlist',f+'julius/tiedlist','-input','mic','-tailmargin','800','-rejectshort','600'],stdout=subprocess.PIPE)
 client = pyjulius.Client('localhost',10500)
