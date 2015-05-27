@@ -102,6 +102,23 @@ def regen_music():
 		print (title)
 		song_title_map[title.lower()] = file
 
+def regen_contacts():
+	firsts = []
+	fulls = []
+	ccon = sqlite3.connect('/home/nemo/.local/share/system/Contacts/qtcontacts-sqlite/contacts.db')
+	cur = ccon.cursor()
+	cur.execute('SELECT lowerFirstName, lowerLastName from Contacts')
+	rows = cur.fetchall()
+	for row in rows:
+		first, last = row
+		if first is not None and first.isalpha():
+			firsts.append(first)
+			if last is not None and last.isalpha():
+				fulls.append(first+' '+last)
+				print (fulls[-1])
+			else:
+				print (firsts[-1])
+	print (rows)
 
 if not os.path.exists('/home/nemo/.cache/saera/musictitles.grammar'):
 	if not os.path.exists('/home/nemo/.cache/saera'):
@@ -110,6 +127,8 @@ if not os.path.exists('/home/nemo/.cache/saera/musictitles.grammar'):
 	espeak2julius.create_grammar(lst, 'musictitles')
 else:
 	regen_music()
+
+regen_contacts()
 
 jproc = subprocess.Popen([f+'julius/julius.arm','-module','-gram',f+'julius/saera', '-gram', '/home/nemo/.cache/saera/musictitles','-h',f+'julius/hmmdefs','-hlist',f+'julius/tiedlist','-input','mic','-tailmargin','800','-rejectshort','600'],stdout=subprocess.PIPE)
 # jproc = subprocess.Popen([f+'julius/julius.arm','-module','-gram','/tmp/saera/musictitles','-h',f+'julius/hmmdefs','-hlist',f+'julius/tiedlist','-input','mic','-tailmargin','800','-rejectshort','600'],stdout=subprocess.PIPE)
