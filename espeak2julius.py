@@ -126,7 +126,10 @@ text       t eh k s t
             tvoca += "\n\n% W_"+str(i)+"_"+str(index)+"\n"+words[index].lower().ljust(10)+' '+pronunciation
             tgram += " W_"+str(i)+"_"+str(index)
             if index==0 and len(c)>1:
-                tgram += "\nNAME: W_"+str(i)+"_"+str(index)
+                voca += tvoca
+                gram += tgram
+                tvoca = ""
+                tgram = "\nNAME: W_"+str(i)+"_"+str(index)
         voca += tvoca
         gram += tgram
     voca = voca.replace('ih \n','iy \n').replace(' n k ',' ng k ')
