@@ -131,7 +131,7 @@ if not os.path.exists('/home/nemo/.cache/saera/contacts.dfa'):
 	if not os.path.exists('/home/nemo/.cache/saera'):
 		os.mkdir('/home/nemo/.cache/saera')
 	regen_contacts()
-	espeak2julius.create_grammar(lst, 'contacts', 'contacts')
+	espeak2julius.create_grammar(list(contacts), 'contacts', 'contacts')
 else:
 	regen_contacts()
 
