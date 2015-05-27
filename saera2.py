@@ -749,6 +749,8 @@ def resume_daemons():
 def activate():
 	if not platform.app:
 		return ""
+	if datetime.now().hour<5:
+		return ""
 	platform.cur.execute("SELECT * FROM Variables WHERE VarName='last_activated'")
 	row = platform.cur.fetchone()
 	platform.cur.execute('INSERT OR REPLACE INTO Variables (ID, VarName, Value) VALUES ((SELECT ID FROM Variables WHERE VarName = "last_activated"), "last_activated", "'+datetime.now().isoformat()+'");')
