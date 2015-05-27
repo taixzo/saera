@@ -31,6 +31,7 @@ OI      oy
 aU      aw
 oU      ow
 tt      t
+sz      s
 b       b
 d       d
 f       f
