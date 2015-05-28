@@ -23,7 +23,7 @@ jd = open (f+'julius/dict').read().splitlines()
 jdict = dict([(i.split('[')[0].strip(), i.split(']')[-1].replace('sp','').strip()) for i in jd])
 
 # substitutions = {'ix':'iy', 'r': 'er', 'er':'r', 'n':'ng','ey':'ay','aa':'ax','ax':'ae','ih':'ax','eh':'ix','z':'s','jh':'ch','aw':'ow'}
-substitutions = {'ix':'iy', 'r': 'er', 'er':'r', 'n':'ng','ey':'ay','aa':'ax','ax':'ae','ih':'ix','eh':'ix','z':'s','jh':'ch','aw':'ow','ey':'ix', 'uw':'ow', 'dh':'th'}
+substitutions = {'ix':'iy', 'iy':'ix', 'r': 'er', 'er':'r', 'n':'ng','ey':'ay','ay':'ey','aa':'ax','ax':'ae', 'ae':'ax','ih':'ix','eh':'ix', 'ah':'ax','z':'s','jh':'ch','aw':'ow','ey':'ix', 'uw':'ow', 'dh':'th'}
 
 for i in syllconv:
     splitline = re.split("  +",i)
@@ -92,7 +92,6 @@ text       t eh k s t
                 for k in range(len(tpro)-2):
                     if words[index].lower()=='sorcery': print (tpro)
                     if not "\n"+tpro[k]+'-'+tpro[k+1]+'+'+tpro[k+2] in triphones:
-                        if words[index].lower()=='sorcery': print (tpro[k]+'-'+tpro[k+1]+'+'+tpro[k+2]+" not in triphones")
                         if tpro[k] in substitutions and "\n"+substitutions[tpro[k]]+'-'+tpro[k+1]+'+'+tpro[k+2] in triphones:
                             log (words[index]+": substituted "+substitutions[tpro[k]]+" into "+tpro[k]+'-'+tpro[k+1]+'+'+tpro[k+2], 2)
                             tpro[k] = substitutions[tpro[k]]
