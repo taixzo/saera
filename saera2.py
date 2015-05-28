@@ -249,6 +249,7 @@ class Saera:
 
 		# if 'weather' in result['outcome']['entities']:
 			# if result['outcome']['entities']['weather']['value'] == "rain":
+		loc_str = "in "+loc[1] if loc[1] != "here" else "here"
 		if "rain" in result['text']:
 			if is_time:
 				if pop>60:
@@ -273,67 +274,67 @@ class Saera:
 			if is_time:
 				if "sun" in weather or "clear" in weather:
 					if is_day(float(loc[4]),time):
-						return "Yes, it will be sunny"+(" in "+loc[1]+" at "+hour+"." if not here else " at "+hour+".")
+						return "Yes, it will be sunny"+(" "+loc_str+" at "+hour+"." if not here else " at "+hour+".")
 					else:
 						now = datetime.now()
-						return "No, the sun will be down at "+str((now.hour-1)%12+1 if True else now.hour)+":"+str(now.minute).zfill(2)+(" in "+loc[1]+"." if not here else ".")
+						return "No, the sun will be down at "+str((now.hour-1)%12+1 if True else now.hour)+":"+str(now.minute).zfill(2)+(" "+loc_str+"." if not here else ".")
 				elif "scattered clouds" in weather:
 					if is_day(float(loc[4]),time):
 						return "Yes, with scattered clouds."
 					else:
-						return "There will be a few clouds, and it will be night in "+loc[1]+" at "+hour+"."
+						return "There will be a few clouds, and it will be night "+loc_str+" at "+hour+"."
 				else:
-					return "No, the weather in "+loc[1]+" will be "+weather+" at "+hour+"."
+					return "No, the weather "+loc_str+" will be "+weather+" at "+hour+"."
 			else:
 				if "sun" in weather or "clear" in weather:
 					if is_day(float(loc[4])):
-						return "Yes, it's sunny in "+loc[1]+"!"
+						return "Yes, it's sunny "+loc_str+"!"
 					else:
 						now = datetime.now()
-						return "It would be sunny if the sun were still up. It is "+str((now.hour-1)%12+1 if True else now.hour)+":"+str(now.minute).zfill(2)+(" in "+loc[1]+"." if not here else ".")
+						return "It would be sunny if the sun were still up. It is "+str((now.hour-1)%12+1 if True else now.hour)+":"+str(now.minute).zfill(2)+(" "+loc_str+"." if not here else ".")
 				elif "scattered clouds" in weather:
 					if is_day(float(loc[4])):
 						return "Yes, with scattered clouds."
 					else:
-						return "There's a few clouds, and it's night in "+loc[1]+"."
+						return "There's a few clouds, and it's night "+loc_str+"."
 				else:
-					return "No, the weather in "+loc[1]+" is "+weather+"."
+					return "No, the weather "+loc_str+" is "+weather+"."
 		if 'temperature' in result['outcome']['entities']:
 			if result['outcome']['entities']['temperature']['value'] == "cold":
 				if is_time:
 					if abs(temp_f-feelslike_f)<5:
 						if temp_f<40:
-							return "Yes, it will be "+str(int(round(temp_f)))+u("° in ")+loc[1]+"."
+							return "Yes, it will be "+str(int(round(temp_f)))+u("° ")+loc_str+"."
 						elif temp_f<60:
-							return "It will be sort of cold; the temperature in "+loc[1]+" is supposed to be "+str(int(round(temp_f)))+u("°.")
+							return "It will be sort of cold; the temperature "+loc_str+" is supposed to be "+str(int(round(temp_f)))+u("°.")
 						else:
-							return "No, it will be "+str(int(round(temp_f)))+u("° in ")+loc[1]+"."
+							return "No, it will be "+str(int(round(temp_f)))+u("° ")+loc_str+"."
 					else:
 						if feelslike_f<40:
-							return "Yes, it will be "+str(int(round(temp_f)))+u("° in ")+loc[1]+" but with the wind chill it will feel like "+str(int(round(feelslike_f)))+u("°.")
+							return "Yes, it will be "+str(int(round(temp_f)))+u("° ")+loc_str+" but with the wind chill it will feel like "+str(int(round(feelslike_f)))+u("°.")
 						elif feelslike_f<60:
-							return "It will be sort of cold; the temperature in "+loc[1]+" will be "+str(int(round(temp_f)))+u("° but it will feel like ")+str(int(round(feelslike_f)))+u("°.")
+							return "It will be sort of cold; the temperature "+loc_str+" will be "+str(int(round(temp_f)))+u("° but it will feel like ")+str(int(round(feelslike_f)))+u("°.")
 						else:
-							return "No, it will be "+str(int(round(temp_f)))+u("° in ")+loc[1]+" but it will feel like "+str(int(round(feelslike_f)))+u("°.")
+							return "No, it will be "+str(int(round(temp_f)))+u("° ")+loc_str+" but it will feel like "+str(int(round(feelslike_f)))+u("°.")
 				else:
 					if abs(temp_f-feelslike_f)<5:
 						if temp_f<40:
-							return "Yes, it's "+str(int(round(temp_f)))+u("° in ")+loc[1]+"."
+							return "Yes, it's "+str(int(round(temp_f)))+u("° ")+loc_str+"."
 						elif temp_f<60:
-							return "It's sort of cold; the temperature in "+loc[1]+" is "+str(int(round(temp_f)))+u("°.")
+							return "It's sort of cold; the temperature "+loc_str+" is "+str(int(round(temp_f)))+u("°.")
 						else:
-							return "No, it's "+str(int(round(temp_f)))+u("° in ")+loc[1]+"."
+							return "No, it's "+str(int(round(temp_f)))+u("° ")+loc_str+"."
 					else:
 						if feelslike_f<40:
-							return "Yes, it's "+str(int(round(temp_f)))+u("° in ")+loc[1]+" but it feels like "+str(int(round(feelslike_f)))+u("°.")
+							return "Yes, it's "+str(int(round(temp_f)))+u("° ")+loc_str+" but it feels like "+str(int(round(feelslike_f)))+u("°.")
 						elif feelslike_f<60:
-							return "It's sort of cold; the temperature in "+loc[1]+" is "+str(int(round(temp_f)))+u("° but it feels like ")+str(int(round(feelslike_f)))+u("°.")
+							return "It's sort of cold; the temperature "+loc_str+" is "+str(int(round(temp_f)))+u("° but it feels like ")+str(int(round(feelslike_f)))+u("°.")
 						else:
-							return "No, it's "+str(int(round(temp_f)))+u("° in ")+loc[1]+" but it feels like "+str(int(round(feelslike_f)))+u("°.")
+							return "No, it's "+str(int(round(temp_f)))+u("° ")+loc_str+" but it feels like "+str(int(round(feelslike_f)))+u("°.")
 		if is_time:
-			return "The weather in "+loc[1]+" will be "+weather+" and "+str(int(round(temp_f)))+u("°. at ")+hour+"."
+			return "The weather "+loc_str+" will be "+weather+" and "+str(int(round(temp_f)))+u("°. at ")+hour+"."
 		else:
-			return "The weather in "+loc[1]+" is "+weather+", and "+str(int(round(temp_f)))+u("°.")
+			return "The weather "+loc_str+" is "+weather+", and "+str(int(round(temp_f)))+u("°.")
 	def call_phone(self, result):
 		if 'phone_number' in result['outcome']['entities']:
 			num = result['outcome']['entities']['phone_number']['value']
@@ -593,7 +594,7 @@ class Saera:
 		bb = (float(loc[3])-.25,float(loc[4])-.25,float(loc[3])+.25,float(loc[4])+.25)
 		trafficdata = json.loads(urllib2.urlopen("http://dev.virtualearth.net/REST/v1/Traffic/Incidents/"+str(bb[0])+","+str(bb[1])+","+str(bb[2])+","+str(bb[3])+"?key=AltIdRJ4KAV9d1U-rE3T0E-OFN66cwd3D1USLS28oVl2lbIRbFcqMZHJZd5DwTTP").read().decode("utf-8"))
 		print (trafficdata['resourceSets'][0])
-		retmsg = "There "+(('are '+str(trafficdata['resourceSets'][0]['estimatedTotal'])+' ').replace(' 0 ',' no ')+'traffic incidents ').replace('are 1 traffic incidents ','is 1 traffic incident ')+"in the "+loc[1]+" area."
+		retmsg = "There "+(('are '+str(trafficdata['resourceSets'][0]['estimatedTotal'])+' ').replace(' 0 ',' no ')+'traffic incidents ').replace('are 1 traffic incidents ','is 1 traffic incident ')+("in the "+loc[1]+" area." if loc[1] != "here" else "around here.")
 		if trafficdata['resourceSets'][0]['estimatedTotal']<10:
 			lists = []
 			for i in trafficdata['resourceSets'][0]['resources']:
@@ -753,6 +754,12 @@ def resume_daemons():
 	if not platform.app:
 		return ""
 	return platform.resume_daemons()
+
+def set_position(lat, lon):
+	platform.cur.execute('INSERT INTO Locations (LocName, Zip, Latitude, Longitude, Timezone) VALUES ("here", "", '+str(lat)+', '+str(lon)+', 0)')
+	platform.cur.execute('INSERT OR REPLACE INTO Variables (ID, VarName, Value) VALUES ((SELECT ID FROM Variables WHERE VarName = "here"), "here", "'+str(platform.cur.lastrowid)+'");')
+	platform.conn.commit()
+	print ("Lat = "+str(lat)+", lon = "+str(lon))
 
 def activate():
 	if not platform.app:
