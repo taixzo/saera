@@ -134,11 +134,16 @@ Page {
         // anchors.bottomMargin: Theme.paddingLarge
         anchors.bottomMargin: 100
 
+        highlightFollowsCurrentItem: true
+
         width: parent.width
 //        height: parent.height
 
         model: ListModel {
             id: listModel
+            onCountChanged: {
+                messages.currentIndex = messages.count - 1
+            }
             ListElement { value: "How can I help you?"; who: "saera" }
         }
         delegate: Item {
@@ -160,9 +165,6 @@ Page {
             }
             height: t.lineCount*(t.font.pixelSize-1) + Theme.itemSizeSmall
 
-            Component.onCompleted: {
-                messages.scrollToBottom()
-            }
         }
     }
 
