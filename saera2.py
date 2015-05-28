@@ -575,6 +575,33 @@ class Saera:
 				tz = json.loads(urllib2.urlopen('http://api.geonames.org/timezoneJSON?lat='+locdic['geonames'][0]["lat"]+'&lng='+locdic['geonames'][0]["lng"]+'&username=taixzo').read().decode("utf-8"))['rawOffset']
 				platform.cur.execute('INSERT INTO Locations (LocName, Zip, Latitude, Longitude, Timezone) VALUES ("'+loc[1]+'", "", '+loc[3]+', '+loc[4]+', '+str(tz)+')')
 				platform.conn.commit()
+			if 'on the way' in result['text']:
+				platform.cur.execute("SELECT * FROM Variables WHERE VarName='here'")
+				here = platform.cur.fetchone()
+				if here:
+					platform.cur.execute("SELECT * FROM Locations WHERE Id="+str(here[2]))
+					here = platform.cur.fetchone()
+				else:
+					platform.cur.execute("SELECT * FROM Variables WHERE VarName='home'")
+					here = platform.cur.fetchone()
+					if here:
+						platform.cur.execute("SELECT * FROM Locations WHERE Id="+str(here[2]))
+						here = platform.cur.fetchone()
+					else:
+						return "Where do you live?"
+				routeinfo = json.loads(urllib2.urlopen("http://dev.virtualearth.net/REST/V1/Routes/Driving?wp.0="+str(here[4])+","+str(here[3])+"%2Cwa&wp.1="+loc[1].replace(" ","%20")+"&avoid=minimizeTolls&key=AltIdRJ4KAV9d1U-rE3T0E-OFN66cwd3D1USLS28oVl2lbIRbFcqMZHJZd5DwTTP").read().decode("utf-8"))
+				travelDuration = routeinfo['resourceSets'][0]['resources'][0]['travelDuration']
+				travelDurationTraffic = routeinfo['resourceSets'][0]['resources'][0]['travelDurationTraffic']
+				trafficCongestion = routeinfo['resourceSets'][0]['resources'][0]['trafficCongestion']
+				if float(travelDuration)/travelDurationTraffic>0.9:
+					return "There isn't much traffic between here and "+loc[1]+"."
+				elif float(travelDuration)/travelDurationTraffic>0.7:
+					return "There's some traffic between here and "+loc[1]+"; expect to be delayed about "+str(int((travelDurationTraffic-travelDuration)/60))+" minutes."
+					return "There isn't much traffic between here and "+loc[1]+"."
+				elif float(travelDuration)/travelDurationTraffic>0.5:
+					return "There's quite a bit of traffic between here and "+loc[1]+"; expect to be delayed about "+str(int((travelDurationTraffic-travelDuration)/60))+" minutes."
+				else:
+					return "There is heavy congestion. It will take about "+(str(travelDurationTraffic/3600)+" hours" if travelDurationTraffic>5400 else str(travelDurationTraffic/60) + " minutes") + " to reach "+loc[1]+"."
 		else:
 			platform.cur.execute("SELECT * FROM Variables WHERE VarName='here'")
 			loc = platform.cur.fetchone()
