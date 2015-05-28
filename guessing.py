@@ -294,7 +294,7 @@ class vLocation(Variable):
 	def __init__(self):
 		Variable.__init__(self)
 		self.keywords = []
-		self.prewords = ['in','at','from','about']
+		self.prewords = ['in','at','from','about', 'to']
 		self.postwords = ['at','after','when','if','in']
 
 #################################
