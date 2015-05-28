@@ -36,7 +36,7 @@ def parse(tokens):
 				hour = int(token)
 				minute = minute or 0
 			else:
-				if minute is None and addedtimeadjustment == 0:
+				if minute in (None, 0) and addedtimeadjustment == 0:
 					minute = int(token)
 		elif token in ['a','an']:
 			temptime = 1
