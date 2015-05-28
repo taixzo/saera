@@ -32,6 +32,7 @@ import QtQuick 2.0
 import QtMultimedia 5.0
 import Sailfish.Silica 1.0
 import io.thp.pyotherside 1.0
+import QtPositioning 5.2
 
 
 Page {
@@ -111,6 +112,7 @@ Page {
                   btn.visible = true
                   loadingIndicator.running = false
                   loadingText.visible = false
+                  call('saera2.set_position', [src.position.coordinate.latitude, src.position.coordinate.longitude], function (result){})
                   page.activate_morning()
                 });
              });
@@ -228,5 +230,16 @@ Page {
       anchors.horizontalCenter: loadingIndicator.horizontalCenter
       text: "Loading"
       color: Theme.highlightColor
+    }
+
+    PositionSource {
+        id: src
+        updateInterval: 60000
+        active: true
+
+        onPositionChanged: {
+            var coord = src.position.coordinate;
+            console.log("Coordinate:", coord.longitude, coord.latitude);
+        }
     }
 }
