@@ -113,6 +113,7 @@ Page {
                   loadingIndicator.running = false
                   loadingText.visible = false
                   call('saera2.set_position', [src.position.coordinate.latitude, src.position.coordinate.longitude], function (result){})
+                  src.canCallPython = true
                   page.activate_morning()
                 });
              });
@@ -236,10 +237,13 @@ Page {
         id: src
         updateInterval: 60000
         active: true
+        property bool canCallPython: false
 
         onPositionChanged: {
             var coord = src.position.coordinate;
-            py.call('saera2.set_position', [coord.latitude, coord.longitude], function (result){})
+            if (canCallPython) {
+                py.call('saera2.set_position', [coord.latitude, coord.longitude], function (result){})
+            }
             console.log("Coordinate:", coord.longitude, coord.latitude);
         }
     }
