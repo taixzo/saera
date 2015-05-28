@@ -12,7 +12,7 @@ call        k ao l
 dial        d ay ax l
 
 % NAME
-steve	   s t iy v 
+steve	   s t iy v
 young      y ah ng
 bob        b aa b
 john       jh aa n
@@ -258,6 +258,9 @@ testing   t eh s t ix ng
 
 % TIME
 time      t ay m
+
+% TRAFFIC
+traffic   t r ae f ix k
 
 % WEATHER_DESC
 cold      k ow l d
