@@ -40,6 +40,7 @@ if not os.path.exists(memory_path):
 	cur.execute('CREATE TABLE Variables (Id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, VarName TEXT NOT NULL, Value TEXT NOT NULL, UpdateTime TIMESTAMP DEFAULT CURRENT_TIMESTAMP)')
 	cur.execute('CREATE TABLE Locations (Id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, LocName TEXT NOT NULL COLLATE NOCASE, Zip TEXT, Latitude REAL, Longitude REAL, Timezone REAL, UpdateTime TIMESTAMP DEFAULT CURRENT_TIMESTAMP)')
 	cur.execute('CREATE TABLE People (Id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, Name TEXT NOT NULL COLLATE NOCASE, Description TEXT, Born DATE, Died DATE, Gender TEXT, Profession TEXT)')
+	cur.execute('CREATE TABLE LocationLogs (Id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, Latitude REAL, Longitude REAL, UpdateTime TIMESTAMP DEFAULT CURRENT_TIMESTAMP)')
 
 	cur.execute('INSERT INTO Locations (LocName, Zip, Latitude, Longitude, Timezone) VALUES ("Tokyo", "", 35.6833, 139.6833, 9)')
 	cur.execute('INSERT INTO Locations (LocName, Zip, Latitude, Longitude, Timezone) VALUES ("Shanghai", "", 31.2, 121.5, 8)')
@@ -103,7 +104,7 @@ def run_text(widget=None,event=None,data=None):
 	if isinstance(res,basestring):
 		reslab = Label("<b>"+res+"</b>")
 		reslab.set_use_markup(True)
-		reslab.set_alignment(xalign=0.05, yalign=0.5) 
+		reslab.set_alignment(xalign=0.05, yalign=0.5)
 		app.vbox.pack_start(reslab,False,True,30)
 		reslab.show()
 	else:
@@ -124,7 +125,7 @@ def run_text(widget=None,event=None,data=None):
 				app.vbox.pack_start(rlab,False,True,0)
 			if not reslab:
 				reslab = rlab
-			rlab.set_alignment(xalign=0.05, yalign=0.5) 
+			rlab.set_alignment(xalign=0.05, yalign=0.5)
 			rlab.show()
 		res = '\n'.join([i[0] for i in res])
 	os.system('espeak -v +f2 "' + res.replace(":00"," o'clock").replace("\n",". ") + '" &')
@@ -150,7 +151,7 @@ def run_app(s):
 	input = gtk.Entry()
 	welcome_message = Label("<b>How may I help you?</b>")
 	welcome_message.set_use_markup(True)
-	welcome_message.set_alignment(xalign=0.05, yalign=0.5) 
+	welcome_message.set_alignment(xalign=0.05, yalign=0.5)
 
 	input.connect('activate', run_text)
 
@@ -167,7 +168,7 @@ def run_app(s):
 	window.add(bigvbox)
 	window.show_all()
 	gtk.main()
-	
+
 	while False:
 		inp = raw_input("> ")
 		result = run_text(inp)

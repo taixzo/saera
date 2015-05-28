@@ -783,8 +783,10 @@ def resume_daemons():
 	return platform.resume_daemons()
 
 def set_position(lat, lon):
-	platform.cur.execute('INSERT INTO Locations (LocName, Zip, Latitude, Longitude, Timezone) VALUES ("here", "", '+str(lat)+', '+str(lon)+', 0)')
+	# platform.cur.execute('INSERT INTO Locations (LocName, Zip, Latitude, Longitude, Timezone) VALUES ("here", "", '+str(lat)+', '+str(lon)+', 0)')
+	platform.cur.execute('INSERT OR REPLACE INTO Locations (ID, LocName, Zip, Latitude, Longitude, Timezone) VALUES ((SELECT ID FROM Locations WHERE LocName = "here"), "here", "", '+str(lat)+', '+str(lon)+', 0)')
 	platform.cur.execute('INSERT OR REPLACE INTO Variables (ID, VarName, Value) VALUES ((SELECT ID FROM Variables WHERE VarName = "here"), "here", "'+str(platform.cur.lastrowid)+'");')
+	platform.cur.execute('INSERT INTO LocationLogs (Latitude, Longitude) VALUES ('+str(lat)+','+str(lon)+')')
 	platform.conn.commit()
 	print ("Lat = "+str(lat)+", lon = "+str(lon))
 

@@ -239,6 +239,7 @@ Page {
 
         onPositionChanged: {
             var coord = src.position.coordinate;
+            py.call('saera2.set_position', [coord.latitude, coord.longitude], function (result){})
             console.log("Coordinate:", coord.longitude, coord.latitude);
         }
     }
