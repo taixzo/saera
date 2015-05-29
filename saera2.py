@@ -3,7 +3,7 @@
 
 # import pyotherside
 
-from time import timezone
+from time import timezone, sleep
 from datetime import datetime, time, timedelta
 import calendar
 import logging
@@ -109,6 +109,101 @@ def is_day(lon,dt=None):
 	tst = dt.hour * 60 + dt.minute + dt.second / 60 + time_offset
 	solar_time = datetime.combine(dt.date(), time(0)) + timedelta(minutes=tst)
 	return solar_time.hour<12
+
+def decodePath (encoded, is3D):
+	length = len(encoded)
+	index = 0
+	array = []
+	lat = 0
+	lng = 0
+	ele = 0
+
+	while index < length:
+		shift = 0
+		result = 0
+		while True:
+			b = ord(encoded[index]) - 63
+			result |= (b & 0x1f) << shift
+			shift += 5
+			index += 1
+			if b<0x20: break
+		deltaLat = ~(result >> 1) if (result & 1) else (result >> 1)
+		lat += deltaLat
+
+		shift = 0;
+		result = 0;
+
+		while True:
+			b = ord(encoded[index]) - 63;
+			result |= (b & 0x1f) << shift;
+			shift += 5;
+			index +=1
+			if b<0x20: break
+		deltaLon = ~(result >> 1) if (result & 1) else (result >> 1)
+		lng += deltaLon;
+
+		if is3D:
+			# elevation
+			shift = 0;
+			result = 0;
+			while True:
+				b = ord(encoded[index]) - 63
+				result |= (b & 0x1f) << shift
+				shift += 5
+				index += 1
+				if b >= 0x20: break
+			deltaEle = ~(result >> 1) if (result & 1) else (result >> 1)
+			ele += deltaEle;
+			array.append([lng * 1e-5, lat * 1e-5, ele / 100])
+		else:
+			array.append([lng * 1e-5, lat * 1e-5])
+
+	# // end = new Date().getTime();
+	# // print ("decoded " + length + " coordinates in " + ((end - start) / 1000) + "s");
+	return array
+
+global direction_list
+direction_list = []
+
+def formatTime(seconds):
+	if seconds<60:
+		return str(int(round(seconds)))+" second"+("s" if round(seconds)!=1 else "")
+	elif seconds<300:
+		return str(int(round(seconds/60)))+" minute"+("s " if round(seconds/60)!=1 else " ")+str(int(round(seconds))%60)+" second"+("s" if round(seconds)%60!=1 else "")
+	elif seconds<3600:
+		return str(int(round(seconds/60)))+" minute"+("s" if round(seconds/60)!=1 else "")
+	elif seconds<36000:
+		return str(int(round(seconds/3600)))+" hour"+("s " if round(seconds/3600)!=1 else " ")+str(int(round(seconds/60))%60)+" minute"+("s" if round(seconds/60)%60!=1 else "")
+	else:
+		return str(int(round(seconds/3600)))+" hour"+("s" if round(seconds/3600)!=1 else "")
+
+def formatDistance(meters):
+	imperial = True
+	if imperial:
+		feet = 3.28084*meters
+		if feet>26400: # 5 miles
+			miles = int(round(feet/5280))
+			return str(miles)+" miles"
+		elif feet>=5280:
+			miles = feet/5280
+			return "{0:.1f}".format(round(miles,1)) + " mile"+("s" if round(miles,1) != 1 else "")
+		elif feet>100:
+			return str(int(round(feet/50)*50))+" feet"
+		elif feet>25:
+			return str(int(round(feet/10)*10))+" feet"
+		else:
+			return str(int(round(feet)))+(" feet" if round(feet) != 1 else " foot")
+	else:
+		if meters>5000:
+			return str(int(round(meters/1000)))+" kilometers"
+		elif meters>1000:
+			return "{0:.1f}".format(round(meters/1000,1)) + " kilometers"+("s" if round(meters/1000,1) != 1 else "")
+		elif meters>100:
+			return str(int(round(meters/50)*50))+" meters"
+		elif feet>25:
+			return str(int(round(meters/10)*10))+" meters"
+		else:
+			return str(int(round(meters)))+(" meters" if round(feet) != 1 else " meter")
 
 class Saera:
 	def __init__(self):
@@ -633,6 +728,50 @@ class Saera:
 						lists.append(endpoints)
 				retmsg+="\n"+i['description']
 		return retmsg
+	def directions(self, result):
+		global direction_list
+		print (result)
+		platform.cur.execute("SELECT * FROM Variables WHERE VarName='here'")
+		here = platform.cur.fetchone()
+		if here:
+			platform.cur.execute("SELECT * FROM Locations WHERE Id="+str(here[2]))
+			here = platform.cur.fetchone()
+		else:
+			platform.cur.execute("SELECT * FROM Variables WHERE VarName='home'")
+			here = platform.cur.fetchone()
+			if here:
+				platform.cur.execute("SELECT * FROM Locations WHERE Id="+str(here[2]))
+				here = platform.cur.fetchone()
+			else:
+				return "Where do you live?"
+		if 'location' in result['outcome']['entities']:
+			platform.sayRich("One moment.", "One moment...","")
+			location = result['outcome']['entities']['location']
+			platform.cur.execute("SELECT * FROM Locations WHERE LocName='"+location+"'")
+			loc = platform.cur.fetchone()
+			if not loc:
+				req = urllib2.urlopen('https://graphhopper.com/api/1/geocode?q='+location.replace(' ','%20')+'&point='+str(here[3])+','+str(here[4])+'&key=d5365874-1efe-4f12-92ee-5757f82041fe').read().decode("utf-8")
+				locdic = json.loads(req)
+				loc = (0,locdic['hits'][0]["name"],"",locdic['hits'][0]["point"]["lat"],locdic['hits'][0]["point"]["lng"])
+				# tz = json.loads(urllib2.urlopen('http://api.geonames.org/timezoneJSON?lat='+locdic['geonames'][0]["lat"]+'&lng='+locdic['geonames'][0]["lng"]+'&username=taixzo').read().decode("utf-8"))['rawOffset']
+				# platform.cur.execute('INSERT INTO Locations (LocName, Zip, Latitude, Longitude, Timezone) VALUES ("'+loc[1]+'", "", '+loc[3]+', '+loc[4]+', '+str(tz)+')')
+				# platform.conn.commit()
+				print (loc)
+			req = urllib2.urlopen("https://graphhopper.com/api/1/route?point="+str(here[3])+","+str(here[4])+"&point="+str(loc[3])+","+str(loc[4])+"&vehicle=car&points_encoded=true&calc_points=true&key=d5365874-1efe-4f12-92ee-5757f82041fe").read().decode("utf-8")
+			pathdic = json.loads(req)
+			path = decodePath(pathdic['paths'][0]['points'], False)
+			print (path)
+			instructions = pathdic['paths'][0]['instructions']
+			for index, instruction in enumerate(instructions):
+				# point = path[int((instruction['interval'][0]+instruction['interval'][1])/2)]
+				point = path[instruction['interval'][0]]
+				instruction['point'] = point
+				print (instruction['text'], 'at', point)
+			platform.enablePTP()
+			direction_list = instructions
+			total_distance = int(round(pathdic['paths'][0]['distance']*0.000621371))
+			return "Ok, "+loc[1]+" is "+str(total_distance)+" mile"+("s" if total_distance != 1 else "") + " away. It will take about "+formatTime(pathdic['paths'][0]['time']/1000)+"."
+		return "No."
 	def coin_flip(self,result):
 		if 'number' in result['outcome']['entities'] and result['outcome']['entities']['number']>1:
 			coins = []
@@ -742,6 +881,8 @@ class Saera:
 			return self.search(result)
 		elif result['outcome']['intent']=="traffic":
 			return self.traffic(result)
+		elif result['outcome']['intent']=="directions":
+			return self.directions(result)
 		elif result['outcome']['intent']=="coin_flip":
 			return self.coin_flip(result)
 		elif result['outcome']['intent']=="roll_dice":
@@ -783,12 +924,23 @@ def resume_daemons():
 	return platform.resume_daemons()
 
 def set_position(lat, lon):
+	global direction_list
 	# platform.cur.execute('INSERT INTO Locations (LocName, Zip, Latitude, Longitude, Timezone) VALUES ("here", "", '+str(lat)+', '+str(lon)+', 0)')
 	platform.cur.execute('INSERT OR REPLACE INTO Locations (ID, LocName, Zip, Latitude, Longitude, Timezone) VALUES ((SELECT ID FROM Locations WHERE LocName = "here"), "here", "", '+str(lat)+', '+str(lon)+', 0)')
 	platform.cur.execute('INSERT OR REPLACE INTO Variables (ID, VarName, Value) VALUES ((SELECT ID FROM Variables WHERE VarName = "here"), "here", "'+str(platform.cur.lastrowid)+'");')
 	platform.cur.execute('INSERT INTO LocationLogs (Latitude, Longitude) VALUES ('+str(lat)+','+str(lon)+')')
 	platform.conn.commit()
 	print ("Lat = "+str(lat)+", lon = "+str(lon))
+
+	if direction_list != []:
+		print ("Pat = "+str(direction_list[0]['point'][1])+", pon = "+str(direction_list[0]['point'][0]))
+		# if abs(lat-direction_list[0]['point'][1])<0.001 and abs(lon-direction_list[0]['point'][0])<0.013:
+		if abs(lat-direction_list[0]['point'][1])<0.0002 and abs(lon-direction_list[0]['point'][0])<0.0026:
+			print (direction_list[0])
+			platform.speak(direction_list[0]['text'])
+			sleep(10)
+			platform.sayRich("In "+formatDistance(direction_list[0]['distance'])+", "+direction_list[1]['text'], direction_list[1]['text'],direction_list[1]['sign'], direction_list[1]['point'][1], direction_list[1]['point'][0])
+			direction_list = direction_list[1:]
 
 def activate():
 	if not platform.app:

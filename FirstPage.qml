@@ -38,17 +38,19 @@ import QtPositioning 5.2
 Page {
     id: page
 
+    property real latitude: 0;
+    property real longitude: 0;
 
     function speak() {
       mainWindow.activate()
       playSound.play()
       busyIndicator.running = true;
       py.call('saera2.run_voice',[],function(res) {
-        listModel.append({value: res, who: "me", link: false});
+        listModel.append({value: res, who: "me", link: false, image: "", lat: 0, lon: 0});
         py.call('saera2.run_text', [res], function(result){
             busyIndicator.running = false;
             if (typeof(result)=="string") {
-              listModel.append({value: result, who: "saera", link: false});
+              listModel.append({value: result, who: "saera", link: false, image: "", lat: 0, lon: 0});
             } else {
               for (var i in result) {
                 listModel.append({value: result[i][0], who: "saera", link: result[i][1]});
@@ -67,11 +69,11 @@ Page {
           busyIndicator.running = false;
             if (typeof(result)=="string") {
               if (result != "") {
-                listModel.append({value: result, who: "saera", link: false});
+                listModel.append({value: result, who: "saera", link: false, image: "", lat: 0, lon: 0});
               }
             } else {
               for (var i in result) {
-                listModel.append({value: result[i][0], who: "saera", link: result[i][1]});
+                listModel.append({value: result[i][0], who: "saera", link: result[i][1], image: "", lat: 0, lon: 0});
               }
             }
         })
@@ -82,6 +84,62 @@ Page {
 
     function load_msg(msg) {
         loadingText.text = msg
+    }
+
+    function enablePTP() {
+        // src.updateInterval = 1000
+        // src.update()
+        src.active = false
+        navsrc.active = true
+    }
+
+    function toRadians(x) {
+        return x*0.0174532925
+    }
+
+    function distance (lat1, lon1, lat2, lon2) {
+        var R = 6371000; // metres
+        var φ1 = toRadians(lat1);
+        var φ2 = toRadians(lat2);
+        var Δφ = toRadians(lat2-lat1);
+        var Δλ = toRadians(lon2-lon1);
+
+        var a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+                Math.cos(φ1) * Math.cos(φ2) *
+                Math.sin(Δλ/2) * Math.sin(Δλ/2);
+        var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+        var d = R * c;
+        return d
+    }
+
+    function dist (lat, lon) {
+        var d = distance(lat, lon, page.latitude, page.longitude)
+        console.log("D is "+d)
+        var m = d*0.000621371
+        if (m<10) {
+            return m.toFixed(1)+" mi"
+        } else {
+            return parseInt(m)+" mi"
+        }
+    }
+
+    function sayRich(message, img, lat, lon) {
+        var images = {}
+        images[-3] = "image://theme/icon-direction-hard-left"
+        images[-2] = "image://theme/icon-direction-left"
+        images[-1] = "image://theme/icon-direction-light-left"
+        images[0] = "image://theme/icon-direction-forward"
+        images[1] = "image://theme/icon-direction-light-right"
+        images[2] = "image://theme/icon-direction-right"
+        images[3] = "image://theme/icon-direction-hard-right"
+        images[4] = "image://theme/icon-cover-location"
+        images[5] = "image://theme/icon-cover-location"
+        images[6] = "image://theme/icon-direction-uturn-left"
+        if (!isNaN(parseFloat(img))) { // if img is a number
+            img = images[img]
+        }
+        listModel.append({value: message, who: "saera", link: false, image: img, lat: lat, lon: lon});
     }
 
     Component.onCompleted: {
@@ -119,6 +177,8 @@ Page {
              });
              setHandler('start',page.speak)
              setHandler('load_msg', page.load_msg)
+             setHandler('enablePTP', page.enablePTP)
+             setHandler('sayRich', page.sayRich)
          }
          onError: console.log('Python error: ' + traceback)
     }
@@ -133,6 +193,7 @@ Page {
         anchors.bottom: btn.top
         // anchors.bottomMargin: Theme.paddingLarge
         anchors.bottomMargin: 100
+        anchors.topMargin: Theme.paddingLarge
 
         highlightFollowsCurrentItem: true
 
@@ -143,17 +204,40 @@ Page {
             id: listModel
             onCountChanged: {
                 messages.currentIndex = messages.count - 1
+                if (messages.length>2 && listModel.get(messages.count-2).lat) {
+                    listModel.get(messages.count-2).lat = 0
+                    listModel.get(messages.count-2).lon = 0
+                }
             }
-            ListElement { value: "How can I help you?"; who: "saera" }
+            ListElement { value: "How can I help you?"; who: "saera"; link: false; image: ""; lat: 0; lon: 0 }
         }
         delegate: Item {
             width: ListView.view.width
+
+            Image {
+                id: i
+                anchors {
+                    right: parent.right
+                }
+                source: image ? image : ""
+                width: image ? 64 : 0
+                height: image ? 64 : 0
+            }
+
+            Text {
+                id: d
+                anchors {
+                    right: i.left
+                }
+                color: "#FFFFFF"
+                text: lat ? dist(lat, lon) : ""
+            }
 
             Text {
                 id: t
                 anchors {
                     left: parent.left
-                    right: parent.right
+                    right: d.left
                     margins: Theme.paddingLarge
                 }
                 text: value
@@ -179,14 +263,14 @@ Page {
         EnterKey.onClicked: {
             parent.focus = true;
             busyIndicator.running = true;
-            listModel.append({value: text, who: "me", link: false})
+            listModel.append({value: text, who: "me", link: false, image: "", lat: 0, lon: 0})
             py.call('saera2.run_text', [text], function(result){
                 busyIndicator.running = false;
                 if (typeof(result)=="string") {
-                  listModel.append({value: result, who: "saera", link: false});
+                  listModel.append({value: result, who: "saera", link: false, image: "", lat: 0, lon: 0});
                 } else {
                   for (var i in result) {
-                    listModel.append({value: result[i][0], who: "saera", link: result[i][1]});
+                    listModel.append({value: result[i][0], who: "saera", link: result[i][1], image: "", lat: 0, lon: 0});
                   }
                 }
                 // messages.scrollToBottom();
@@ -243,8 +327,29 @@ Page {
 
         onPositionChanged: {
             var coord = src.position.coordinate;
+            latitude = coord.latitude
+            longitude = coord.longitude
             if (canCallPython) {
                 py.call('saera2.set_position', [coord.latitude, coord.longitude], function (result){})
+            }
+            console.log("Coordinate:", coord.longitude, coord.latitude);
+        }
+    }
+
+    PositionSource {
+        id: navsrc
+        updateInterval: 1000
+        active: false
+
+        onPositionChanged: {
+            var coord = navsrc.position.coordinate;
+            page.latitude = coord.latitude
+            page.longitude = coord.longitude
+            if (src.canCallPython) {
+                py.call('saera2.set_position', [coord.latitude, coord.longitude], function (result){})
+            }
+            if (messages.length>2 && listModel.get(messages.count-1).lat) {
+                listModel.get(messages.count-1).lat = listModel.get(messages.count-1).lat
             }
             console.log("Coordinate:", coord.longitude, coord.latitude);
         }

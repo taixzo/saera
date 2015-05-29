@@ -405,9 +405,17 @@ def speak(string):
 		spoken_str = string
 	else:
 		spoken_str = '\n'.join([i[0] for i in string])
-	os.system('espeak --stdout -v +f2 "' + spoken_str.replace(":00"," o'clock").replace("\n",". ") + '" | gst-launch-0.10 -q fdsrc ! wavparse ! audioconvert ! alsasink &')
+	if not os.path.exists("/tmp/espeak_lock"):
+		os.system('touch /tmp/espeak_lock && espeak --stdout -v +f2 "' + spoken_str.replace(":00"," o'clock").replace("\n",". ") + '" | gst-launch-0.10 -q fdsrc ! wavparse ! audioconvert ! alsasink && rm /tmp/espeak_lock &')
 	detected = False
 	return string
+
+def enablePTP():
+	pyotherside.send('enablePTP')
+
+def sayRich(spokenMessage, message, img, lat=0, lon=0):
+	pyotherside.send('sayRich',message, img, lat, lon)
+	speak(spokenMessage)
 
 def quit():
 	conn.close()
