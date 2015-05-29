@@ -413,6 +413,9 @@ def speak(string):
 def enablePTP():
 	pyotherside.send('enablePTP')
 
+def disablePTP():
+	pyotherside.send('disablePTP')
+
 def sayRich(spokenMessage, message, img, lat=0, lon=0):
 	pyotherside.send('sayRich',message, img, lat, lon)
 	speak(spokenMessage)

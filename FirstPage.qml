@@ -93,6 +93,11 @@ Page {
         navsrc.active = true
     }
 
+    function disablePTP() {
+        src.active = true
+        navsrc.active = false
+    }
+
     function toRadians(x) {
         return x*0.0174532925
     }
@@ -115,7 +120,6 @@ Page {
 
     function dist (lat, lon) {
         var d = distance(lat, lon, page.latitude, page.longitude)
-        console.log("D is "+d)
         var m = d*0.000621371
         if (m<10) {
             return m.toFixed(1)+" mi"
@@ -204,7 +208,7 @@ Page {
             id: listModel
             onCountChanged: {
                 messages.currentIndex = messages.count - 1
-                if (messages.length>2 && listModel.get(messages.count-2).lat) {
+                if (messages.count>2 && listModel.get(messages.count-2).lat) {
                     listModel.get(messages.count-2).lat = 0
                     listModel.get(messages.count-2).lon = 0
                 }
@@ -218,6 +222,7 @@ Page {
                 id: i
                 anchors {
                     right: parent.right
+                    rightMargin: image ? 10 : 0
                 }
                 source: image ? image : ""
                 width: image ? 64 : 0
@@ -228,6 +233,7 @@ Page {
                 id: d
                 anchors {
                     right: i.left
+                    rightMargin: lat ? 10 : 0
                 }
                 color: "#FFFFFF"
                 text: lat ? dist(lat, lon) : ""
@@ -332,7 +338,6 @@ Page {
             if (canCallPython) {
                 py.call('saera2.set_position', [coord.latitude, coord.longitude], function (result){})
             }
-            console.log("Coordinate:", coord.longitude, coord.latitude);
         }
     }
 
@@ -348,10 +353,23 @@ Page {
             if (src.canCallPython) {
                 py.call('saera2.set_position', [coord.latitude, coord.longitude], function (result){})
             }
-            if (messages.length>2 && listModel.get(messages.count-1).lat) {
-                listModel.get(messages.count-1).lat = listModel.get(messages.count-1).lat
+            if (messages.count>2 && listModel.get(messages.count-1).lat) {
+                // listModel.get(messages.count-1).lat = listModel.get(messages.count-1).lat
+                listModel.set(messages.count-1, {value:listModel.get(messages.count-1).value,
+                                                who:listModel.get(messages.count-1).who,
+                                                image:listModel.get(messages.count-1).image,
+                                                link:listModel.get(messages.count-1).link,
+                                                lat:listModel.get(messages.count-1).lat,
+                                                lon:listModel.get(messages.count-1).lon})
+                listModel.set(messages.count-2, {value:listModel.get(messages.count-2).value,
+                                                who:listModel.get(messages.count-2).who,
+                                                image:listModel.get(messages.count-2).image,
+                                                link:listModel.get(messages.count-2).link,
+                                                lat:0,
+                                                lon:0})
+                // listModel.get(messages.count-1).lat = 0
+                // listModel.get(messages.count-1).lon = 0
             }
-            console.log("Coordinate:", coord.longitude, coord.latitude);
         }
     }
 }

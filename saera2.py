@@ -165,6 +165,22 @@ def decodePath (encoded, is3D):
 global direction_list
 direction_list = []
 
+def toRadians(x):
+	return x*0.0174532925
+
+def geo_distance (lat1, lon1, lat2, lon2):
+	R = 6371000; # metres
+	phi1 = toRadians(lat1)
+	phi2 = toRadians(lat2)
+	deltaphi = toRadians(lat2-lat1)
+	deltalambda = toRadians(lon2-lon1)
+
+	a = math.sin(deltaphi/2) * math.sin(deltaphi/2) + math.cos(phi1) * math.cos(phi2) * math.sin(deltalambda/2) * math.sin(deltalambda/2)
+	c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
+
+	d = R * c
+	return d
+
 def formatTime(seconds):
 	if seconds<60:
 		return str(int(round(seconds)))+" second"+("s" if round(seconds)!=1 else "")
@@ -745,14 +761,19 @@ class Saera:
 			else:
 				return "Where do you live?"
 		if 'location' in result['outcome']['entities']:
-			platform.sayRich("One moment.", "One moment...","")
+			platform.sayRich("", "One moment...","")
 			location = result['outcome']['entities']['location']
 			platform.cur.execute("SELECT * FROM Locations WHERE LocName='"+location+"'")
 			loc = platform.cur.fetchone()
 			if not loc:
-				req = urllib2.urlopen('https://graphhopper.com/api/1/geocode?q='+location.replace(' ','%20')+'&point='+str(here[3])+','+str(here[4])+'&key=d5365874-1efe-4f12-92ee-5757f82041fe').read().decode("utf-8")
+				# req = urllib2.urlopen('https://graphhopper.com/api/1/geocode?q='+location.replace(' ','%20')+'&point='+str(here[3])+','+str(here[4])+'&key=d5365874-1efe-4f12-92ee-5757f82041fe').read().decode("utf-8")
+				# locdic = json.loads(req)
+				# loc = (0,locdic['hits'][0]["name"],"",locdic['hits'][0]["point"]["lat"],locdic['hits'][0]["point"]["lng"])
+				req = urllib2.urlopen('http://dev.virtualearth.net/REST/v1/Locations?query='+location.replace(' ','%20')+'&userLocation='+str(here[3])+','+str(here[4])+'&maxResults=10&key=AltIdRJ4KAV9d1U-rE3T0E-OFN66cwd3D1USLS28oVl2lbIRbFcqMZHJZd5DwTTP').read().decode("utf-8")
 				locdic = json.loads(req)
-				loc = (0,locdic['hits'][0]["name"],"",locdic['hits'][0]["point"]["lat"],locdic['hits'][0]["point"]["lng"])
+				loc = (0,locdic['resourceSets'][0]['resources'][0]["name"],"",locdic['resourceSets'][0]['resources'][0]["point"]["coordinates"][0],locdic['resourceSets'][0]['resources'][0]["point"]["coordinates"][1])
+
+
 				# tz = json.loads(urllib2.urlopen('http://api.geonames.org/timezoneJSON?lat='+locdic['geonames'][0]["lat"]+'&lng='+locdic['geonames'][0]["lng"]+'&username=taixzo').read().decode("utf-8"))['rawOffset']
 				# platform.cur.execute('INSERT INTO Locations (LocName, Zip, Latitude, Longitude, Timezone) VALUES ("'+loc[1]+'", "", '+loc[3]+', '+loc[4]+', '+str(tz)+')')
 				# platform.conn.commit()
@@ -767,10 +788,11 @@ class Saera:
 				point = path[instruction['interval'][0]]
 				instruction['point'] = point
 				print (instruction['text'], 'at', point)
+			instructions = [{'text':'Start','point':instructions[0]['point'],'distance':0}] + instructions
 			platform.enablePTP()
 			direction_list = instructions
 			total_distance = int(round(pathdic['paths'][0]['distance']*0.000621371))
-			return "Ok, "+loc[1]+" is "+str(total_distance)+" mile"+("s" if total_distance != 1 else "") + " away. It will take about "+formatTime(pathdic['paths'][0]['time']/1000)+"."
+			return "Ok, "+loc[1]+" is "+(str(total_distance)+" mile"+("s" if total_distance != 1 else "") if total_distance >= 1 else "less than a mile") + " away. It will take about "+formatTime(pathdic['paths'][0]['time']/1000)+"."
 		return "No."
 	def coin_flip(self,result):
 		if 'number' in result['outcome']['entities'] and result['outcome']['entities']['number']>1:
@@ -930,17 +952,39 @@ def set_position(lat, lon):
 	platform.cur.execute('INSERT OR REPLACE INTO Variables (ID, VarName, Value) VALUES ((SELECT ID FROM Variables WHERE VarName = "here"), "here", "'+str(platform.cur.lastrowid)+'");')
 	platform.cur.execute('INSERT INTO LocationLogs (Latitude, Longitude) VALUES ('+str(lat)+','+str(lon)+')')
 	platform.conn.commit()
-	print ("Lat = "+str(lat)+", lon = "+str(lon))
 
 	if direction_list != []:
-		print ("Pat = "+str(direction_list[0]['point'][1])+", pon = "+str(direction_list[0]['point'][0]))
 		# if abs(lat-direction_list[0]['point'][1])<0.001 and abs(lon-direction_list[0]['point'][0])<0.013:
-		if abs(lat-direction_list[0]['point'][1])<0.0002 and abs(lon-direction_list[0]['point'][0])<0.0026:
+		print (geo_distance(lat, lon, direction_list[0]['point'][1], direction_list[0]['point'][0]))
+		if geo_distance(lat, lon, direction_list[0]['point'][1], direction_list[0]['point'][0])<75:
+		# if True:
 			print (direction_list[0])
 			platform.speak(direction_list[0]['text'])
 			sleep(10)
-			platform.sayRich("In "+formatDistance(direction_list[0]['distance'])+", "+direction_list[1]['text'], direction_list[1]['text'],direction_list[1]['sign'], direction_list[1]['point'][1], direction_list[1]['point'][0])
-			direction_list = direction_list[1:]
+			if len(direction_list)>1:
+				if direction_list[0]['text'] == "Start":
+					if direction_list[1]['point'][1]>lat:
+						if direction_list[1]['point'][1]-lat>abs(direction_list[1]['point'][0]-lon):
+							compass_dir = "north"
+						elif direction_list[1]['point'][0]>lon:
+							compass_dir = "east"
+						else:
+							compass_dir = "west"
+					else:
+						if lat-direction_list[1]['point'][1]>abs(direction_list[1]['point'][0]-lon):
+							compass_dir = "south"
+						elif direction_list[1]['point'][0]>lon:
+							compass_dir = "east"
+						else:
+							compass_dir = "west"
+					tex = "Head "+compass_dir+(" on " + direction_list[1]['text'].split(" onto ")[-1]+"." if " onto " in direction_list[1]['text'] else ".")
+					platform.sayRich(tex, tex, 4)
+				else:
+					platform.sayRich("In "+formatDistance(direction_list[0]['distance'])+", "+direction_list[1]['text'], direction_list[1]['text'],direction_list[1]['sign'], direction_list[1]['point'][1], direction_list[1]['point'][0])
+				direction_list = direction_list[1:]
+			else:
+				direction_list = []
+				platform.disablePTP()
 
 def activate():
 	if not platform.app:
