@@ -12,6 +12,7 @@ import time
 import random
 import threading
 import espeak2julius
+from streetnames import get_street_names
 import re
 from ID3 import ID3
 try:
@@ -106,6 +107,7 @@ def regen_music():
 
 contacts = {}
 firstnames = {}
+streetnames = []
 
 def regen_contacts():
 	firsts = []
@@ -137,6 +139,31 @@ def regen_contacts():
 					contacts[i]['phoneNumber'] = phoneNumber
 					break
 
+def regen_streetnames():
+	global streetnames
+	cur.execute("SELECT * FROM Variables WHERE VarName='here'")
+	here = cur.fetchone()
+	if here:
+		cur.execute("SELECT * FROM Locations WHERE Id="+str(here[2]))
+		here = cur.fetchone()
+	else:
+		cur.execute("SELECT * FROM Variables WHERE VarName='home'")
+		here = cur.fetchone()
+		if here:
+			cur.execute("SELECT * FROM Locations WHERE Id="+str(here[2]))
+			here = cur.fetchone()
+		else:
+			streetnames = [("main","st"),
+						   ("first","ave"),
+						   ("washington","blvd")]
+			return
+	stn = get_street_names(here)
+	for streettype in stn:
+		for streetname in stn[streettype]:
+			streetnames.append((streetname,streettype.lower()))
+	print (streetnames)
+	# espeak2julius.create_grammar(streetnames, 'addresses', 'addresses')
+
 pyotherside.send('load_msg','Loading music titles...')
 if not os.path.exists('/home/nemo/.cache/saera/musictitles.dfa'):
 	if not os.path.exists('/home/nemo/.cache/saera'):
@@ -155,8 +182,18 @@ if not os.path.exists('/home/nemo/.cache/saera/contacts.dfa'):
 else:
 	regen_contacts()
 
+pyotherside.send('load_msg','Loading street names...')
+if not os.path.exists('/home/nemo/.cache/saera/addresses.dfa'):
+	if not os.path.exists('/home/nemo/.cache/saera'):
+		os.mkdir('/home/nemo/.cache/saera')
+	regen_streetnames()
+	pyotherside.send('load_msg','Loading street names\n(this may take a while)...')
+	espeak2julius.create_grammar(streetnames, 'addresses', 'addresses')
+else:
+	pass # We don't do anything with streetnames here so no point to load them
+
 pyotherside.send('load_msg','Initializing speech recognition...')
-jproc = subprocess.Popen([f+'julius/julius.arm','-module','-gram',f+'julius/saera', '-gram', '/home/nemo/.cache/saera/musictitles', '-gram', '/home/nemo/.cache/saera/contacts','-h',f+'julius/hmmdefs','-hlist',f+'julius/tiedlist','-input','mic','-tailmargin','800','-rejectshort','600'],stdout=subprocess.PIPE)
+jproc = subprocess.Popen([f+'julius/julius.arm','-module','-gram',f+'julius/saera', '-gram', '/home/nemo/.cache/saera/musictitles', '-gram', '/home/nemo/.cache/saera/contacts', '-gram', '/home/nemo/.cache/saera/addresses','-h',f+'julius/hmmdefs','-hlist',f+'julius/tiedlist','-input','mic','-tailmargin','800','-rejectshort','600'],stdout=subprocess.PIPE)
 # jproc = subprocess.Popen([f+'julius/julius.arm','-module','-gram','/tmp/saera/musictitles','-h',f+'julius/hmmdefs','-hlist',f+'julius/tiedlist','-input','mic','-tailmargin','800','-rejectshort','600'],stdout=subprocess.PIPE)
 client = pyjulius.Client('localhost',10500)
 print ('Connecting to pyjulius server')

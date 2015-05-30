@@ -5,7 +5,7 @@ import random
 import os, sys
 from ID3 import ID3
 
-loglevel = 2
+loglevel = 1
 
 def log(s, level):
     if loglevel>=level:
@@ -15,7 +15,7 @@ f = __file__.split('espeak2julius.py')[0]
 
 syllconv = open(f+'julius/espeak-julius.txt').read().splitlines()[1:]
 
-triphones = open (f+'julius/tiedlist').read()
+triphones = open (f+'julius/tiedlist').read().split()
 
 d = collections.OrderedDict()
 
@@ -46,7 +46,7 @@ def e2j(string):
                 break
         else:
             return "ERROR: Could not translate "+original_result+" - remaining text: "+result
-    return out
+    return out.strip()
 
 def create_grammar(stringlist, gramname, gramtype):
     if gramtype=='songtitles':
@@ -73,7 +73,81 @@ call       k ao l
 text       t eh k s t
 """
         gram = "S : NS_B CALL NAME NS_E\nS : NS_B CALL FIRSTNAME NS_E\nS : NS_B TEXT NAME NS_E\nS : NS_B TEXT FIRSTNAME NS_E\n\n"
+    elif gramtype=='addresses':
+        voca = """% NS_B
+<s>        sil
+
+% NS_E
+</s>       sil
+
+% DIRECTIONS
+directions d er eh k sh ax n s
+
+% TO
+to         t uw
+
+% DIGIT
+five       f ay v
+four       f ao r
+nine       n ay n
+eight      ey t
+oh         ow
+one        w ah n
+seven      s eh v ax n
+six        s ih k s
+three      th r iy
+two        t uw
+zero       z ih r ow
+"""
+        gram = "S : NS_B DIRECTIONS TO ADDRESS NS_E\nNUMBER: DIGIT\nNUMBER: NUMBER DIGIT\nADDRESS: NUMBER STREET_STRUCT\n\n"
+        streettypes = {"ln":("lane","l ey n"),
+                       "rd":("road","r ow d"),
+                       "way":("way","w ey"),
+                       "pl":("place","p l ey s"),
+                       "plz":("plaza","p l aa z ax"),
+                       "hwy":("highway","hh ax w ey"),
+                       "dr":("drive","d r ay v"),
+                       "pike":("pike","p ay k"),
+                       "expy":("expressway","ix k s p r eh s w ey"),
+                       "sq":("square","s k w eh r"),
+                       "tpke":("turnpike","t uh r n p ay k"),
+                       "drive":("drive","d r ay v"),
+                       "st":("street","s t r iy t"),
+                       "cir":("circle","s er k ax l"),
+                       "fwy":("freeway","f r iy w ey"),
+                       "trce":("terrace","t eh r ax s"),
+                       "road":("road","r ow d"),
+                       "pky":("parkway","p aa k w ey"),
+                       "walk":("walk","w ao k"),
+                       "blvd":("boulevard","b uh l ix f aa r d"),
+                       "aly":("alley","ae l iy"),
+                       "ave":("avenue","ae v ax n uw"),
+                       "ter":("terrace","t eh r ax s"),
+                       "ct":("court","k ao r t"),
+                       "row":("row","r ow")}
+        used_streettypes = []
     for i, string in enumerate(stringlist):
+        pvoca = ""
+        pgram = ""
+        if gramtype=='addresses':
+            string, streettype = string
+            if not streettype in streettypes:
+                continue
+            if not streettype in used_streettypes:
+                v = gram.splitlines()
+                if v[-1].startswith("STREET_STRUCT:"):
+                    v = v[:-1]
+                    gram = '\n'.join(v)+'\n'
+                    n = voca.splitlines()
+                    n = n[:-2]
+                    voca = '\n'.join(n)+'\n'
+                used_streettypes.append(streettype)
+                gram += "\nSTREET_STRUCT: "+streettype.upper()+"_NAME_STRUCT "+streettype.upper()+"\n"
+                voca += "\n% "+streettype.upper()+"\n"+streettypes[streettype][0]+"   "+streettypes[streettype][1] #+"\n\n%"+streettype.upper()+"_NAME\n"
+                print (streettype)
+            else:
+                pgram_base = ""
+                pvoca_base = ""
         words = string.replace('(','').replace(')','').replace('[','').replace(']','').replace('/',' ').replace('-',' ').strip().split()
         c = []
         for word in words:
@@ -84,46 +158,53 @@ text       t eh k s t
                 c.append(e2j(word))
         # c = [e2j(word) for word in words]
         tvoca = ""
-        tgram = {'songtitles':"\nTITLE:",'contacts':'\nFIRSTNAME:'}[gramtype]
+        tgram = {'songtitles':"\nTITLE:",'contacts':'\nFIRSTNAME:','addresses':'\n'+streettype.upper()+"_NAME_STRUCT:"}[gramtype]
         for index, pronunciation in enumerate(c):
             tobreak = False
             tpro = pronunciation.split(' ')
             if len(tpro)>2:
                 for k in range(len(tpro)-2):
-                    if words[index].lower()=='sorcery': print (tpro)
-                    if not "\n"+tpro[k]+'-'+tpro[k+1]+'+'+tpro[k+2] in triphones:
-                        if tpro[k] in substitutions and "\n"+substitutions[tpro[k]]+'-'+tpro[k+1]+'+'+tpro[k+2] in triphones:
+                    if words[index].lower()=='concord': print (tpro)
+                    if not tpro[k]+'-'+tpro[k+1]+'+'+tpro[k+2] in triphones:
+                        if words[index].lower()=='concord':print (1)
+                        if tpro[k] in substitutions and substitutions[tpro[k]]+'-'+tpro[k+1]+'+'+tpro[k+2] in triphones:
+                            if words[index].lower()=='concord': print (2)
                             log (words[index]+": substituted "+substitutions[tpro[k]]+" into "+tpro[k]+'-'+tpro[k+1]+'+'+tpro[k+2], 2)
                             tpro[k] = substitutions[tpro[k]]
                             continue
-                        elif tpro[k+1] in substitutions and "\n"+tpro[k]+'-'+substitutions[tpro[k+1]]+'+'+tpro[k+2] in triphones:
+                        elif tpro[k+1] in substitutions and tpro[k]+'-'+substitutions[tpro[k+1]]+'+'+tpro[k+2] in triphones:
+                            if words[index].lower()=='concord': print (3)
                             log (words[index]+": substituted "+substitutions[tpro[k+1]]+" into: "+tpro[k]+'-'+tpro[k+1]+'+'+tpro[k+2], 2)
                             tpro[k+1] = substitutions[tpro[k+1]]
                             continue
-                        elif tpro[k+2] in substitutions and "\n"+tpro[k]+'-'+tpro[k+1]+'+'+substitutions[tpro[k+2]] in triphones:
+                        elif tpro[k+2] in substitutions and tpro[k]+'-'+tpro[k+1]+'+'+substitutions[tpro[k+2]] in triphones:
+                            if words[index].lower()=='concord': print (4)
                             log (words[index]+": substituted "+substitutions[tpro[k+2]]+" into: "+tpro[k]+'-'+tpro[k+1]+'+'+tpro[k+2], 2)
                             tpro[k+2] = substitutions[tpro[k+2]]
                             continue
-                        print (words[index]+" will fail. Failing triphone: "+tpro[k]+'-'+tpro[k+1]+'+'+tpro[k+2])
+                        log (words[index]+" will fail. Failing triphone: "+tpro[k]+'-'+tpro[k+1]+'+'+tpro[k+2], 2)
                         tobreak = True
                         tvoca = ""
                         tgram = ""
                         break
                     else:
-                        if words[index].lower()=='sorcery': print (tpro[k]+'-'+tpro[k+1]+'+'+tpro[k+2]+" passes")
+                        if words[index].lower()=='concord': print (tpro[k]+'-'+tpro[k+1]+'+'+tpro[k+2]+" passes")
                 if tobreak: break
                 # Second pass in case substitutions broke earlier triphones
                 for k in range(len(tpro)-2):
-                    if not "\n"+tpro[k]+'-'+tpro[k+1]+'+'+tpro[k+2] in triphones:
-                        print (words[index]+" failed second pass. Failing triphone: "+tpro[k]+'-'+tpro[k+1]+'+'+tpro[k+2])
+                    if not tpro[k]+'-'+tpro[k+1]+'+'+tpro[k+2] in triphones:
+                        log (words[index]+" failed second pass. Failing triphone: "+tpro[k]+'-'+tpro[k+1]+'+'+tpro[k+2], 2)
                         tobreak = True
                         tvoca = ""
                         tgram = ""
                         break
                 pronunciation = ' '.join(tpro)
+                if words[index].lower()=='concord': print (pronunciation)
             if tobreak: break
             w = words[index].capitalize() if gramtype=="contacts" else words[index].lower()
             tvoca += "\n\n% W_"+str(i)+"_"+str(index)+"\n"+w.ljust(10)+' '+pronunciation
+            if words[index].lower()=='concord': print (tvoca)
+
             tgram += " W_"+str(i)+"_"+str(index)
             if index==0 and len(c)>1:
                 voca += tvoca
@@ -132,7 +213,7 @@ text       t eh k s t
                 tgram = "\nNAME: W_"+str(i)+"_"+str(index)
         voca += tvoca
         gram += tgram
-    voca = voca.replace('ih \n','iy \n').replace(' n k ',' ng k ')
+    # voca = voca.replace('ih \n','iy \n').replace(' n k ',' ng k ')
     if not os.path.exists('/home/nemo/.cache/saera'):
         os.mkdir('/home/nemo/.cache/saera')
     open('/home/nemo/.cache/saera/'+gramname+'.grammar','w').write(gram)
