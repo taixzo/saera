@@ -123,174 +123,177 @@
 65	[test]	t eh s t
 66	[testing]	t eh s t ix ng
 67	[time]	t ay m
-68	[cold]	k ow l d
-68	[hot]	hh aa t
-68	[sunny]	s ah n iy
-68	[raining]	r ey n ix ng
-68	[windy]	w ay n d iy
-69	[weather]	w eh dh er
-70	[like]	l ay k
-71	[will]	w ih l
-72	[at]	ae t
-73	[rain]	r ey n
-73	[snow]	s n ow
-74	[remind]	r ix m ay n d
-75	[London]	l ah n d ax n
-75	[Shanghai]	sh ae ng hh ay
-75	[Beijing]	b ey zh ih ng
-75	[Istanbul]	ih s t aa n b uw l
-75	[Moscow]	m aa s k ow
-75	[Seoul]	s ow l
-75	[Shenzhen]	sh eh n zh eh n
-75	[Delhi]	d eh l iy
-75	[Tokyo]	t ow k iy ow
-75	[London]	l ah n d ax n
-75	[Cairo]	k ay r ow
-75	[Johannesburg]	jh ow hh ae n ix s b er g
-75	[Bangkok]	b ae ng k aa k
-75	[Athens]	ae th ax n z
-75	[Toronto]	t er aa n t ow
-75	[Sydney]	s ih d n iy
-75	[Ankara]	ae ng k er ax
-75	[Melbourne]	m eh l b er n
-75	[Alexandria]	ae l ax g z ae n d r iy ax
-75	[Singapore]	s ih ng ax p ao r
-75	[Berlin]	b er l ih n
-75	[Madrid]	m ax d r ih d
-75	[Nairobi]	n ay r ow b iy
-75	[Xiamen]	z iy ey m ax n
-75	[Casablanca]	k ae s ax b l ae ng k ax
-75	[Izmir]	ih z m ih r
-75	[Chicago]	sh ax k aa g ow
-75	[Osaka]	ow s aa k ax
-75	[Rome]	r ow m
-75	[Paris]	p eh r ix s
-75	[Houston]	hh y uw s t ax n
-75	[Dubai]	d uw b ay
-75	[Perth]	p er th
-75	[Vienna]	v iy eh n ax
-75	[Budapest]	b uw dx ax p eh s t
-75	[Hamburg]	hh ae m b er g
-75	[Warsaw]	w ao r s ao
-75	[Barcelona]	b aa r s ix l ow n ax
-75	[Philadelphia]	f ih l ax d eh l f iy ax
-75	[Phoenix]	f iy n ix k s
-75	[Stockholm]	s t aa k hh ow l m
-75	[Munich]	m y uw n ix k
-75	[Prague]	p r aa g
-75	[Milan]	m ax l aa n
-75	[Adelaide]	ae dx ax l ey d
-75	[Dallas]	d ae l ax s
-75	[Copenhagen]	k ow p ax n hh ey g ax n
-75	[Birmingham]	b er m ix ng hh ae m
-75	[Calgary]	k ae l g er iy
-75	[Antalya]	ae n t ax l y aa
-75	[Ottawa]	aa dx ax w aa
-75	[Marseille]	m aa r s ay l
-75	[Austin]	ao s t ax n
-75	[Jacksonville]	jh ae k s ax n v ih l
-75	[Indianapolis]	ih n d iy ax n ae p ax l ix s
-75	[Valencia]	v ax l eh n s iy ax
-75	[Glasgow]	g l ae s k ow
-75	[Amsterdam]	ae m s t er d ae m
-75	[Columbus]	k ax l ah m b ax s
-75	[Charlotte]	sh aa r l ax t
-75	[Detroit]	d ix t r oy t
-75	[Memphis]	m eh m f ax s
-75	[Boston]	b aa s t ax n
-75	[Denver]	d eh n v er
-75	[Washington]	w aa sh ix ng t ax n
-75	[Washington_D_C]	w aa sh ix ng t ax n d iy s iy
-75	[Nashville]	n ae sh v ix l
-75	[Baltimore]	b ao l t ax m ao r
-75	[Seattle]	s iy ae dx ax l
-75	[Louisville]	l uw iy v ih l
-75	[Helsinki]	hh eh l s ix ng k iy
-75	[Vancouver]	v ae n k uw v er
-75	[Portland]	p ao r t l ax n d
-75	[Milwaukee]	m ix l w ao k iy
-75	[Edinburgh]	eh d ax n b er ow
-75	[Malaga]	m ae l ax g ax
-75	[Albuquerque]	ae l b ax k er k iy
-75	[Bristol]	b r ih s t ax l
-75	[Dublin]	d ah b l ix n
-75	[Manchester]	m ae n ch eh s t er
-75	[Lyon]	l ay ax n
-75	[Sacramento]	s ae k r ax m eh n t ow
-75	[Toulouse]	t uw l uw z
-75	[Nice]	n ay s
-75	[Alicante]	ae l ax k aa n t eh
-75	[Venice]	v eh n ax s
-75	[Frankfurt]	f r ae ng k f er t
-75	[Philadelphia]	f ih l ax d eh l f iy ax
-75	[Rochester]	r aa ch eh s t er
-75	[Syracuse]	s ih r ax k y uw z
-75	[Buffalo]	b ah f ax l ow
-75	[Miami]	m ay ae m iy
-76	[York]	y ao r k
-76	[Petersburg]	p iy dx er z b er g
-76	[Angeles]	ae n jh ax l ix s
-76	[Diego]	d ix ey g ow
-76	[Antonio]	ae n t ow n iy ow
-76	[José]	hh ow z ey
-76	[Francisco]	f r ae n s ih s k ow
-76	[Vegas]	v ey g ax s
-77	[New]	n uw
-77	[Las]	l aa s
-77	[Los]	l ow s
-77	[Santa]	s ae n t ax
-77	[Saint]	s ey n t
-78	[Mexico]	m eh k s ax k ow
-78	[Guatemala]	g w aa t ax m ao l ax
-78	[Oklahoma]	ow k l ax hh ow m ax
-78	[Kansas]	k ae n z ax s
-79	[City]	s ih dx iy
-80	[eat]	iy t
-80	[shower]	sh aw er
-81	[play]	p l ey
-81	[make]	m ey k
-81	[write]	r ay t
-81	[eat]	iy t
-81	[get]	g eh t
-81	[do]	d uw
-81	[call]	k ao l
-82	[put]	p uh t
-82	[take]	t ey k
-83	[wash]	w aa sh
-83	[food]	f uw d
-83	[dinner]	d ih n er
-83	[supper]	s ah p er
-83	[guitar]	g ih t ax
-83	[piano]	p iy ae n ow
-83	[washer]	w aa sh ax
-83	[dryer]	d r ay er
-83	[mom]	m aa m
-83	[mother]	m ah dh er
-83	[dad]	d ae d
-83	[father]	f aa dh er
-83	[sister]	s ih s t er
-83	[brother]	b r ah dh er
-84	[a]	ax
-84	[an]	ae n
-84	[the]	dh ax
-84	[the]	dh iy
-85	[in]	ix n
-85	[into]	ix n t uw
-85	[on]	aa n
-85	[at]	ae t
-85	[for]	f ao r
-85	[with]	w ih dh
-85	[from]	f r ah m
-86	[out]	aw t
-86	[in]	ix n
-86	[on]	aa n
-86	[next]	n eh k s t
-87	[of]	ah v
-87	[to]	t uw
-88	[my]	m ay
-88	[your]	y ao r
-88	[his]	hh ih z
-88	[her]	hh er
-88	[its]	ih t s
-88	[our]	aw er
-88	[their]	dh eh r
+68	[traffic]	t r ae f ix k
+69	[cold]	k ow l d
+69	[hot]	hh aa t
+69	[sunny]	s ah n iy
+69	[raining]	r ey n ix ng
+69	[windy]	w ay n d iy
+70	[weather]	w eh dh er
+71	[like]	l ay k
+72	[will]	w ih l
+73	[at]	ae t
+74	[cancel]	k ae n s ax l
+75	[navigation]	n ae v ax g ey sh ax n
+76	[rain]	r ey n
+76	[snow]	s n ow
+77	[remind]	r ix m ay n d
+78	[London]	l ah n d ax n
+78	[Shanghai]	sh ae ng hh ay
+78	[Beijing]	b ey zh ih ng
+78	[Istanbul]	ih s t aa n b uw l
+78	[Moscow]	m aa s k ow
+78	[Seoul]	s ow l
+78	[Shenzhen]	sh eh n zh eh n
+78	[Delhi]	d eh l iy
+78	[Tokyo]	t ow k iy ow
+78	[London]	l ah n d ax n
+78	[Cairo]	k ay r ow
+78	[Johannesburg]	jh ow hh ae n ix s b er g
+78	[Bangkok]	b ae ng k aa k
+78	[Athens]	ae th ax n z
+78	[Toronto]	t er aa n t ow
+78	[Sydney]	s ih d n iy
+78	[Ankara]	ae ng k er ax
+78	[Melbourne]	m eh l b er n
+78	[Alexandria]	ae l ax g z ae n d r iy ax
+78	[Singapore]	s ih ng ax p ao r
+78	[Berlin]	b er l ih n
+78	[Madrid]	m ax d r ih d
+78	[Nairobi]	n ay r ow b iy
+78	[Xiamen]	z iy ey m ax n
+78	[Casablanca]	k ae s ax b l ae ng k ax
+78	[Izmir]	ih z m ih r
+78	[Chicago]	sh ax k aa g ow
+78	[Osaka]	ow s aa k ax
+78	[Rome]	r ow m
+78	[Paris]	p eh r ix s
+78	[Houston]	hh y uw s t ax n
+78	[Dubai]	d uw b ay
+78	[Perth]	p er th
+78	[Vienna]	v iy eh n ax
+78	[Budapest]	b uw dx ax p eh s t
+78	[Hamburg]	hh ae m b er g
+78	[Warsaw]	w ao r s ao
+78	[Barcelona]	b aa r s ix l ow n ax
+78	[Philadelphia]	f ih l ax d eh l f iy ax
+78	[Phoenix]	f iy n ix k s
+78	[Stockholm]	s t aa k hh ow l m
+78	[Munich]	m y uw n ix k
+78	[Prague]	p r aa g
+78	[Milan]	m ax l aa n
+78	[Adelaide]	ae dx ax l ey d
+78	[Dallas]	d ae l ax s
+78	[Copenhagen]	k ow p ax n hh ey g ax n
+78	[Birmingham]	b er m ix ng hh ae m
+78	[Calgary]	k ae l g er iy
+78	[Antalya]	ae n t ax l y aa
+78	[Ottawa]	aa dx ax w aa
+78	[Marseille]	m aa r s ay l
+78	[Austin]	ao s t ax n
+78	[Jacksonville]	jh ae k s ax n v ih l
+78	[Indianapolis]	ih n d iy ax n ae p ax l ix s
+78	[Valencia]	v ax l eh n s iy ax
+78	[Glasgow]	g l ae s k ow
+78	[Amsterdam]	ae m s t er d ae m
+78	[Columbus]	k ax l ah m b ax s
+78	[Charlotte]	sh aa r l ax t
+78	[Detroit]	d ix t r oy t
+78	[Memphis]	m eh m f ax s
+78	[Boston]	b aa s t ax n
+78	[Denver]	d eh n v er
+78	[Washington]	w aa sh ix ng t ax n
+78	[Washington_D_C]	w aa sh ix ng t ax n d iy s iy
+78	[Nashville]	n ae sh v ix l
+78	[Baltimore]	b ao l t ax m ao r
+78	[Seattle]	s iy ae dx ax l
+78	[Louisville]	l uw iy v ih l
+78	[Helsinki]	hh eh l s ix ng k iy
+78	[Vancouver]	v ae n k uw v er
+78	[Portland]	p ao r t l ax n d
+78	[Milwaukee]	m ix l w ao k iy
+78	[Edinburgh]	eh d ax n b er ow
+78	[Malaga]	m ae l ax g ax
+78	[Albuquerque]	ae l b ax k er k iy
+78	[Bristol]	b r ih s t ax l
+78	[Dublin]	d ah b l ix n
+78	[Manchester]	m ae n ch eh s t er
+78	[Lyon]	l ay ax n
+78	[Sacramento]	s ae k r ax m eh n t ow
+78	[Toulouse]	t uw l uw z
+78	[Nice]	n ay s
+78	[Alicante]	ae l ax k aa n t eh
+78	[Venice]	v eh n ax s
+78	[Frankfurt]	f r ae ng k f er t
+78	[Philadelphia]	f ih l ax d eh l f iy ax
+78	[Rochester]	r aa ch eh s t er
+78	[Syracuse]	s ih r ax k y uw z
+78	[Buffalo]	b ah f ax l ow
+78	[Miami]	m ay ae m iy
+79	[York]	y ao r k
+79	[Petersburg]	p iy dx er z b er g
+79	[Angeles]	ae n jh ax l ix s
+79	[Diego]	d ix ey g ow
+79	[Antonio]	ae n t ow n iy ow
+79	[José]	hh ow z ey
+79	[Francisco]	f r ae n s ih s k ow
+79	[Vegas]	v ey g ax s
+80	[New]	n uw
+80	[Las]	l aa s
+80	[Los]	l ow s
+80	[Santa]	s ae n t ax
+80	[Saint]	s ey n t
+81	[Mexico]	m eh k s ax k ow
+81	[Guatemala]	g w aa t ax m ao l ax
+81	[Oklahoma]	ow k l ax hh ow m ax
+81	[Kansas]	k ae n z ax s
+82	[City]	s ih dx iy
+83	[eat]	iy t
+83	[shower]	sh aw er
+84	[play]	p l ey
+84	[make]	m ey k
+84	[write]	r ay t
+84	[eat]	iy t
+84	[get]	g eh t
+84	[do]	d uw
+84	[call]	k ao l
+85	[put]	p uh t
+85	[take]	t ey k
+86	[wash]	w aa sh
+86	[food]	f uw d
+86	[dinner]	d ih n er
+86	[supper]	s ah p er
+86	[guitar]	g ih t ax
+86	[piano]	p iy ae n ow
+86	[washer]	w aa sh ax
+86	[dryer]	d r ay er
+86	[mom]	m aa m
+86	[mother]	m ah dh er
+86	[dad]	d ae d
+86	[father]	f aa dh er
+86	[sister]	s ih s t er
+86	[brother]	b r ah dh er
+87	[a]	ax
+87	[an]	ae n
+87	[the]	dh ax
+87	[the]	dh iy
+88	[in]	ix n
+88	[into]	ix n t uw
+88	[on]	aa n
+88	[at]	ae t
+88	[for]	f ao r
+88	[with]	w ih dh
+88	[from]	f r ah m
+89	[out]	aw t
+89	[in]	ix n
+89	[on]	aa n
+89	[next]	n eh k s t
+90	[of]	ah v
+90	[to]	t uw
+91	[my]	m ay
+91	[your]	y ao r
+91	[his]	hh ih z
+91	[her]	hh er
+91	[its]	ih t s
+91	[our]	aw er
+91	[their]	dh eh r

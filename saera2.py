@@ -909,6 +909,14 @@ class Saera:
 			return self.coin_flip(result)
 		elif result['outcome']['intent']=="roll_dice":
 			return self.roll_dice(result)
+		elif result['outcome']['intent']=="cancel":
+			global direction_list
+			if direction_list != []:
+				direction_list = []
+				platform.disablePTP()
+				return "Canceled navigation."
+			else:
+				return "Cancel what?"
 		elif result['outcome']['intent']=="mumble":
 			return "Sorry, I didn't understand that."
 		elif result['outcome']['intent']=="quit" or result['outcome']['intent']=="good_bye":
