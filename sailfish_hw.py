@@ -378,7 +378,7 @@ def pause():
 	print (result)
 
 def play(song=None):
-	if is_playing() in ("Playing", "Paused") and song is None:
+	if is_playing() in ("Playing", "Paused") and not song:
 		result = subprocess.Popen(["gdbus",
 								"call",
 								"-e",
