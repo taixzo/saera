@@ -220,6 +220,7 @@ def resume_daemons():
 	global daemons_running
 	daemons_running = True
 	e.set()
+	e2.set()
 
 def watch_proximity(e):
 	global detected
@@ -244,6 +245,11 @@ def watch_mic(e):
 	inp.setperiodsize(160)
 	while True:
 		l,data = inp.read()
+		if not daemons_running:
+			inp.pause()
+			e.wait()
+			e.clear()
+			inp.pause(False)
 		while True:
 			tl,tdata = inp.read()
 			if tl:
@@ -493,6 +499,9 @@ def disablePTP():
 def sayRich(spokenMessage, message, img, lat=0, lon=0):
 	pyotherside.send('sayRich',message, img, lat, lon)
 	speak(spokenMessage)
+
+def check_can_listen():
+	return not os.path.exists("/tmp/espeak_lock")
 
 def quit():
 	conn.close()

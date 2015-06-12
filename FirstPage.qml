@@ -42,25 +42,26 @@ Page {
     property real longitude: 0;
 
     function speak() {
-      mainWindow.activate()
-      playSound.play()
-      volume.visible = true;
-      py.call('saera2.run_voice',[],function(res) {
-        busyIndicator.running = true;
-        volume.visible = false;
-        listModel.append({value: res, who: "me", link: false, image: "", lat: 0, lon: 0});
-        py.call('saera2.run_text', [res], function(result){
-            busyIndicator.running = false;
-            if (typeof(result)=="string") {
-              listModel.append({value: result, who: "saera", link: false, image: "", lat: 0, lon: 0});
-            } else {
-              for (var i in result) {
-                listModel.append({value: result[i][0], who: "saera", link: result[i][1]});
+      py.call('saera2.check_can_listen',[],function(res){
+        if (!res) return;
+        mainWindow.activate()
+        playSound.play()
+        volume.visible = true;
+        py.call('saera2.run_voice',[],function(res) {
+          busyIndicator.running = true;
+          volume.visible = false;
+          listModel.append({value: res, who: "me", link: false, image: "", lat: 0, lon: 0});
+          py.call('saera2.run_text', [res], function(result){
+              busyIndicator.running = false;
+              if (typeof(result)=="string") {
+                listModel.append({value: result, who: "saera", link: false, image: "", lat: 0, lon: 0});
+              } else {
+                for (var i in result) {
+                  listModel.append({value: result[i][0], who: "saera", link: result[i][1]});
+                }
               }
-            }
-            // messages.scrollToBottom();
-        });
-        // messages.scrollToBottom();
+          });
+        })
       })
     }
 
