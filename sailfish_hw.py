@@ -237,6 +237,14 @@ def watch_proximity(e):
 			print ('Application focused.')
 		time.sleep(1)
 
+def watch_headset_btn():
+	dbproc = subprocess.Popen(["dbus-monitor --system \"type='signal',sender='org.bluez',interface='org.bluez.Headset',member='AnswerRequested'\""],shell=True,stdout=subprocess.PIPE)
+	while True:
+		res = dbproc.stdout.readline()
+		if res.endswith(b'AnswerRequested\n'):
+			pyotherside.send('start')
+
+
 def watch_mic(e):
 	inp = alsaaudio.PCM(alsaaudio.PCM_CAPTURE,alsaaudio.PCM_NONBLOCK)
 	inp.setchannels(1)
@@ -266,8 +274,10 @@ e = threading.Event()
 e2 = threading.Event()
 prox_thread = threading.Thread(target=watch_proximity, args=(e,))
 mic_thread = threading.Thread(target=watch_mic, args=(e2,))
+headset_thread = threading.Thread(target=watch_headset_btn)
 prox_thread.start()
 mic_thread.start()
+headset_thread.start()
 
 def listen():
 	print ("Listening...")
