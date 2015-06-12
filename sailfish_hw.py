@@ -211,6 +211,7 @@ client.send("TERMINATE\n")
 
 detected = False
 daemons_running = True
+listening = False
 
 def pause_daemons():
 	global daemons_running
@@ -280,10 +281,16 @@ mic_thread.start()
 headset_thread.start()
 
 def listen():
+	l = threading.Thread(target=listen_thread)
+	l.start()
+
+def listen_thread():
 	print ("Listening...")
 	# purge message queue
 	time.sleep(0.6)
 	client.send("RESUME\n")
+	global listening
+	listening = True
 	while 1:
 		try:
 			client.results.get(False)
@@ -301,6 +308,8 @@ def listen():
 				# result.words = ['*mumble*']
 				result = MicroMock(words=[MicroMock(word='*mumble*')])
 				break
+			elif not listening:
+				return
 		except Queue.Empty:
 			continue
 	numbers = {'zero':'0','oh':'0','one':'1','two':'2','three':'3','four':'4','five':'5','six':'6','seven':'7','eight':'8','nine':'9'}
@@ -319,7 +328,12 @@ def listen():
 	res = " ".join(words)
 	res = res[0].upper()+res[1:]
 	client.send("TERMINATE\n")
-	return res
+	pyotherside.send('process_spoken_text',res)
+
+def cancel_listening():
+	client.send("TERMINATE\n")
+	global listening
+	listening = False
 
 class timed:
 	alarms = []

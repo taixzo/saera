@@ -40,28 +40,40 @@ Page {
 
     property real latitude: 0;
     property real longitude: 0;
+    property bool listening: false;
 
     function speak() {
       py.call('saera2.check_can_listen',[],function(res){
         if (!res) return;
-        mainWindow.activate()
-        playSound.play()
-        volume.visible = true;
-        py.call('saera2.run_voice',[],function(res) {
-          busyIndicator.running = true;
-          volume.visible = false;
-          listModel.append({value: res, who: "me", link: false, image: "", lat: 0, lon: 0});
-          py.call('saera2.run_text', [res], function(result){
-              busyIndicator.running = false;
-              if (typeof(result)=="string") {
-                listModel.append({value: result, who: "saera", link: false, image: "", lat: 0, lon: 0});
-              } else {
-                for (var i in result) {
-                  listModel.append({value: result[i][0], who: "saera", link: result[i][1]});
-                }
-              }
-          });
-        })
+        if (page.listening) {
+          page.listening = false
+          py.call("saera2.cancel_listening",[],function(res){
+            volume.visible = false;
+          })
+        } else {
+          page.listening = true;
+          mainWindow.activate()
+          playSound.play()
+          volume.visible = true;
+          py.call('saera2.run_voice',[],function(res) {})
+        }
+      })
+    }
+
+    function process_spoken_text(res) {
+      busyIndicator.running = true;
+      volume.visible = false;
+      listModel.append({value: res, who: "me", link: false, image: "", lat: 0, lon: 0});
+      py.call('saera2.run_text', [res], function(result){
+          page.listening = false;
+          busyIndicator.running = false;
+          if (typeof(result)=="string") {
+            listModel.append({value: result, who: "saera", link: false, image: "", lat: 0, lon: 0});
+          } else {
+            for (var i in result) {
+              listModel.append({value: result[i][0], who: "saera", link: result[i][1]});
+            }
+          }
       })
     }
 
@@ -193,6 +205,7 @@ Page {
              setHandler('enablePTP', page.enablePTP)
              setHandler('sayRich', page.sayRich)
              setHandler('set_vol', page.set_vol)
+             setHandler('process_spoken_text', page.process_spoken_text)
          }
          onError: console.log('Python error: ' + traceback)
     }
