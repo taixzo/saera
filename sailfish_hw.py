@@ -13,6 +13,7 @@ import random
 import threading
 import espeak2julius
 from streetnames import get_street_names
+import alsaaudio, audioop
 import re
 from ID3 import ID3
 try:
@@ -235,9 +236,32 @@ def watch_proximity(e):
 			print ('Application focused.')
 		time.sleep(1)
 
+def watch_mic(e):
+	inp = alsaaudio.PCM(alsaaudio.PCM_CAPTURE,alsaaudio.PCM_NONBLOCK)
+	inp.setchannels(1)
+	inp.setrate(8000)
+	inp.setformat(alsaaudio.PCM_FORMAT_S16_LE)
+	inp.setperiodsize(160)
+	while True:
+		l,data = inp.read()
+		while True:
+			tl,tdata = inp.read()
+			if tl:
+				l,data = tl, tdata
+			else:
+				break
+		if l:
+			# Return the maximum of the absolute value of all samples in a fragment.
+			# print (audioop.max(data, 2))
+			pyotherside.send('set_vol',audioop.max(data,2))
+		time.sleep(.04)
+
 e = threading.Event()
+e2 = threading.Event()
 prox_thread = threading.Thread(target=watch_proximity, args=(e,))
+mic_thread = threading.Thread(target=watch_mic, args=(e2,))
 prox_thread.start()
+mic_thread.start()
 
 def listen():
 	print ("Listening...")

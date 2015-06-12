@@ -44,8 +44,10 @@ Page {
     function speak() {
       mainWindow.activate()
       playSound.play()
-      busyIndicator.running = true;
+      volume.visible = true;
       py.call('saera2.run_voice',[],function(res) {
+        busyIndicator.running = true;
+        volume.visible = false;
         listModel.append({value: res, who: "me", link: false, image: "", lat: 0, lon: 0});
         py.call('saera2.run_text', [res], function(result){
             busyIndicator.running = false;
@@ -67,6 +69,7 @@ Page {
         py.call('saera2.resume_daemons',[],function(result){})
         py.call('saera2.activate',[],function(result){
           busyIndicator.running = false;
+          volume.visible = false;
             if (typeof(result)=="string") {
               if (result != "") {
                 listModel.append({value: result, who: "saera", link: false, image: "", lat: 0, lon: 0});
@@ -84,6 +87,10 @@ Page {
 
     function load_msg(msg) {
         loadingText.text = msg
+    }
+
+    function set_vol(vol) {
+        volume.width = 128+Math.max(Math.log(vol)*Math.log(vol), (volume.width-150)*0.7)
     }
 
     function enablePTP() {
@@ -153,6 +160,7 @@ Page {
       messages.visible = false
       inputfield.visible = false
       btn.visible = false
+      volume.visible = false
     }
 
     Component.onDestruction: {
@@ -183,6 +191,7 @@ Page {
              setHandler('load_msg', page.load_msg)
              setHandler('enablePTP', page.enablePTP)
              setHandler('sayRich', page.sayRich)
+             setHandler('set_vol', page.set_vol)
          }
          onError: console.log('Python error: ' + traceback)
     }
@@ -288,6 +297,17 @@ Page {
     SoundEffect {
         id: playSound
         source: "resources/Slick.wav"
+    }
+
+    Rectangle {
+        id: volume
+        anchors.centerIn: btn
+        width: 128
+        height: width
+        color: "transparent"
+        border.color: Theme.secondaryHighlightColor
+        border.width: 2
+        radius: width*0.5
     }
 
     IconButton {
