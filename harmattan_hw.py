@@ -1,6 +1,5 @@
 #! /usr/bin/env python
 
-import pyotherside
 import os, sys
 import email
 import subprocess
@@ -8,7 +7,7 @@ import sqlite3
 import dbus
 from datetime import datetime, timedelta
 import pyjulius
-import queue as Queue
+import Queue
 import time
 import random
 import threading
@@ -61,6 +60,10 @@ mailconn = sqlite3.connect('/home/user/.qmf/database/qmailstore.db')
 mailcur = mailconn.cursor()
 
 f = __file__.split('harmattan_hw.py')[0]
+
+log = open('/home/user/debug.log','w')
+log.write(f+'\n')
+log.flush()
 
 # terminate any pre-existing julius processes
 p = subprocess.Popen(['ps', '-A'], stdout=subprocess.PIPE)
@@ -161,7 +164,6 @@ def regen_streetnames():
 	print (streetnames)
 	# espeak2julius.create_grammar(streetnames, 'addresses', 'addresses')
 
-pyotherside.send('load_msg','Loading music titles...')
 if not os.path.exists('/home/user/.cache/saera/musictitles.dfa'):
 	if not os.path.exists('/home/user/.cache/saera'):
 		os.mkdir('/home/user/.cache/saera')
@@ -170,7 +172,6 @@ if not os.path.exists('/home/user/.cache/saera/musictitles.dfa'):
 else:
 	regen_music()
 
-pyotherside.send('load_msg','Loading contacts...')
 if not os.path.exists('/home/user/.cache/saera/contacts.dfa'):
 	if not os.path.exists('/home/user/.cache/saera'):
 		os.mkdir('/home/user/.cache/saera')
@@ -179,18 +180,16 @@ if not os.path.exists('/home/user/.cache/saera/contacts.dfa'):
 else:
 	regen_contacts()
 
-pyotherside.send('load_msg','Loading street names...')
-if not os.path.exists('/home/nemo/.cache/saera/addresses.dfa'):
-	if not os.path.exists('/home/nemo/.cache/saera'):
-		os.mkdir('/home/nemo/.cache/saera')
+if not os.path.exists('/home/user/.cache/saera/addresses.dfa'):
+	if not os.path.exists('/home/user/.cache/saera'):
+		os.mkdir('/home/user/.cache/saera')
 	regen_streetnames()
-	pyotherside.send('load_msg','Loading street names\n(this may take a while)...')
 	espeak2julius.create_grammar(streetnames, 'addresses', 'addresses')
 else:
 	pass # We don't do anything with streetnames here so no point to load them
 
-pyotherside.send('load_msg','Initializing speech recognition...')
-jproc = subprocess.Popen([f+'julius/julius.arm','-module','-gram',f+'julius/saera', '-gram', '/home/user/.cache/saera/musictitles', '-gram', '/home/user/.cache/saera/contacts', '-gram', '/home/user/.cache/saera/addresses','-h',f+'julius/hmmdefs','-hlist',f+'julius/tiedlist','-input','mic','-tailmargin','800','-rejectshort','600'],stdout=subprocess.PIPE)
+print ' '.join([f+'julius/julius-harmattan','-module','-gram',f+'julius/saera', '-gram', '/home/user/.cache/saera/musictitles', '-gram', '/home/user/.cache/saera/contacts', '-gram', '/home/user/.cache/saera/addresses','-h',f+'julius/hmmdefs','-hlist',f+'julius/tiedlist','-input','mic','-tailmargin','800','-rejectshort','600'])
+jproc = subprocess.Popen([f+'julius/julius-harmattan','-module','-gram',f+'julius/saera', '-gram', '/home/user/.cache/saera/musictitles', '-gram', '/home/user/.cache/saera/contacts', '-gram', '/home/user/.cache/saera/addresses','-h',f+'julius/hmmdefs','-hlist',f+'julius/tiedlist','-input','mic','-tailmargin','800','-rejectshort','600'],stdout=subprocess.PIPE)
 # jproc = subprocess.Popen([f+'julius/julius.arm','-module','-gram','/tmp/saera/musictitles','-h',f+'julius/hmmdefs','-hlist',f+'julius/tiedlist','-input','mic','-tailmargin','800','-rejectshort','600'],stdout=subprocess.PIPE)
 client = pyjulius.Client('localhost',10500)
 print ('Connecting to pyjulius server')

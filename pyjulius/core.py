@@ -18,7 +18,7 @@
 from exceptions import ConnectionError
 from models import Sentence
 from pyjulius.exceptions import SendTimeoutError
-from xml.etree.ElementTree import XML, ParseError
+from xml.etree.ElementTree import XML #, ParseError
 try:
     import Queue
 except ImportError:
@@ -206,6 +206,6 @@ class Client(threading.Thread):
         block = re.sub(r'<(/?)s>', r'&lt;\1s&gt;', self._readblock())
         try:
             xml = XML(block)
-        except ParseError:
+        except:
             xml = None
         return xml

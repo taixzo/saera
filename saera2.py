@@ -30,11 +30,14 @@ import subprocess
 from guessing import Guesser
 
 if sys.version_info[0]<3:
-	if sys.version_info[1]<6:
+	if sys.version_info[1]<7:
 		try:
 			import fremantle_hw as platform
 		except ImportError:
-			import cmd_hw as platform
+			try:
+				import harmattan_hw as platform
+			except ImportError:
+				import cmd_hw as platform
 	else:
 		if pfm.linux_distribution()[0].lower()=='ubuntu':
 			import ubuntu_hw as platform

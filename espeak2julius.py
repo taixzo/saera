@@ -1,6 +1,9 @@
 import re
 import subprocess
-import collections
+try:
+    from collections import OrderedDict
+except ImportError: # for python2.6 and lower
+    from ordereddict import OrderedDict
 import random
 import os, sys
 from ID3 import ID3
@@ -17,7 +20,7 @@ syllconv = open(f+'julius/espeak-julius.txt').read().splitlines()[1:]
 
 triphones = open (f+'julius/tiedlist').read().split()
 
-d = collections.OrderedDict()
+d = OrderedDict()
 
 jd = open (f+'julius/dict').read().splitlines()
 jdict = dict([(i.split('[')[0].strip(), i.split(']')[-1].replace('sp','').strip()) for i in jd])
@@ -158,7 +161,12 @@ zero       z ih r ow
                 c.append(e2j(word))
         # c = [e2j(word) for word in words]
         tvoca = ""
-        tgram = {'songtitles':"\nTITLE:",'contacts':'\nFIRSTNAME:','addresses':'\n'+streettype.upper()+"_NAME_STRUCT:"}[gramtype]
+        if gramtype=="songtitles":
+            tgram = "\nTITLE:"
+        elif gramtype=="contacts":
+            tgram = "\nFIRSTNAME:"
+        elif gramtype=="addresses":
+            tgram = "\n"+streettype.upper()+"_NAME_STRUCT:"
         for index, pronunciation in enumerate(c):
             tobreak = False
             tpro = pronunciation.split(' ')
@@ -214,12 +222,15 @@ zero       z ih r ow
         voca += tvoca
         gram += tgram
     # voca = voca.replace('ih \n','iy \n').replace(' n k ',' ng k ')
-    if not os.path.exists('/home/nemo/.cache/saera'):
-        os.mkdir('/home/nemo/.cache/saera')
-    open('/home/nemo/.cache/saera/'+gramname+'.grammar','w').write(gram)
-    open('/home/nemo/.cache/saera/'+gramname+'.voca','w').write(voca)
-    os.system(f+'julius/ARM/mkdfa.pl /home/nemo/.cache/saera/'+gramname)
-    print (f+'julius/ARM/mkdfa.pl /home/nemo/.cache/saera/'+gramname)
+    home = os.getenv('HOME')
+    if not os.path.exists(home+'/.cache/saera'):
+        os.mkdir(home+'/.cache/saera')
+    open(home+'/.cache/saera/'+gramname+'.grammar','w').write(gram)
+    open(home+'/.cache/saera/'+gramname+'.voca','w').write(voca)
+    # try:
+    os.system('perl '+f+'julius/ARM/mkdfa.pl '+home+'/.cache/saera/'+gramname)
+    # except
+    print (f+'julius/ARM/mkdfa.pl '+home+'/.cache/saera/'+gramname)
     return gram, voca
 
 if __name__=="__main__":
