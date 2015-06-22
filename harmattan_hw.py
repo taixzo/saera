@@ -53,6 +53,8 @@ else:
 	conn.row_factory = sqlite3.Row
 	cur = conn.cursor()
 
+if os.path.exists('/tmp/espeak_lock'):
+	os.remove('/tmp/espeak_lock')
 
 # WE NEED SQLITES3 AND PYTHON-DBUS
 
@@ -119,6 +121,7 @@ streetnames = []
 def regen_contacts():
 	firsts = []
 	fulls = []
+	return # Contacts are borked for now
 	ccon = sqlite3.connect('/home/user/.cache/tracker/meta.db')
 	cur = ccon.cursor()
 	# THIS IS A TERRIBLE HACK
@@ -164,7 +167,7 @@ def regen_streetnames():
 	print (streetnames)
 	# espeak2julius.create_grammar(streetnames, 'addresses', 'addresses')
 
-if not os.path.exists('/home/user/.cache/saera/musictitles.dfa'):
+'''if not os.path.exists('/home/user/.cache/saera/musictitles.dfa'):
 	if not os.path.exists('/home/user/.cache/saera'):
 		os.mkdir('/home/user/.cache/saera')
 	regen_music()
@@ -186,10 +189,11 @@ if not os.path.exists('/home/user/.cache/saera/addresses.dfa'):
 	regen_streetnames()
 	espeak2julius.create_grammar(streetnames, 'addresses', 'addresses')
 else:
-	pass # We don't do anything with streetnames here so no point to load them
+	pass # We don't do anything with streetnames here so no point to load them'''
 
 print ' '.join([f+'julius/julius-harmattan','-module','-gram',f+'julius/saera', '-gram', '/home/user/.cache/saera/musictitles', '-gram', '/home/user/.cache/saera/contacts', '-gram', '/home/user/.cache/saera/addresses','-h',f+'julius/hmmdefs','-hlist',f+'julius/tiedlist','-input','mic','-tailmargin','800','-rejectshort','600'])
-jproc = subprocess.Popen([f+'julius/julius-harmattan','-module','-gram',f+'julius/saera', '-gram', '/home/user/.cache/saera/musictitles', '-gram', '/home/user/.cache/saera/contacts', '-gram', '/home/user/.cache/saera/addresses','-h',f+'julius/hmmdefs','-hlist',f+'julius/tiedlist','-input','mic','-tailmargin','800','-rejectshort','600'],stdout=subprocess.PIPE)
+# jproc = subprocess.Popen([f+'julius/julius-harmattan','-module','-gram',f+'julius/saera', '-gram', '/home/user/.cache/saera/musictitles', '-gram', '/home/user/.cache/saera/contacts', '-gram', '/home/user/.cache/saera/addresses','-h',f+'julius/hmmdefs','-hlist',f+'julius/tiedlist','-input','mic','-tailmargin','800','-rejectshort','600'],stdout=subprocess.PIPE)
+jproc = subprocess.Popen([f+'julius/julius-harmattan','-module','-gram',f+'julius/saera','-h',f+'julius/hmmdefs','-hlist',f+'julius/tiedlist','-input','mic','-tailmargin','800','-rejectshort','600'],stdout=subprocess.PIPE)
 # jproc = subprocess.Popen([f+'julius/julius.arm','-module','-gram','/tmp/saera/musictitles','-h',f+'julius/hmmdefs','-hlist',f+'julius/tiedlist','-input','mic','-tailmargin','800','-rejectshort','600'],stdout=subprocess.PIPE)
 client = pyjulius.Client('localhost',10500)
 print ('Connecting to pyjulius server')
@@ -467,7 +471,7 @@ def speak(string):
 	else:
 		spoken_str = '\n'.join([i[0] for i in string])
 	if not os.path.exists("/tmp/espeak_lock"):
-		os.system('touch /tmp/espeak_lock && espeak --stdout -v +f2 "' + spoken_str.replace(":00"," o'clock").replace("\n",". ") + '" | gst-launch-0.10 -q fdsrc ! wavparse ! audioconvert ! alsasink && rm /tmp/espeak_lock &')
+		os.system('touch /tmp/espeak_lock && espeak -v +f2 "' + spoken_str.replace(":00"," o'clock").replace("\n",". ") + '"  && rm /tmp/espeak_lock &')
 	detected = False
 	return string
 
