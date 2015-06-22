@@ -13,6 +13,7 @@ import random
 import threading
 import espeak2julius
 from streetnames import get_street_names
+import alsaaudio, audioop
 import re
 from ID3 import ID3
 try:
@@ -210,6 +211,7 @@ client.send("TERMINATE\n")
 
 detected = False
 daemons_running = True
+listening = False
 
 def pause_daemons():
 	global daemons_running
@@ -219,6 +221,7 @@ def resume_daemons():
 	global daemons_running
 	daemons_running = True
 	e.set()
+	e2.set()
 
 def watch_proximity(e):
 	global detected
@@ -235,15 +238,59 @@ def watch_proximity(e):
 			print ('Application focused.')
 		time.sleep(1)
 
+def watch_headset_btn():
+	dbproc = subprocess.Popen(["dbus-monitor --system \"type='signal',sender='org.bluez',interface='org.bluez.Headset',member='AnswerRequested'\""],shell=True,stdout=subprocess.PIPE)
+	while True:
+		res = dbproc.stdout.readline()
+		if res.endswith(b'AnswerRequested\n'):
+			pyotherside.send('start')
+
+
+def watch_mic(e):
+	inp = alsaaudio.PCM(alsaaudio.PCM_CAPTURE,alsaaudio.PCM_NONBLOCK)
+	inp.setchannels(1)
+	inp.setrate(8000)
+	inp.setformat(alsaaudio.PCM_FORMAT_S16_LE)
+	inp.setperiodsize(160)
+	while True:
+		l,data = inp.read()
+		if not daemons_running:
+			inp.pause()
+			e.wait()
+			e.clear()
+			inp.pause(False)
+		while True:
+			tl,tdata = inp.read()
+			if tl:
+				l,data = tl, tdata
+			else:
+				break
+		if l:
+			# Return the maximum of the absolute value of all samples in a fragment.
+			# print (audioop.max(data, 2))
+			pyotherside.send('set_vol',audioop.max(data,2))
+		time.sleep(.04)
+
 e = threading.Event()
+e2 = threading.Event()
 prox_thread = threading.Thread(target=watch_proximity, args=(e,))
+mic_thread = threading.Thread(target=watch_mic, args=(e2,))
+headset_thread = threading.Thread(target=watch_headset_btn)
 prox_thread.start()
+mic_thread.start()
+headset_thread.start()
 
 def listen():
+	l = threading.Thread(target=listen_thread)
+	l.start()
+
+def listen_thread():
 	print ("Listening...")
 	# purge message queue
 	time.sleep(0.6)
 	client.send("RESUME\n")
+	global listening
+	listening = True
 	while 1:
 		try:
 			client.results.get(False)
@@ -261,6 +308,8 @@ def listen():
 				# result.words = ['*mumble*']
 				result = MicroMock(words=[MicroMock(word='*mumble*')])
 				break
+			elif not listening:
+				return
 		except Queue.Empty:
 			continue
 	numbers = {'zero':'0','oh':'0','one':'1','two':'2','three':'3','four':'4','five':'5','six':'6','seven':'7','eight':'8','nine':'9'}
@@ -279,7 +328,12 @@ def listen():
 	res = " ".join(words)
 	res = res[0].upper()+res[1:]
 	client.send("TERMINATE\n")
-	return res
+	pyotherside.send('process_spoken_text',res)
+
+def cancel_listening():
+	client.send("TERMINATE\n")
+	global listening
+	listening = False
 
 class timed:
 	alarms = []
@@ -348,7 +402,7 @@ def pause():
 	print (result)
 
 def play(song=None):
-	if is_playing() in ("Playing", "Paused") and song is None:
+	if is_playing() in ("Playing", "Paused") and not song:
 		result = subprocess.Popen(["gdbus",
 								"call",
 								"-e",
@@ -469,6 +523,9 @@ def disablePTP():
 def sayRich(spokenMessage, message, img, lat=0, lon=0):
 	pyotherside.send('sayRich',message, img, lat, lon)
 	speak(spokenMessage)
+
+def check_can_listen():
+	return not os.path.exists("/tmp/espeak_lock")
 
 def quit():
 	conn.close()

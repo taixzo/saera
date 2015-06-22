@@ -40,25 +40,40 @@ Page {
 
     property real latitude: 0;
     property real longitude: 0;
+    property bool listening: false;
 
     function speak() {
-      mainWindow.activate()
-      playSound.play()
+      py.call('saera2.check_can_listen',[],function(res){
+        if (!res) return;
+        if (page.listening) {
+          page.listening = false
+          py.call("saera2.cancel_listening",[],function(res){
+            volume.visible = false;
+          })
+        } else {
+          page.listening = true;
+          mainWindow.activate()
+          playSound.play()
+          volume.visible = true;
+          py.call('saera2.run_voice',[],function(res) {})
+        }
+      })
+    }
+
+    function process_spoken_text(res) {
       busyIndicator.running = true;
-      py.call('saera2.run_voice',[],function(res) {
-        listModel.append({value: res, who: "me", link: false, image: "", lat: 0, lon: 0});
-        py.call('saera2.run_text', [res], function(result){
-            busyIndicator.running = false;
-            if (typeof(result)=="string") {
-              listModel.append({value: result, who: "saera", link: false, image: "", lat: 0, lon: 0});
-            } else {
-              for (var i in result) {
-                listModel.append({value: result[i][0], who: "saera", link: result[i][1]});
-              }
+      volume.visible = false;
+      listModel.append({value: res, who: "me", link: false, image: "", lat: 0, lon: 0});
+      py.call('saera2.run_text', [res], function(result){
+          page.listening = false;
+          busyIndicator.running = false;
+          if (typeof(result)=="string") {
+            listModel.append({value: result, who: "saera", link: false, image: "", lat: 0, lon: 0});
+          } else {
+            for (var i in result) {
+              listModel.append({value: result[i][0], who: "saera", link: result[i][1]});
             }
-            // messages.scrollToBottom();
-        });
-        // messages.scrollToBottom();
+          }
       })
     }
 
@@ -67,6 +82,7 @@ Page {
         py.call('saera2.resume_daemons',[],function(result){})
         py.call('saera2.activate',[],function(result){
           busyIndicator.running = false;
+          volume.visible = false;
             if (typeof(result)=="string") {
               if (result != "") {
                 listModel.append({value: result, who: "saera", link: false, image: "", lat: 0, lon: 0});
@@ -84,6 +100,10 @@ Page {
 
     function load_msg(msg) {
         loadingText.text = msg
+    }
+
+    function set_vol(vol) {
+        volume.width = 128+Math.max(Math.log(vol)*Math.log(vol), (volume.width-150)*0.7)
     }
 
     function enablePTP() {
@@ -153,6 +173,7 @@ Page {
       messages.visible = false
       inputfield.visible = false
       btn.visible = false
+      volume.visible = false
     }
 
     Component.onDestruction: {
@@ -183,6 +204,8 @@ Page {
              setHandler('load_msg', page.load_msg)
              setHandler('enablePTP', page.enablePTP)
              setHandler('sayRich', page.sayRich)
+             setHandler('set_vol', page.set_vol)
+             setHandler('process_spoken_text', page.process_spoken_text)
          }
          onError: console.log('Python error: ' + traceback)
     }
@@ -288,6 +311,17 @@ Page {
     SoundEffect {
         id: playSound
         source: "resources/Slick.wav"
+    }
+
+    Rectangle {
+        id: volume
+        anchors.centerIn: btn
+        width: 128
+        height: width
+        color: "transparent"
+        border.color: Theme.secondaryHighlightColor
+        border.width: 2
+        radius: width*0.5
     }
 
     IconButton {

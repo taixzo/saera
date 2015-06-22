@@ -1011,5 +1011,11 @@ def activate():
 	else:
 		return platform.speak("Good morning! "+platform.app.weather({'outcome':{'entities':{}},'text':''}) )
 
+def check_can_listen():
+	return platform.check_can_listen()
+
+def cancel_listening():
+	return platform.cancel_listening()
+
 if __name__=="__main__":
 	initialize()
