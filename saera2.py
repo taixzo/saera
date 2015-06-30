@@ -86,6 +86,13 @@ class Memory:
 			return self.items[item][0]
 		except KeyError:
 			raise ForgottenException
+	def get_more_recent(self, *items):
+		lst = [self.items[item]+[item] for item in items if item in self.items]
+		lst.sort(key=lambda x: x[1])
+		try:
+			return (lst[-1][0], lst[-1][2])
+		except IndexError:
+			raise ForgottenException
 	def tick(self):
 		if self.forgettable:
 			for i in list(self.items):
@@ -300,13 +307,16 @@ class Saera:
 			loc = platform.cur.fetchone()
 			if not loc:
 				# How to convert a generalized location to a city??
-				# For some idiotic reson, this segfaults under SailfishOS. Return of the cUrl!
-				req = urllib2.urlopen('http://api.geonames.org/searchJSON?q='+location.replace(" ","+")+'&username=taixzo').read().decode("utf-8")
-				# req  = subprocess.Popen(["curl",
-										   # 'http://api.geonames.org/searchJSON?q='+location.replace(" ","+")+'&username=taixzo'], stdout=subprocess.PIPE).communicate()[0].decode("utf-8")
+				try:
+					req = urllib2.urlopen('http://api.geonames.org/searchJSON?q='+location.replace(" ","+")+'&username=taixzo').read().decode("utf-8")
+				except:
+					return "I need an internet connection to look up the weather, sorry."
 				locdic = json.loads(req)
 				loc = (0,locdic['geonames'][0]["toponymName"],"",locdic['geonames'][0]["lat"],locdic['geonames'][0]["lng"])
-				tz = json.loads(urllib2.urlopen('http://api.geonames.org/timezoneJSON?lat='+locdic['geonames'][0]["lat"]+'&lng='+locdic['geonames'][0]["lng"]+'&username=taixzo').read().decode("utf-8"))['rawOffset']
+				try:
+					tz = json.loads(urllib2.urlopen('http://api.geonames.org/timezoneJSON?lat='+locdic['geonames'][0]["lat"]+'&lng='+locdic['geonames'][0]["lng"]+'&username=taixzo').read().decode("utf-8"))['rawOffset']
+				except:
+					return "I need an internet connection to look up the weather, sorry."
 				platform.cur.execute('INSERT INTO Locations (LocName, Zip, Latitude, Longitude, Timezone) VALUES ("'+loc[1]+'", "", '+loc[3]+', '+loc[4]+', '+str(tz)+')')
 				platform.conn.commit()
 		else:
@@ -334,9 +344,6 @@ class Saera:
 			else:
 				is_time = False
 				f = urllib2.urlopen('http://api.wunderground.com/api/0a02b434d9bf118f/geolookup/conditions/q/'+str(loc[3])+','+str(loc[4])+'.json').read()
-			# DAMMIT SAILFISH WHY DO YOU HATE THE INTERNET
-			# req  = subprocess.Popen(["curl",
-									   # 'http://api.wunderground.com/api/0a02b434d9bf118f/geolookup/conditions/q/'+loc[0]+','+loc[1]+'.json'], stdout=subprocess.PIPE).communicate()[0]
 		except urllib2.URLError:
 			return "I need an internet connection to look up the weather, sorry."
 		json_string = f.decode("utf-8")
@@ -360,6 +367,11 @@ class Saera:
 				precip = float(parsed_json['current_observation']['precip_1hr_in'])
 			except ValueError:
 				precip = 0
+
+		# if 'location' in result['outcome']['entities']:
+			# TODO: store weather for locations every so often
+		# else:
+			# TODO: ditto
 
 		# if 'weather' in result['outcome']['entities']:
 			# if result['outcome']['entities']['weather']['value'] == "rain":
@@ -450,6 +462,7 @@ class Saera:
 		else:
 			return "The weather "+loc_str+" is "+weather+", and "+str(int(round(temp_f)))+u("°.")
 	def call_phone(self, result):
+		self.short_term_memory.set('intent','call_phone')
 		if 'phone_number' in result['outcome']['entities']:
 			num = result['outcome']['entities']['phone_number']['value']
 			platform.call_phone(num)
@@ -458,23 +471,39 @@ class Saera:
 			num = ''.join([{'zero':'0','oh':'0','naught':'0','one':'1','two':'2','three':'3','four':'4','five':'5','six':'6','seven':'7',
 							'eight':'8','nine':'9','ten':'10','eleven':'11','twelve':'12','thirteen':'13','fourteen':'14','fifteen':'15',
 							'sixteen':'16','seventeen':'17','eighteen':'18','nineteen':'19','hundred':'00'}[i] for i in result['outcome']['entities']['digits'].split()])
-			platform.call_phone(num)
-			return "Calling "+num
+			self.short_term_memory.set('phone_number', num)
+			return "Would you like me to call "+num+"?"
 		elif 'contact' in result['outcome']['entities']:
 			try:
-				platform.call_contact(result['outcome']['entities']['contact'])
+				# platform.call_contact(result['outcome']['entities']['contact'])
+				res = platform.check_contact(result['outcome']['entities']['contact'])
+				if res:
+					self.short_term_memory.set('contact',result['outcome']['entities']['contact'])
 			except NameError:
 				return "I don't know who "+result['outcome']['entities']['contact']+" is."
 			except AttributeError:
 				return result['outcome']['entities']['contact']+" doesn't have a phone number."
-			return 'Calling '+result['outcome']['entities']['contact']+"."
+			return 'Would you like me to call '+result['outcome']['entities']['contact']+"?"
 		else:
 			return "What number should I call?"
 	def yesno(self,result):
+		response_is_yes = result['outcome']['entities']['yes_no'] if 'yes_no' in result['outcome']['entities'] else True
 		try:
 			intent = self.short_term_memory.get('intent')
 			if intent=="alarm":
 				return "What?"
+			elif intent=="call_phone":
+				if response_is_yes:
+					try:
+						call_dest, dest_type = self.short_term_memory.get_more_recent('phone_number','contact')
+						if dest_type=='phone_number':
+							platform.call_phone(call_dest)
+							return "Calling "+call_dest+"."
+						elif dest_type=='contact':
+							platform.call_contact(call_dest)
+							return "Calling "+call_dest+"."
+					except:
+						return "Sorry, could you repeat that?"
 			elif intent=="weather":
 				return "Good."
 		except ForgottenException:
@@ -504,14 +533,13 @@ class Saera:
 			platform.cur.execute("SELECT * FROM Locations WHERE LocName='"+location+"'")
 			loc = platform.cur.fetchone()
 			if not loc:
-				# How to convert a generalized location to a city??
-				# For some idiotic reson, this segfaults under SailfishOS. Return of the cUrl!
-				req = urllib2.urlopen('http://api.geonames.org/searchJSON?q='+location.replace(" ","+")+'&username=taixzo').read().decode("utf-8")
-				# req  = subprocess.Popen(["curl",
-										   # 'http://api.geonames.org/searchJSON?q='+location.replace(" ","+")+'&username=taixzo'], stdout=subprocess.PIPE).communicate()[0].decode("utf-8")
-				locdic = json.loads(req)
+				try:
+					req = urllib2.urlopen('http://api.geonames.org/searchJSON?q='+location.replace(" ","+")+'&username=taixzo').read().decode("utf-8")
+					locdic = json.loads(req)
 
-				tz = json.loads(urllib2.urlopen('http://api.geonames.org/timezoneJSON?lat='+locdic['geonames'][0]["lat"]+'&lng='+locdic['geonames'][0]["lng"]+'&username=taixzo').read().decode("utf-8"))['rawOffset']
+					tz = json.loads(urllib2.urlopen('http://api.geonames.org/timezoneJSON?lat='+locdic['geonames'][0]["lat"]+'&lng='+locdic['geonames'][0]["lng"]+'&username=taixzo').read().decode("utf-8"))['rawOffset']
+				except:
+					return "I don't know where "+location+" is."
 				loc = (0,locdic['geonames'][0]["toponymName"],"",locdic['geonames'][0]["lat"],locdic['geonames'][0]["lng"],tz)
 			now = now + timedelta(hours=loc[5]-localOffset)
 			return "It is "+str((now.hour-1)%12+1 if True else now.hour)+":"+str(now.minute).zfill(2)+" in "+loc[1]+"."
@@ -555,7 +583,7 @@ class Saera:
 				platform.conn.commit()
 				return "Ok, you live in "+loc['name']+", "+loc["region"]+"."
 			except urllib2.URLError:
-				return "I need an internet connection to look up the weather, sorry."
+				return "I don't know where"+result['outcome']['entities']['location']+" is, sorry."
 		return "Where is "+result['outcome']['entities']['location']
 	def who_is(self,result):
 		conjugations = {'I':'am','you':'are','he':'is','she':'is','it':'is','we':'are','they':'are'}
@@ -592,22 +620,25 @@ class Saera:
 				if res:
 					person = {'name':res[1],'description':res[2],'born':res[3],'died':res[4],'gender':res[5],'profession':res[6]}
 				else:
-					req = json.loads(urllib2.urlopen("https://www.wikidata.org/w/api.php?action=wbsearchentities&search="+who.replace(" ","%20")+"&language=en&format=json").read().decode("utf-8"))
-					if req['search']:
-						genders = {6581097:'male',6581072:'female'}
-						wikidataid = req['search'][0]['id']
-						req = json.loads(urllib2.urlopen("https://www.wikidata.org/wiki/Special:EntityData/"+wikidataid+".json").read().decode("utf-8"))
-						person = {	'name':req['entities'][wikidataid]['labels']['en']['value'],
-									'description':req['entities'][wikidataid]['descriptions']['en']['value'],
-									'born':req['entities'][wikidataid]['claims']['P569'][0]['mainsnak']['datavalue']['value']['time'] if 'P569' in req['entities'][wikidataid]['claims'] else None,
-									'died':None,
-									'profession':None,
-									'gender':genders[req['entities'][wikidataid]['claims']['P21'][0]['mainsnak']['datavalue']['value']['numeric-id']] if req['entities'][wikidataid]['claims']['P21'][0]['mainsnak']['datavalue']['value']['numeric-id'] in genders else 'other'
-									}
-						platform.cur.execute('INSERT OR REPLACE INTO People (ID, Name, Description, Born, Died, Gender, Profession) VALUES ((SELECT ID FROM People WHERE Name = "'+person['name']+'"), "'+person['name']+'", "'+person['description']+'", "'+(person['born'] or 'NULL')+'","'+(person['died'] or 'NULL')+'","'+person['gender']+'",NULL);')
-						platform.conn.commit()
-					else:
-						return "I don't know who "+who+" is."
+					try:
+						req = json.loads(urllib2.urlopen("https://www.wikidata.org/w/api.php?action=wbsearchentities&search="+who.replace(" ","%20")+"&language=en&format=json").read().decode("utf-8"))
+						if req['search']:
+							genders = {6581097:'male',6581072:'female'}
+							wikidataid = req['search'][0]['id']
+							req = json.loads(urllib2.urlopen("https://www.wikidata.org/wiki/Special:EntityData/"+wikidataid+".json").read().decode("utf-8"))
+							person = {	'name':req['entities'][wikidataid]['labels']['en']['value'],
+										'description':req['entities'][wikidataid]['descriptions']['en']['value'],
+										'born':req['entities'][wikidataid]['claims']['P569'][0]['mainsnak']['datavalue']['value']['time'] if 'P569' in req['entities'][wikidataid]['claims'] else None,
+										'died':None,
+										'profession':None,
+										'gender':genders[req['entities'][wikidataid]['claims']['P21'][0]['mainsnak']['datavalue']['value']['numeric-id']] if req['entities'][wikidataid]['claims']['P21'][0]['mainsnak']['datavalue']['value']['numeric-id'] in genders else 'other'
+										}
+							platform.cur.execute('INSERT OR REPLACE INTO People (ID, Name, Description, Born, Died, Gender, Profession) VALUES ((SELECT ID FROM People WHERE Name = "'+person['name']+'"), "'+person['name']+'", "'+person['description']+'", "'+(person['born'] or 'NULL')+'","'+(person['died'] or 'NULL')+'","'+person['gender']+'",NULL);')
+							platform.conn.commit()
+						else:
+							return "I don't know who "+who+" is."
+					except:
+						return "I don't know who "+who+" is, and I can't look it up without an internet connection."
 			pronoun = 'he' if person["gender"] == "male" else 'she' if person["gender"] == "female" else 'it'
 			self.short_term_memory.set(pronoun,person)
 			return pronoun.capitalize() + " " + conjugations[pronoun] + " " + ("a " if not (person['description'].lower().startswith("the ") or person['description'].lower().startswith("a ") or person['description'].lower().startswith("an ")) else "") + person["description"][0].upper()+person["description"][1:]+'.'
@@ -661,32 +692,38 @@ class Saera:
 			except ForgottenException:
 				return (" "+result.text+" ").replace(" it "," what ").strip()+"?"
 	def search (self,result):
-		if 'search_engine' in result['outcome']['entities']:
-			search_engine = result['outcome']['entities']['search_engine']
-		else:
-			search_engine = "google"
-		if search_engine=="google":
-			search = pygoogle.pygoogle( log_level=log_level, query=result['outcome']['entities']['query'], pages=1, hl='en')
-			return [("I found these results:",)]+list(search.search().items())
-		elif search_engine=="wikipedia":
-			try:
-				return [wikikit.summary(result['outcome']['entities']['query'],sentences=1)]
-			except KeyError:
-				return "Wikipedia doesn't have an entry for "+result['outcome']['entities']['query']+"."
-		elif search_engine=="duckduckgo" or search_engine=="duck duck go" or search_engine=="duck go":
-			# r = duckduckgo.query(result['outcome']['entities']['query'])
-			return duckduckgo.get_zci(result['outcome']['entities']['query'])
-		return "I don't know how to search  "+search_engine+"."
+		try:
+			if 'search_engine' in result['outcome']['entities']:
+				search_engine = result['outcome']['entities']['search_engine']
+			else:
+				search_engine = "google"
+			if search_engine=="google":
+				search = pygoogle.pygoogle( log_level=log_level, query=result['outcome']['entities']['query'], pages=1, hl='en')
+				return [("I found these results:",)]+list(search.search().items())
+			elif search_engine=="wikipedia":
+				try:
+					return [wikikit.summary(result['outcome']['entities']['query'],sentences=1)]
+				except KeyError:
+					return "Wikipedia doesn't have an entry for "+result['outcome']['entities']['query']+"."
+			elif search_engine=="duckduckgo" or search_engine=="duck duck go" or search_engine=="duck go":
+				# r = duckduckgo.query(result['outcome']['entities']['query'])
+				return duckduckgo.get_zci(result['outcome']['entities']['query'])
+			return "I don't know how to search  "+search_engine+"."
+		except:
+			return "I need an internet connection to search "+search_engine+" for "+result['outcome']['entities']['query']+"."
 	def traffic(self, result):
 		if 'location' in result['outcome']['entities']:
 			location = result['outcome']['entities']['location']
 			platform.cur.execute("SELECT * FROM Locations WHERE LocName='"+location+"'")
 			loc = platform.cur.fetchone()
 			if not loc:
-				req = urllib2.urlopen('http://api.geonames.org/searchJSON?q='+location.replace(" ","+")+'&username=taixzo').read().decode("utf-8")
-				locdic = json.loads(req)
-				loc = (0,locdic['geonames'][0]["toponymName"],"",locdic['geonames'][0]["lat"],locdic['geonames'][0]["lng"])
-				tz = json.loads(urllib2.urlopen('http://api.geonames.org/timezoneJSON?lat='+locdic['geonames'][0]["lat"]+'&lng='+locdic['geonames'][0]["lng"]+'&username=taixzo').read().decode("utf-8"))['rawOffset']
+				try:
+					req = urllib2.urlopen('http://api.geonames.org/searchJSON?q='+location.replace(" ","+")+'&username=taixzo').read().decode("utf-8")
+					locdic = json.loads(req)
+					loc = (0,locdic['geonames'][0]["toponymName"],"",locdic['geonames'][0]["lat"],locdic['geonames'][0]["lng"])
+					tz = json.loads(urllib2.urlopen('http://api.geonames.org/timezoneJSON?lat='+locdic['geonames'][0]["lat"]+'&lng='+locdic['geonames'][0]["lng"]+'&username=taixzo').read().decode("utf-8"))['rawOffset']
+				except:
+					return "I need an internet connection to check the traffic, sorry."
 				platform.cur.execute('INSERT INTO Locations (LocName, Zip, Latitude, Longitude, Timezone) VALUES ("'+loc[1]+'", "", '+loc[3]+', '+loc[4]+', '+str(tz)+')')
 				platform.conn.commit()
 			if 'on the way' in result['text']:
@@ -703,7 +740,10 @@ class Saera:
 						here = platform.cur.fetchone()
 					else:
 						return "Where do you live?"
-				routeinfo = json.loads(urllib2.urlopen("http://dev.virtualearth.net/REST/V1/Routes/Driving?wp.0="+str(here[4])+","+str(here[3])+"%2Cwa&wp.1="+loc[1].replace(" ","%20")+"&avoid=minimizeTolls&key=AltIdRJ4KAV9d1U-rE3T0E-OFN66cwd3D1USLS28oVl2lbIRbFcqMZHJZd5DwTTP").read().decode("utf-8"))
+				try:
+					routeinfo = json.loads(urllib2.urlopen("http://dev.virtualearth.net/REST/V1/Routes/Driving?wp.0="+str(here[4])+","+str(here[3])+"%2Cwa&wp.1="+loc[1].replace(" ","%20")+"&avoid=minimizeTolls&key=AltIdRJ4KAV9d1U-rE3T0E-OFN66cwd3D1USLS28oVl2lbIRbFcqMZHJZd5DwTTP").read().decode("utf-8"))
+				except:
+					return "I need an internet connection to check the traffic, sorry."
 				travelDuration = routeinfo['resourceSets'][0]['resources'][0]['travelDuration']
 				travelDurationTraffic = routeinfo['resourceSets'][0]['resources'][0]['travelDurationTraffic']
 				trafficCongestion = routeinfo['resourceSets'][0]['resources'][0]['trafficCongestion']
@@ -733,7 +773,10 @@ class Saera:
 				else:
 					return "Where do you live?"
 		bb = (float(loc[3])-.25,float(loc[4])-.25,float(loc[3])+.25,float(loc[4])+.25)
-		trafficdata = json.loads(urllib2.urlopen("http://dev.virtualearth.net/REST/v1/Traffic/Incidents/"+str(bb[0])+","+str(bb[1])+","+str(bb[2])+","+str(bb[3])+"?key=AltIdRJ4KAV9d1U-rE3T0E-OFN66cwd3D1USLS28oVl2lbIRbFcqMZHJZd5DwTTP").read().decode("utf-8"))
+		try:
+			trafficdata = json.loads(urllib2.urlopen("http://dev.virtualearth.net/REST/v1/Traffic/Incidents/"+str(bb[0])+","+str(bb[1])+","+str(bb[2])+","+str(bb[3])+"?key=AltIdRJ4KAV9d1U-rE3T0E-OFN66cwd3D1USLS28oVl2lbIRbFcqMZHJZd5DwTTP").read().decode("utf-8"))
+		except:
+			return "I need an internet connection to check the traffic." # Would you like me to check next time I have a connection?"
 		print (trafficdata['resourceSets'][0])
 		retmsg = "There "+(('are '+str(trafficdata['resourceSets'][0]['estimatedTotal'])+' ').replace(' 0 ',' no ')+'traffic incidents ').replace('are 1 traffic incidents ','is 1 traffic incident ')+("in the "+loc[1]+" area." if loc[1] != "here" else "around here.")
 		if trafficdata['resourceSets'][0]['estimatedTotal']<10:
@@ -772,16 +815,18 @@ class Saera:
 				# req = urllib2.urlopen('https://graphhopper.com/api/1/geocode?q='+location.replace(' ','%20')+'&point='+str(here[3])+','+str(here[4])+'&key=d5365874-1efe-4f12-92ee-5757f82041fe').read().decode("utf-8")
 				# locdic = json.loads(req)
 				# loc = (0,locdic['hits'][0]["name"],"",locdic['hits'][0]["point"]["lat"],locdic['hits'][0]["point"]["lng"])
-				req = urllib2.urlopen('http://dev.virtualearth.net/REST/v1/Locations?query='+location.replace(' ','%20')+'&userLocation='+str(here[3])+','+str(here[4])+'&maxResults=10&key=AltIdRJ4KAV9d1U-rE3T0E-OFN66cwd3D1USLS28oVl2lbIRbFcqMZHJZd5DwTTP').read().decode("utf-8")
+				try:
+					req = urllib2.urlopen('http://dev.virtualearth.net/REST/v1/Locations?query='+location.replace(' ','%20')+'&userLocation='+str(here[3])+','+str(here[4])+'&maxResults=10&key=AltIdRJ4KAV9d1U-rE3T0E-OFN66cwd3D1USLS28oVl2lbIRbFcqMZHJZd5DwTTP').read().decode("utf-8")
+				except:
+					return "I can't look up directions without an internet connection, sorry."
 				locdic = json.loads(req)
 				loc = (0,locdic['resourceSets'][0]['resources'][0]["name"],"",locdic['resourceSets'][0]['resources'][0]["point"]["coordinates"][0],locdic['resourceSets'][0]['resources'][0]["point"]["coordinates"][1])
 
-
-				# tz = json.loads(urllib2.urlopen('http://api.geonames.org/timezoneJSON?lat='+locdic['geonames'][0]["lat"]+'&lng='+locdic['geonames'][0]["lng"]+'&username=taixzo').read().decode("utf-8"))['rawOffset']
-				# platform.cur.execute('INSERT INTO Locations (LocName, Zip, Latitude, Longitude, Timezone) VALUES ("'+loc[1]+'", "", '+loc[3]+', '+loc[4]+', '+str(tz)+')')
-				# platform.conn.commit()
 				print (loc)
-			req = urllib2.urlopen("https://graphhopper.com/api/1/route?point="+str(here[3])+","+str(here[4])+"&point="+str(loc[3])+","+str(loc[4])+"&vehicle=car&points_encoded=true&calc_points=true&key=d5365874-1efe-4f12-92ee-5757f82041fe").read().decode("utf-8")
+			try:
+				req = urllib2.urlopen("https://graphhopper.com/api/1/route?point="+str(here[3])+","+str(here[4])+"&point="+str(loc[3])+","+str(loc[4])+"&vehicle=car&points_encoded=true&calc_points=true&key=d5365874-1efe-4f12-92ee-5757f82041fe").read().decode("utf-8")
+			except:
+				return "I can't look up directions without an internet connection, sorry."
 			pathdic = json.loads(req)
 			path = decodePath(pathdic['paths'][0]['points'], False)
 			print (path)
