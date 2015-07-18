@@ -194,7 +194,7 @@ else:
 	pass # We don't do anything with streetnames here so no point to load them
 
 pyotherside.send('load_msg','Initializing speech recognition...')
-jproc = subprocess.Popen([f+'julius/julius.arm','-module','-gram',f+'julius/saera', '-gram', '/home/nemo/.cache/saera/musictitles', '-gram', '/home/nemo/.cache/saera/contacts', '-gram', '/home/nemo/.cache/saera/addresses','-h',f+'julius/hmmdefs','-hlist',f+'julius/tiedlist','-input','mic','-tailmargin','800','-rejectshort','600'],stdout=subprocess.PIPE)
+jproc = subprocess.Popen([f+'julius/julius.jolla','-module','-gram',f+'julius/saera', '-gram', '/home/nemo/.cache/saera/musictitles', '-gram', '/home/nemo/.cache/saera/contacts', '-gram', '/home/nemo/.cache/saera/addresses','-h',f+'julius/hmmdefs','-hlist',f+'julius/tiedlist','-input','mic','-tailmargin','800','-rejectshort','600'],stdout=subprocess.PIPE)
 # jproc = subprocess.Popen([f+'julius/julius.arm','-module','-gram','/tmp/saera/musictitles','-h',f+'julius/hmmdefs','-hlist',f+'julius/tiedlist','-input','mic','-tailmargin','800','-rejectshort','600'],stdout=subprocess.PIPE)
 client = pyjulius.Client('localhost',10500)
 print ('Connecting to pyjulius server')
@@ -457,6 +457,18 @@ def call_phone(num):
 								"com.jolla.voicecall.ui.dial",
 								"'"+num+"'"], stdout=subprocess.PIPE).communicate()
 	return "true" in result[0].decode("UTF-8")
+
+def check_contact(contact):
+	if contact.lower() in contacts:
+		c = contacts[contact.lower()]
+	elif contact.lower() in firstnames:
+		c = contacts[firstnames[contact.lower()]]
+	else:
+		raise NameError
+	if c['hasPhoneNumber']:
+		return True
+	else:
+		raise AttributeError
 
 def call_contact(contact):
 	if contact.lower() in contacts:
