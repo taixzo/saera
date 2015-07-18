@@ -218,7 +218,8 @@ zero       z ih r ow
                 voca += tvoca
                 gram += tgram
                 tvoca = ""
-                tgram = "\nNAME: W_"+str(i)+"_"+str(index)
+                if gramtype=="contacts":
+                    tgram = "\nNAME: W_"+str(i)+"_"+str(index)
         voca += tvoca
         gram += tgram
     # voca = voca.replace('ih \n','iy \n').replace(' n k ',' ng k ')
