@@ -222,11 +222,11 @@ zero       z ih r ow
                     tgram = "\nNAME: W_"+str(i)+"_"+str(index)
         voca += tvoca
         gram += tgram
-        newvoca = []
-        for line in voca.splitlines():
+        newgram = []
+        for line in gram.splitlines():
             if not line=="TITLE:":
-                newvoca+=line
-        voca = '\n'.join(newvoca)
+                newgram.append(line)
+        gram = '\n'.join(newgram)
     # voca = voca.replace('ih \n','iy \n').replace(' n k ',' ng k ')
     home = os.getenv('HOME')
     if not os.path.exists(home+'/.cache/saera'):
