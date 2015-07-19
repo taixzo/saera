@@ -126,11 +126,17 @@ def regen_contacts():
 				contacts[first+' '+last] = {'hasPhoneNumber':hasPhoneNumber, 'contactId':contactId}
 				firstnames[first] = first+' '+last
 				guessing.variables['contact'].keywords.append(last)
-				print (fulls[-1])
+				try:
+					print (fulls[-1])
+				except UnicodeEncodeError:
+					print ("Name contains Unicode string")
 			else:
 				contacts[first] = {'hasPhoneNumber':hasPhoneNumber, 'contactId':contactId}
 				firstnames[first] = first
-				print (firsts[-1])
+				try:
+					print (firsts[-1])
+				except UnicodeEncodeError:
+					print ("Name contains Unicode string")
 	cur.execute('SELECT Contacts.contactId, PhoneNumbers.phoneNumber from Contacts, PhoneNumbers where Contacts.contactId = PhoneNumbers.contactId')
 	rows = cur.fetchall()
 	for contactId, phoneNumber in rows:
