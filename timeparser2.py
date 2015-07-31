@@ -62,7 +62,7 @@ def parse(tokens):
 		elif token in daytimes:
 			hour = daytimes[token]
 	if minutetimeadjustment:
-		addedtimeadjustment = minutetimeadjustment
+		addedtimeadjustment += minutetimeadjustment
 
 	adjustmentdelta = timedelta(days = dateadjustment, minutes = timeadjustment)
 	adjustmentdelta2 = timedelta(minutes = addedtimeadjustment)
