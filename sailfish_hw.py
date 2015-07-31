@@ -67,6 +67,7 @@ for line in out.decode('UTF-8').splitlines():
 		pid = int(line.split(None, 1)[0])
 		os.kill(pid, 9)
 
+activeMediaPlayer = "jolla-mediaplayer"
 song_title_map = {}
 lst = []
 def regen_music():
@@ -385,6 +386,7 @@ def run_app(s):
 	app = s
 
 def is_playing():
+	global activeMediaPlayer
 	result = subprocess.Popen(["gdbus",
 								"call",
 								"-e",
@@ -396,7 +398,24 @@ def is_playing():
 								"org.freedesktop.DBus.Properties.Get",
 								"org.mpris.MediaPlayer2.Player",
 								"PlaybackStatus"], stdout=subprocess.PIPE).communicate()
-	return "Playing" if "Playing" in result[0].decode("UTF-8") else "Paused" if "Paused" in result[0].decode("UTF-8") else "Off" if not result[0] else "Stopped"
+	spotresult = subprocess.Popen(["gdbus",
+								"call",
+								"-e",
+								"-d",
+								"org.mpris.MediaPlayer2.CuteSpot",
+								"-o",
+								"/org/mpris/MediaPlayer2",
+								"-m",
+								"org.freedesktop.DBus.Properties.Get",
+								"org.mpris.MediaPlayer2.Player",
+								"PlaybackStatus"], stdout=subprocess.PIPE).communicate()
+	if not result[0]:
+		activeMediaPlayer = "CuteSpot"
+		return "Playing" if "Playing" in spotresult[0].decode("UTF-8") else "Paused" if "Paused" in spotresult[0].decode("UTF-8") else "Off" if not spotresult[0] else "Stopped"
+	else:
+		activeMediaPlayer = "jolla-mediaplayer"
+		return "Playing" if "Playing" in result[0].decode("UTF-8") else "Paused" if "Paused" in result[0].decode("UTF-8") else "Stopped"
+
 
 
 def pause():
@@ -404,7 +423,7 @@ def pause():
 								"call",
 								"-e",
 								"-d",
-								"org.mpris.MediaPlayer2.jolla-mediaplayer",
+								"org.mpris.MediaPlayer2."+activeMediaPlayer,
 								"-o",
 								"/org/mpris/MediaPlayer2",
 								"-m",
@@ -417,7 +436,7 @@ def play(song=None):
 								"call",
 								"-e",
 								"-d",
-								"org.mpris.MediaPlayer2.jolla-mediaplayer",
+								"org.mpris.MediaPlayer2."+activeMediaPlayer,
 								"-o",
 								"/org/mpris/MediaPlayer2",
 								"-m",
