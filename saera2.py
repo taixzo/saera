@@ -41,6 +41,8 @@ if sys.version_info[0]<3:
 	else:
 		if pfm.linux_distribution()[0].lower()=='ubuntu':
 			import ubuntu_hw as platform
+		elif sys.platform == 'darwin':
+			import osx_hw as platform
 		else:
 			import cmd_hw as platform
 else:
