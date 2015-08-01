@@ -231,17 +231,22 @@ listening = False
 
 # These should really go in a utilities file
 def post_multipart(host, selector, fields, files):
-    content_type, body = encode_multipart_formdata(fields, files)
-    h = httplib.HTTPConnection(host)
-    h.putrequest('POST', selector)
-    h.putheader('content-type', content_type)
-    h.putheader('content-length', str(len(body)))
-    h.endheaders()
-    h.send(body)
-    # errcode, errmsg, headers = h.getreply()
-    response = h.getresponse()
-    # return h.file.read()
-    return response.read().decode('utf-8')
+	content_type, body = encode_multipart_formdata(fields, files)
+	while True:
+		try:
+			h = httplib.HTTPConnection(host)
+			h.putrequest('POST', selector)
+			h.putheader('content-type', content_type)
+			h.putheader('content-length', str(len(body)))
+			h.endheaders()
+			h.send(body)
+			break
+		except InterruptedError:
+			continue
+	# errcode, errmsg, headers = h.getreply()
+	response = h.getresponse()
+	# return h.file.read()
+	return response.read().decode('utf-8')
 
 def encode_multipart_formdata(fields, files):
     boundary = b"fhajlhafjdhjkfadsjhkfhajsfdhjfdhajkhjsfdakl"
