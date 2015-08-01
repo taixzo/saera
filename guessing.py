@@ -368,6 +368,28 @@ class vQuery(Variable):
 		Variable.__init__(self)
 		self.prewords = ['for'] #+ vSearchEngine().keywords
 
+class vYesNo(Variable):
+	def __init__(self):
+		Variable.__init__(self)
+		self.affirmatives = ['yes','yep','yeah', 'certainly']
+		self.negatives = ['no', 'nope','dont','don\'t','not']
+		self.keywords = self.affirmatives+self.negatives
+	def parse(self, words):
+		for word in self.negatives:
+			if word in words:
+				return False
+		for word in self.affirmatives:
+			if word in words:
+				return True
+		# Assume we answer in the positive if it isn't one of these?
+		return True
+
+class vStore(Variable):
+	def __init__(self):
+		Variable.__init__(self)
+		# TODO
+		pass
+
 
 variables = {'time':vTime(),
 			 'digits':vDigits(),
@@ -386,7 +408,9 @@ variables = {'time':vTime(),
 			 'do_action':vDoAction(),
 			 'search_engine':vSearchEngine(),
 			 'query':vQuery(),
-			 'song':vSong()}
+			 'song':vSong(),
+			 'yes_no':vYesNo(),
+			 'store':vStore()}
 
 if __name__=="__main__":
 	# i = Intent()
