@@ -372,7 +372,7 @@ def listen_thread():
 		except Queue.Empty:
 			continue
 	numbers = {'zero':'0','oh':'0','one':'1','two':'2','three':'3','four':'4','five':'5','six':'6','seven':'7','eight':'8','nine':'9'}
-	words = [i.word.lower() for i in result.words]
+	words = [i.word for i in result.words]
 	num_str = ''
 	for i, word in enumerate(words):
 		if len(words)>i-1:
@@ -384,7 +384,11 @@ def listen_thread():
 					words[i-(len(num_str))+1:i] = ['']*(len(num_str)-1)
 				num_str = ''
 	words = [i for i in words if i]
-	res = " ".join(words)
+	if words[0] in ['what','where','when','why','how','who','is','will','are','do','should','can','would','does']:
+		punct = '?'
+	else:
+		punct = '.'
+	res = " ".join(words)+punct
 	res = res[0].upper()+res[1:]
 	client.send("TERMINATE\n")
 	pyotherside.send('process_spoken_text',res)
