@@ -4,6 +4,8 @@ import os, sys
 import email
 import subprocess
 import sqlite3
+import pyjulius
+import time
 
 import gtk
 from gtk import Window, Button, Widget, VBox, Label
@@ -55,6 +57,65 @@ else:
 	conn.row_factory = sqlite3.Row
 	cur = conn.cursor()
 
+f = __file__.split('fremantle_hw.py')[0]
+
+jproc = subprocess.Popen([f+'julius/julius.arm','-module','-gram',f+'julius/saera','-h',f+'julius/hmmdefs','-hlist',f+'julius/tiedlist','-input','mic','-tailmargin','800','-rejectshort','600'],stdout=subprocess.PIPE)
+client = pyjulius.Client('localhost',10500)
+print ('Connecting to pyjulius server')
+while True:
+	try:
+		client.connect()
+		break
+	except pyjulius.ConnectionError:
+		sys.stdout.write('.')
+		time.sleep(2)
+sys.stdout.write('..Connected\n')
+client.start()
+client.send("TERMINATE\n")
+
+def listen():
+	print ("Listening...")
+	# purge message queue
+	time.sleep(0.6)
+	client.send("RESUME\n")
+	while 1:
+		try:
+			client.results.get(False)
+		except Queue.Empty:
+			break
+	print ("Message queue Empty")
+	while 1:
+		try:
+			result = client.results.get(False)
+			if isinstance(result,pyjulius.Sentence):
+				print ("SENTENCE")
+				print (dir(result), " ".join([i.word for i in result.words]), result.score)
+				break
+			elif result.tag=="RECOGFAIL":
+				# result.words = ['*mumble*']
+				result = MicroMock(words=[MicroMock(word='*mumble*')])
+				break
+		except Queue.Empty:
+			continue
+	numbers = {'zero':'0','oh':'0','one':'1','two':'2','three':'3','four':'4','five':'5','six':'6','seven':'7','eight':'8','nine':'9'}
+	words = [i.word.lower() for i in result.words]
+	num_str = ''
+	for i, word in enumerate(words):
+		if len(words)>i-1:
+			if word in numbers:
+				num_str += numbers[word]
+			else:
+				if len(num_str)>1:
+					words[i-(len(num_str))] = num_str
+					words[i-(len(num_str))+1:i] = ['']*(len(num_str)-1)
+				num_str = ''
+	words = [i for i in words if i]
+	res = " ".join(words)
+	res = res[0].upper()+res[1:]
+	client.send("TERMINATE\n")
+	run_text(text=res)
+	return res
+
 def set_alarm(time, message = "alarm"):
 	# TODO
 	event = alarm.Event()
@@ -89,9 +150,10 @@ def set_reminder(time, message, location=None):
 def open_url(widget,url):
 	os.system('dbus-send --system --type=method_call --dest=com.nokia.osso_browser /com/nokia/osso_browser/request com.nokia.osso_browser.load_url string:"'+url+'"')
 
-def run_text(widget=None,event=None,data=None):
-	text = widget.get_text()
-	widget.set_text("")
+def run_text(widget=None,event=None,data=None, text=None):
+	if text is None:
+		text = widget.get_text()
+		widget.set_text("")
 	if text.strip()=="":
 		return
 
@@ -145,6 +207,8 @@ def run_app(s):
 	window.connect("destroy", gtk.main_quit)
 	bigvbox = VBox()
 	vbox = VBox()
+	button = Button("Listen")
+	button.connect("clicked", listen)
 
 	pannable_area = hildon.PannableArea()
 
@@ -162,6 +226,7 @@ def run_app(s):
 	# welcome_message.connect_object("clicked", Widget.destroy, window)
 	pannable_area.add_with_viewport(vbox)
 	bigvbox.pack_start(pannable_area,True,True,0)
+	bigvbox.pack_start(button,False,True,5)
 	bigvbox.pack_start(input,False,True,5)
 
 	vbox.pack_start(welcome_message,False,True,30)
