@@ -957,6 +957,8 @@ class Saera:
 			return self.coin_flip(result)
 		elif result['outcome']['intent']=="roll_dice":
 			return self.roll_dice(result)
+		elif result['outcome']['intent']=="get_song":
+			return platform.identify_song()
 		elif result['outcome']['intent']=="cancel":
 			global direction_list
 			if direction_list != []:

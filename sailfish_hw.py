@@ -12,6 +12,7 @@ import time
 import random
 import threading
 import espeak2julius
+import json
 from streetnames import get_street_names
 import alsaaudio, audioop
 import re
@@ -21,6 +22,10 @@ try:
 except:
 	import urllib as parse
 import guessing
+import base64
+import hmac
+import hashlib
+import http.client as httplib
 
 import ast # for safely parsing timed stuff
 
@@ -224,6 +229,44 @@ detected = False
 daemons_running = True
 listening = False
 
+# These should really go in a utilities file
+def post_multipart(host, selector, fields, files):
+    content_type, body = encode_multipart_formdata(fields, files)
+    h = httplib.HTTPConnection(host)
+    h.putrequest('POST', selector)
+    h.putheader('content-type', content_type)
+    h.putheader('content-length', str(len(body)))
+    h.endheaders()
+    h.send(body)
+    # errcode, errmsg, headers = h.getreply()
+    response = h.getresponse()
+    # return h.file.read()
+    return response.read().decode('utf-8')
+
+def encode_multipart_formdata(fields, files):
+    boundary = b"fhajlhafjdhjkfadsjhkfhajsfdhjfdhajkhjsfdakl"
+    CRLF = b'\r\n'
+    L = []
+    for (key, value) in fields.items():
+        L.append(b'--' + boundary)
+        L.append(('Content-Disposition: form-data; name="%s"' % key).encode('utf-8'))
+        L.append(b'')
+        L.append(value)
+    for (key, value) in files.items():
+        L.append(b'--' + boundary)
+        L.append(('Content-Disposition: form-data; name="%s"; filename="%s"' % (key, key)).encode('utf-8'))
+        L.append(b'Content-Type: application/octet-stream')
+        L.append(b'')
+        L.append(value)
+    L.append(b'--' + boundary + b'--')
+    L.append(b'')
+    body = CRLF.join(L)
+    content_type = ('multipart/form-data; boundary=%s' % boundary.decode('utf-8')).encode('utf-8')
+    return content_type, body
+
+access_key = "e46ce64507373c1d4e18a5e927efe7e0"
+access_secret = "XGjCnOU0U4Dysum3kGmPDG0YH8gKvoMQUZY1hzox"
+
 def pause_daemons():
 	global daemons_running
 	daemons_running = False
@@ -417,7 +460,6 @@ def is_playing():
 		return "Playing" if "Playing" in result[0].decode("UTF-8") else "Paused" if "Paused" in result[0].decode("UTF-8") else "Stopped"
 
 
-
 def pause():
 	result = subprocess.Popen(["gdbus",
 								"call",
@@ -473,6 +515,50 @@ def play(song=None):
 								"-m",
 								"org.mpris.MediaPlayer2.Player.Play"], stdout=subprocess.PIPE).communicate()
 	print (result)
+
+def identify_song():
+	if os.path.exists('/tmp/rec.ogg'):
+		os.remove('/tmp/rec.ogg')
+	gproc = subprocess.Popen(['gst-launch-0.10 autoaudiosrc ! vorbisenc ! oggmux ! filesink location=/tmp/rec.ogg'], shell=True)
+	time.sleep(11)
+	gproc.terminate()
+
+	f = open('/tmp/rec.ogg', "rb")
+	sample_bytes = os.path.getsize('/tmp/rec.ogg')
+	content = f.read()
+	f.close()
+
+	http_method = "POST"
+	http_uri = "/v1/identify"
+	data_type = "audio"
+	signature_version = "1"
+	timestamp = time.time()
+
+	string_to_sign = http_method+"\n"+http_uri+"\n"+access_key+"\n"+data_type+"\n"+signature_version+"\n"+str(timestamp)
+	sign = base64.b64encode(hmac.new(access_secret.encode('utf-8'), string_to_sign.encode('utf-8'), digestmod=hashlib.sha1).digest())
+
+	fields = {'access_key':access_key.encode('utf-8'),
+	          'sample_bytes':str(sample_bytes).encode('utf-8'),
+	          'timestamp':str(timestamp).encode('utf-8'),
+	          'signature':sign,
+	          'data_type':data_type.encode('utf-8'),
+	          "signature_version":signature_version.encode('utf-8')}
+
+	res = post_multipart("ap-southeast-1.api.acrcloud.com", "/v1/identify", fields, {"sample":content})
+	print (res)
+	result = json.loads(res)
+	if result['status']['code']==0: # Success!
+		title = result['metadata']['music'][0]['title']
+		artists = [i['name'] for i in result['metadata']['music'][0]['artists']]
+		if len(artists) == 1:
+			artists_string = artists[0]
+		else:
+			artists = ", ".join(artists[:-1])+" and "+artists[-1]
+		return "It sounds like "+title+", by "+artists_string+"."
+	elif result['status']['code']==1001:
+		return "I don't recognize it."
+	else:
+		return "I can't find out, the server gave me a "+str(result['status']['code'])+" error."
 
 def call_phone(num):
 	result = subprocess.Popen(["gdbus",
