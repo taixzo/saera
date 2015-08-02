@@ -818,11 +818,11 @@ class Saera:
 				# locdic = json.loads(req)
 				# loc = (0,locdic['hits'][0]["name"],"",locdic['hits'][0]["point"]["lat"],locdic['hits'][0]["point"]["lng"])
 				try:
-					req = urllib2.urlopen('http://dev.virtualearth.net/REST/v1/Locations?query='+location.replace(' ','%20')+'&userLocation='+str(here[3])+','+str(here[4])+'&maxResults=10&key=AltIdRJ4KAV9d1U-rE3T0E-OFN66cwd3D1USLS28oVl2lbIRbFcqMZHJZd5DwTTP').read().decode("utf-8")
+					req = urllib2.urlopen('https://maps.googleapis.com/maps/api/geocode/json?key=AIzaSyBUI3LwzSUmm3cI8-nEMGrQYAzs6VWFIfg&address='+location.replace(' ','+')+'&bounds='+str(float(here[3])-0.1)+','+str(float(here[4])-0.1)+'|'+str(float(here[3])+0.1)+','+str(float(here[4])+0.1)+'').read().decode("utf-8")
 				except:
 					return "I can't look up directions without an internet connection, sorry."
 				locdic = json.loads(req)
-				loc = (0,locdic['resourceSets'][0]['resources'][0]["name"],"",locdic['resourceSets'][0]['resources'][0]["point"]["coordinates"][0],locdic['resourceSets'][0]['resources'][0]["point"]["coordinates"][1])
+				loc = (0,' '.join([i["long_name"] for i in locdic['results'][0]['address_components'] if i['types'][0] not in ('country','postal','postal_code_suffix','administrative_area_level_2','neighborhood')]),"",locdic['results'][0]["geometry"]["location"]["lat"],locdic['results'][0]["geometry"]["location"]["lng"])
 
 				print (loc)
 			try:
