@@ -98,12 +98,12 @@ def regen_music():
 	?song nie:url ?url . }"', shell=True, stdout=subprocess.PIPE).communicate()[0].splitlines()[1:]
 	for line in tlist:
 		if not line: continue
-		l = line.decode('utf-8').split(", file://")
-		file = l[-1]
-		# tracker-sparql uses commas in results and doesn't escape them. As there
-		# seems to be no workaround, we assume that all URLs are file:// urls and
-		# no artists contain commas.
 		try:
+			l = line.decode('utf-8').split(", file://")
+			file = l[-1]
+			# tracker-sparql uses commas in results and doesn't escape them. As there
+			# seems to be no workaround, we assume that all URLs are file:// urls and
+			# no artists contain commas.
 			index_of_last_comma = l[0].rindex(',')
 		except: # If there are no songs on device, tracker-sparql will return 'None' which does not contain commas
 			lst.append('music')
