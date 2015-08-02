@@ -63,12 +63,21 @@ Page {
     function process_spoken_text(res) {
       busyIndicator.running = true;
       volume.visible = false;
-      listModel.append({value: res, who: "me", link: false, image: "", lat: 0, lon: 0});
+      listModel.append({value: res, who: "me", link: false, image: "", lat: 0, lon: 0, spot_preview: ""});
       py.call('saera2.run_text', [res], function(result){
           page.listening = false;
           busyIndicator.running = false;
           if (typeof(result)=="string") {
-            listModel.append({value: result, who: "saera", link: false, image: "", lat: 0, lon: 0});
+            var infos = result.split("|")
+            result = infos[0]
+            if (infos.length>1) {
+              if (infos[1]=="spot_preview") {
+                spot_pv = infos[2]
+              } else {
+                var spot_pv = ""
+              }
+            }
+            listModel.append({value: result, who: "saera", link: false, image: "", lat: 0, lon: 0, spot_preview: spot_pv});
           } else {
             for (var i in result) {
               listModel.append({value: result[i][0], who: "saera", link: result[i][1]});
@@ -85,11 +94,11 @@ Page {
           volume.visible = false;
             if (typeof(result)=="string") {
               if (result != "") {
-                listModel.append({value: result, who: "saera", link: false, image: "", lat: 0, lon: 0});
+                listModel.append({value: result, who: "saera", link: false, image: "", lat: 0, lon: 0, spot_preview: ""});
               }
             } else {
               for (var i in result) {
-                listModel.append({value: result[i][0], who: "saera", link: result[i][1], image: "", lat: 0, lon: 0});
+                listModel.append({value: result[i][0], who: "saera", link: result[i][1], image: "", lat: 0, lon: 0, spot_preview: ""});
               }
             }
         })
@@ -163,7 +172,7 @@ Page {
         if (!isNaN(parseFloat(img))) { // if img is a number
             img = images[img]
         }
-        listModel.append({value: message, who: "saera", link: false, image: img, lat: lat, lon: lon});
+        listModel.append({value: message, who: "saera", link: false, image: img, lat: lat, lon: lon, spot_preview: ""});
     }
 
     Component.onCompleted: {
@@ -235,8 +244,11 @@ Page {
                     listModel.get(messages.count-2).lat = 0
                     listModel.get(messages.count-2).lon = 0
                 }
+                if (messages.count>2) {
+                  listModel.get(messages.count-2).spot_preview = ""
+                }
             }
-            ListElement { value: "How can I help you?"; who: "saera"; link: false; image: ""; lat: 0; lon: 0 }
+            ListElement { value: "How can I help you?"; who: "saera"; link: false; image: ""; lat: 0; lon: 0; spot_preview: "" }
         }
         delegate: Item {
             width: ListView.view.width
@@ -260,6 +272,22 @@ Page {
                 }
                 color: "#FFFFFF"
                 text: lat ? dist(lat, lon) : ""
+            }
+
+            Button {
+                anchors {
+                  top: t.bottom
+                  horizontalCenter: parent.horizontalCenter
+                  margins: Theme.paddingLarge
+                }
+                text: "Play preview"
+                visible: spot_preview!="" ? true : false
+                onClicked: {
+                  py.call('saera2.play_url', [spot_preview], function(result){
+                    text = "Play preview"
+                  })
+                  text = "Stop playing"
+                }
             }
 
             Text {
@@ -292,14 +320,25 @@ Page {
         EnterKey.onClicked: {
             parent.focus = true;
             busyIndicator.running = true;
-            listModel.append({value: text, who: "me", link: false, image: "", lat: 0, lon: 0})
+            listModel.append({value: text, who: "me", link: false, image: "", lat: 0, lon: 0, spot_preview: ""})
             py.call('saera2.run_text', [text], function(result){
                 busyIndicator.running = false;
                 if (typeof(result)=="string") {
-                  listModel.append({value: result, who: "saera", link: false, image: "", lat: 0, lon: 0});
+                  var infos = result.split("|")
+                  result = infos[0]
+                  if (infos.length>1) {
+                    var spot_pv;
+                    if (infos[1]=="spot_preview") {
+                      spot_pv = infos[2]
+                      console.log(spot_pv)
+                    } else {
+                      spot_pv = ""
+                    }
+                  }
+                  listModel.append({value: result, who: "saera", link: false, image: "", lat: 0, lon: 0, spot_preview: spot_pv});
                 } else {
                   for (var i in result) {
-                    listModel.append({value: result[i][0], who: "saera", link: result[i][1], image: "", lat: 0, lon: 0});
+                    listModel.append({value: result[i][0], who: "saera", link: result[i][1], image: "", lat: 0, lon: 0, spot_preview: ""});
                   }
                 }
                 // messages.scrollToBottom();

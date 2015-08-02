@@ -26,6 +26,7 @@ import base64
 import hmac
 import hashlib
 import http.client as httplib
+import urllib.request as urllib2
 
 import ast # for safely parsing timed stuff
 
@@ -563,11 +564,21 @@ def identify_song():
 			artists_string = artists[0]
 		else:
 			artists = ", ".join(artists[:-1])+" and "+artists[-1]
-		return "It sounds like "+title+", by "+artists_string+"."
+		if "spotify" in result['metadata']['music'][0]['external_metadata']:
+			pv_url = json.loads(urllib2.urlopen("https://api.spotify.com/v1/tracks/"+result['metadata']['music'][0]['external_metadata']['spotify']['track']['id']).read().decode("utf-8"))["preview_url"]
+			return "It sounds like "+title+", by "+artists_string+".|"+"spot_preview|"+pv_url
+		else:
+			return "It sounds like "+title+", by "+artists_string+"."
+
 	elif result['status']['code']==1001:
 		return "I don't recognize it."
 	else:
 		return "I can't find out, the server gave me a "+str(result['status']['code'])+" error."
+
+def play_url(url):
+	g = subprocess.Popen(['gst-launch-0.10 playbin2 uri='+url], shell=True)
+	g.wait()
+	return
 
 def call_phone(num):
 	result = subprocess.Popen(["gdbus",
@@ -642,7 +653,7 @@ def speak(string):
 	except NameError:
 		is_string = isinstance(string,str)
 	if is_string:
-		spoken_str = string
+		spoken_str = string.split('|')[0]
 	else:
 		spoken_str = '\n'.join([i[0] for i in string])
 	if not os.path.exists("/tmp/espeak_lock"):

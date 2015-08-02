@@ -1066,5 +1066,8 @@ def check_can_listen():
 def cancel_listening():
 	return platform.cancel_listening()
 
+def play_url(url):
+	return platform.play_url(url)
+
 if __name__=="__main__":
 	initialize()
