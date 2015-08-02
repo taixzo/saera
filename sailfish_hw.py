@@ -567,6 +567,8 @@ def identify_song():
 		if "spotify" in result['metadata']['music'][0]['external_metadata']:
 			pv_url = json.loads(urllib2.urlopen("https://api.spotify.com/v1/tracks/"+result['metadata']['music'][0]['external_metadata']['spotify']['track']['id']).read().decode("utf-8"))["preview_url"]
 			return "It sounds like "+title+", by "+artists_string+".|"+"spot_preview|"+pv_url
+		elif "itunes" in result['metadata']['music'][0]['external_metadata']:
+			pv_url = json.loads(urllib2.urlopen("https://itunes.apple.com/lookup?id="+result['metadata']['music'][0]['external_metadata']['itunes']['track']['id']).read().decode("utf-8"))["results"][0]["previewUrl"]
 		else:
 			return "It sounds like "+title+", by "+artists_string+"."
 
