@@ -83,9 +83,9 @@ Page {
                   destcoords = dest[1].split(',')
                   listModel.append({value: dest[0]+(dest[2]=="True" ? " (Open)" : " (Closed)"), who: "saera", link: false, image: "", lat: parseFloat(destcoords[0]), lon: parseFloat(destcoords[1]), spot_preview: ""});
                 }
-              } else {
-                listModel.append({value: result, who: "saera", link: false, image: "", lat: 0, lon: 0, spot_preview: ""});
               }
+            } else {
+              listModel.append({value: result, who: "saera", link: false, image: "", lat: 0, lon: 0, spot_preview: ""});
             }
           } else {
             for (var i in result) {
@@ -349,9 +349,9 @@ Page {
                         destcoords = dest[1].split(',')
                         listModel.append({value: dest[0]+(dest[2]=="True" ? " (Open)" : " (Closed)"), who: "saera", link: false, image: "", lat: parseFloat(destcoords[0]), lon: parseFloat(destcoords[1]), spot_preview: ""});
                       }
-                    } else {
-                      listModel.append({value: result, who: "saera", link: false, image: "", lat: 0, lon: 0, spot_preview: ""});
                     }
+                  } else {
+                    listModel.append({value: result, who: "saera", link: false, image: "", lat: 0, lon: 0, spot_preview: ""});
                   }
                 } else {
                   for (var i in result) {
