@@ -892,6 +892,51 @@ class Saera:
 				return "Already playing!"
 			else:
 				return "Play what?"
+	def search_local_business(self, result):
+		if result['outcome']['intent']=="food":
+			keyword = "food"
+		if 'location' in result['outcome']['entities']:
+			location = result['outcome']['entities']['location']
+			platform.cur.execute("SELECT * FROM Locations WHERE LocName='"+location+"'")
+			loc = platform.cur.fetchone()
+			if not loc:
+				try:
+					req = urllib2.urlopen('http://api.geonames.org/searchJSON?q='+location.replace(" ","+")+'&username=taixzo').read().decode("utf-8")
+				except:
+					return "I don't know where "+location+" is, sorry."
+				locdic = json.loads(req)
+				loc = (0,locdic['geonames'][0]["toponymName"],"",locdic['geonames'][0]["lat"],locdic['geonames'][0]["lng"])
+				try:
+					tz = json.loads(urllib2.urlopen('http://api.geonames.org/timezoneJSON?lat='+locdic['geonames'][0]["lat"]+'&lng='+locdic['geonames'][0]["lng"]+'&username=taixzo').read().decode("utf-8"))['rawOffset']
+				except:
+					return "I don't know where "+location+" is, sorry."
+				platform.cur.execute('INSERT INTO Locations (LocName, Zip, Latitude, Longitude, Timezone) VALUES ("'+loc[1]+'", "", '+loc[3]+', '+loc[4]+', '+str(tz)+')')
+				platform.conn.commit()
+		else:
+			platform.cur.execute("SELECT * FROM Variables WHERE VarName='here'")
+			loc = platform.cur.fetchone()
+			if loc:
+				platform.cur.execute("SELECT * FROM Locations WHERE Id="+str(loc[2]))
+				loc = platform.cur.fetchone()
+				here = True
+			else:
+				platform.cur.execute("SELECT * FROM Variables WHERE VarName='home'")
+				loc = platform.cur.fetchone()
+				if loc:
+					platform.cur.execute("SELECT * FROM Locations WHERE Id="+str(loc[2]))
+					loc = platform.cur.fetchone()
+					here = True
+				else:
+					return "Where do you live?"
+		req = urllib2.urlopen('https://maps.googleapis.com/maps/api/place/nearbysearch/json?key=AIzaSyBUI3LwzSUmm3cI8-nEMGrQYAzs6VWFIfg&location='+str(loc[3])+','+str(loc[4])+'&rankby=distance&keyword='+keyword).read().decode('utf-8')
+		places = json.loads(req)
+		if len(places['results'])==1:
+			return places['results'][0]['name']+" is "+formatDistance(geo_distance(loc[3],loc[4],places['results'][0]['geometry']['location']['lat'],places['results'][0]['geometry']['location']['lng']))+" away."
+		retstr = "I found these results. The closest one is "+places['results'][0]['name']+", which is "+formatDistance(geo_distance(loc[3],loc[4],places['results'][0]['geometry']['location']['lat'],places['results'][0]['geometry']['location']['lng']))+" away."
+		retstr += "|destinations"
+		for destination in places['results'][:5]:
+			retstr+="|"+destination['name']+'^'+str(destination['geometry']['location']['lat'])+','+str(destination['geometry']['location']['lng'])+'^'+str(destination['opening_hours']['open_now'] if 'opening_hours' in destination else None)
+		return retstr
 	def process(self,result):
 		print (result['outcome']['intent'])
 		self.short_term_memory.tick()
@@ -961,6 +1006,8 @@ class Saera:
 			return self.roll_dice(result)
 		elif result['outcome']['intent']=="get_song":
 			return platform.identify_song()
+		elif result['outcome']['intent']=="food":
+			return self.search_local_business(result)
 		elif result['outcome']['intent']=="cancel":
 			global direction_list
 			if direction_list != []:

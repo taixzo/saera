@@ -72,12 +72,21 @@ Page {
             result = infos[0]
             if (infos.length>1) {
               if (infos[1]=="spot_preview") {
-                spot_pv = infos[2]
+                var spot_pv = infos[2]
+                listModel.append({value: result, who: "saera", link: false, image: "", lat: 0, lon: 0, spot_preview: spot_pv});
+              } else if (infos[1]=="destinations") {
+                listModel.append({value: result, who: "saera", link: false, image: "", lat: 0, lon: 0, spot_preview: ""});
+                var dest;
+                var destcoords;
+                for (var i=2; i<infos.length; i++) {
+                  dest = infos[i].split('^')
+                  destcoords = dest[1].split(',')
+                  listModel.append({value: dest[0]+(dest[2]=="True" ? " (Open)" : " (Closed)"), who: "saera", link: false, image: "", lat: parseFloat(destcoords[0]), lon: parseFloat(destcoords[1]), spot_preview: ""});
+                }
               } else {
-                var spot_pv = ""
+                listModel.append({value: result, who: "saera", link: false, image: "", lat: 0, lon: 0, spot_preview: ""});
               }
             }
-            listModel.append({value: result, who: "saera", link: false, image: "", lat: 0, lon: 0, spot_preview: spot_pv});
           } else {
             for (var i in result) {
               listModel.append({value: result[i][0], who: "saera", link: result[i][1]});
@@ -330,12 +339,20 @@ Page {
                     var spot_pv;
                     if (infos[1]=="spot_preview") {
                       spot_pv = infos[2]
-                      console.log(spot_pv)
+                      listModel.append({value: result, who: "saera", link: false, image: "", lat: 0, lon: 0, spot_preview: spot_pv});
+                    } else if (infos[1]=="destinations") {
+                      listModel.append({value: result, who: "saera", link: false, image: "", lat: 0, lon: 0, spot_preview: ""});
+                      var dest;
+                      var destcoords;
+                      for (var i=2; i<infos.length; i++) {
+                        dest = infos[i].split('^')
+                        destcoords = dest[1].split(',')
+                        listModel.append({value: dest[0]+(dest[2]=="True" ? " (Open)" : " (Closed)"), who: "saera", link: false, image: "", lat: parseFloat(destcoords[0]), lon: parseFloat(destcoords[1]), spot_preview: ""});
+                      }
                     } else {
-                      spot_pv = ""
+                      listModel.append({value: result, who: "saera", link: false, image: "", lat: 0, lon: 0, spot_preview: ""});
                     }
                   }
-                  listModel.append({value: result, who: "saera", link: false, image: "", lat: 0, lon: 0, spot_preview: spot_pv});
                 } else {
                   for (var i in result) {
                     listModel.append({value: result[i][0], who: "saera", link: result[i][1], image: "", lat: 0, lon: 0, spot_preview: ""});
