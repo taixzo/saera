@@ -407,8 +407,15 @@ class timed:
 	alarms = []
 
 	def check():
+		if os.path.exists(os.getenv('HOME')+'/.config/saera/alarms'):
+			alarm_list = open(os.getenv('HOME')+'/.config/saera/alarms').read().splitlines()
+		else:
+			if not os.path.exists(os.getenv('HOME')+'/.config/saera'):
+				os.mkdir(os.getenv('HOME')+'/.config/saera')
+			alarm_list = []
 		result = subprocess.Popen(["timedclient-qt5", "--info"], stdout=subprocess.PIPE).communicate()
 		rawvals = result[0].decode("UTF-8").split("Cookie ")
+		cookie = None
 		for val in rawvals:
 			alm = {}
 			for line in val.split('\n'):
@@ -418,16 +425,48 @@ class timed:
 					sections = [i.strip() for i in line.split('=')]
 					alm[sections[0]] = ast.literal_eval(sections[-1])
 				else:
-					pass
+					# TODO: add alarm to list of alarms if set by us
+					# First, remove any alarms whose time has passed
+					try:
+						cookie = str(int(line))
+					except ValueError:
+						pass
+			if cookie in alarm_list:
+				hour = int(alm['timeOfDay']) // 60
+				minute = int(alm['timeOfDay']) % 60
+				now = datetime.now()
+				created_date = datetime.fromtimestamp(int(alm['createdDate']))
+				alarm_past = False
+				if (now-created_date).days > 1:
+					alarm_past = True
+				elif now.date()>created_date.date():
+					if now.hour>hour or (now.hour == hour and now.minute > minute):
+						alarm_past = True
+				elif hour>created_date.hour or (hour == created_date.hour and minute>created_date.minute):
+					if now.hour>hour or (now.hour == hour and now.minute > minute):
+						alarm_past = True
+				if alarm_past:
+					result = subprocess.Popen(["timedclient-qt5 --cancel-event=%s" % cookie], shell=True, stdout=subprocess.PIPE).communicate()
+					alarm_list.remove(cookie)
+				cookie = None
 			timed.alarms.append(alm)
+		with open(os.getenv('HOME')+'/.config/saera/alarms', 'w') as alarm_list_file:
+			alarm_list_file.write('\n'.join(alarm_list))
 	def set_alarm(time,message):
 		result = subprocess.Popen(["timedclient-qt5 -r'hour="+str(time.hour)+";minute="+str(time.minute)+";everyDayOfWeek;everyDayOfMonth;everyMonth;' -e'APPLICATION=nemoalarms;TITLE=Alarm;createdDate="+str(int(datetime.now().timestamp()))+";timeOfDay="+str(time.hour*60+time.minute)+";type=clock;alarm;reminder;boot;keepAlive;singleShot;time="+time.strftime("%Y-%m-%d %H:%M")+";'"], shell=True, stdout=subprocess.PIPE).communicate()
-		timed.check()
+		res_str = result[0].splitlines()
+		print (res_str)
+		cookie = res_str[-1].decode('utf-8').split('cookie is')[-1].strip()
+		with open(os.getenv('HOME')+'/.config/saera/alarms', 'a') as alarm_list_file:
+			alarm_list_file.write('\n'+cookie)
+		# timed.check()
 
 	def set_reminder(time,message,location=None):
 		result = subprocess.Popen(["timedclient-qt5 -b'TITLE=button0' -e'APPLICATION=saera;TITLE="+message+(";location="+location if location else "")+";time="+time.strftime("%Y-%m-%d %H:%M")+";'"], shell=True, stdout=subprocess.PIPE).communicate()
 		print (result)
 		timed.check()
+
+timed.check()
 
 def set_alarm(time, message = "alarm"):
 	timed.set_alarm(time,message)
