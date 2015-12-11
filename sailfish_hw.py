@@ -124,6 +124,7 @@ def regen_music():
 contacts = {}
 firstnames = {}
 streetnames = []
+volume = 65536
 
 def regen_contacts():
 	firsts = []
@@ -350,6 +351,13 @@ def listen():
 
 def listen_thread():
 	print ("Listening...")
+	global volume
+	volume_getter = subprocess.Popen(["pactl list sinks | grep \"Volume: front-left\" | awk '{print $3}'"], shell=True, stdout=subprocess.PIPE)
+	result, err = volume_getter.communicate()
+	volume = int(result.split(b'\n')[1])
+	target_volume = int(volume/4)
+	subprocess.Popen(['pactl', 'set-sink-volume', '1', str(target_volume)])
+
 	# purge message queue
 	time.sleep(0.6)
 	client.send("RESUME\n")
@@ -402,6 +410,7 @@ def cancel_listening():
 	client.send("TERMINATE\n")
 	global listening
 	listening = False
+	subprocess.Popen(['pactl', 'set-sink-volume', '1', str(volume)])
 
 class timed:
 	alarms = []
@@ -705,7 +714,9 @@ def speak(string):
 	else:
 		spoken_str = '\n'.join([i[0] for i in string])
 	if not os.path.exists("/tmp/espeak_lock"):
-		os.system('touch /tmp/espeak_lock && espeak --stdout -v +f2 "' + spoken_str.replace(":00"," o'clock").replace("\n",". ") + '" | gst-launch-0.10 -q fdsrc ! wavparse ! audioconvert ! alsasink && rm /tmp/espeak_lock &')
+		os.system('pactl set-sink-volume 1 %i' % (volume/2))
+		os.system('touch /tmp/espeak_lock && espeak --stdout -v +f2 "' + spoken_str.replace(":00"," o'clock").replace("\n",". ") + '" |'
+				' gst-launch-0.10 -q fdsrc ! wavparse ! audioconvert ! volume volume=4.0 ! alsasink && rm /tmp/espeak_lock && pactl set-sink-volume 1 %i &' % volume)
 	detected = False
 	return string
 
