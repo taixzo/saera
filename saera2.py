@@ -62,7 +62,7 @@ else:
 
 log_level = logging.INFO
 
-config = platform.load_config()
+config = platform.config
 
 if sys.version < '3':
 	import codecs

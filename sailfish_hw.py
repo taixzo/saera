@@ -27,11 +27,37 @@ import hmac
 import hashlib
 import http.client as httplib
 import urllib.request as urllib2
+from collections import namedtuple
+
+Message = namedtuple("Message", ("id", "sender", "sender_id", "message", "account", "date"))
 
 import ast # for safely parsing timed stuff
 
 global app
 app = None
+
+settings_path = os.getenv('HOME')+'/.config/saera/setting.json'
+
+class Struct:
+    def __init__(self, **entries): 
+        self.__dict__.update(entries)
+
+def load_config():
+	settings = {
+		"use_gps":True,
+		"imperial":True,
+		"read_texts":True,
+	}
+	if os.path.exists(settings_path):
+		with open(settings_path) as settings_file:
+			settings.update(json.load(settings_file))
+	else:
+		os.makedirs(settings_path[:settings_path.rindex('/')], exist_ok=True)
+		with open(settings_path, 'w') as settings_file:
+			json.dump(settings, settings_file)
+	return Struct(**settings)
+
+config = load_config()
 
 class MicroMock(object):
 	def __init__(self, **kwargs):
@@ -142,17 +168,17 @@ def regen_contacts():
 				contacts[first+' '+last] = {'hasPhoneNumber':hasPhoneNumber, 'contactId':contactId}
 				firstnames[first] = first+' '+last
 				guessing.variables['contact'].keywords.append(last)
-				try:
-					print (fulls[-1])
-				except UnicodeEncodeError:
-					print ("Name contains Unicode string")
+				# try:
+				# 	print (fulls[-1])
+				# except UnicodeEncodeError:
+				# 	print ("Name contains Unicode string")
 			else:
 				contacts[first] = {'hasPhoneNumber':hasPhoneNumber, 'contactId':contactId}
 				firstnames[first] = first
-				try:
-					print (firsts[-1])
-				except UnicodeEncodeError:
-					print ("Name contains Unicode string")
+				# try:
+				# 	print (firsts[-1])
+				# except UnicodeEncodeError:
+				# 	print ("Name contains Unicode string")
 	cur.execute('SELECT Contacts.contactId, PhoneNumbers.phoneNumber from Contacts, PhoneNumbers where Contacts.contactId = PhoneNumbers.contactId')
 	rows = cur.fetchall()
 	for contactId, phoneNumber in rows:
@@ -338,6 +364,7 @@ def watch_mic(e):
 
 e = threading.Event()
 e2 = threading.Event()
+e3 = threading.Event()
 prox_thread = threading.Thread(target=watch_proximity, args=(e,))
 mic_thread = threading.Thread(target=watch_mic, args=(e2,))
 headset_thread = threading.Thread(target=watch_headset_btn)
@@ -345,6 +372,94 @@ prox_thread.start()
 mic_thread.start()
 headset_thread.start()
 
+qgvdial_msgs = []
+
+def load_qgvdial_messages():
+	qconn = sqlite3.connect('/home/nemo/.qgvdial/qgvdial.sqlite.db')
+	qcur = qconn.cursor()
+	rows = qcur.execute('SELECT * from gvinbox where flags & 1 != 0 and type=5')
+	for row in rows:
+		qgvdial_msgs.append([row[4],row[6]])
+
+def check_qgvdial_messages():
+	qconn = sqlite3.connect('/home/nemo/.qgvdial/qgvdial.sqlite.db')
+	qcur = qconn.cursor()
+	qcur.execute('SELECT * from gvinbox where flags & 1 != 0 and type=5')
+	rows = qcur.fetchall()
+	new_msgs = []
+	for row in rows:
+		conversation = row[6].split('<br>')
+		for message in conversation:
+			if not message: continue
+			sender, msg = message.split(':</b> ')
+			sender = sender.split('<b>')[-1]
+			msg, msg_time = msg.split(' <i>')
+			msg_time = msg_time.split('</i>')[0]
+			msg_date = datetime.fromtimestamp(row[2])
+			hour, minute = msg_time.split(':')
+			minute, am_pm = minute.split(' ')
+			hour, minute = int(hour), int(minute)
+			if 'p' in am_pm.lower():
+				hour += 12
+				hour %= 24
+			msg_date = msg_date.replace(hour=hour, minute=minute)
+			msg_id = row[0]+hashlib.md5(message.encode('utf-8')).hexdigest()
+
+			msg = Message(id=msg_id, sender=sender, sender_id=row[4], message=msg, account='qgvdial', date=time.mktime(msg_date.timetuple()))
+			if msg not in qgvdial_msgs and sender!='Me':
+				new_msgs.append(msg)
+				qgvdial_msgs.append(msg)
+	return new_msgs
+
+def check_messages():
+	def parse_txt_date(date):
+		return time.mktime(datetime.strptime(date.split(" GMT")[0], '%a %b %d %H:%M:%S %Y').timetuple())
+
+	rproc = subprocess.Popen(["commhistory-tool", "listgroups"],stdout=subprocess.PIPE)
+	res = rproc.communicate()[0]
+	
+	new_msgs = []
+	groups = []
+	for i in res.splitlines():
+		i = i.decode('utf-8')
+		if i.startswith("Group"):
+			groups.append([])
+			v = i[i.index('('):i.index(')')]
+			if not v.startswith('0'):
+				# Yay! New messages!
+				pass
+		else:
+			msg = i.split('|')
+			if len(msg)<13:
+				continue
+			if msg[6]=='0':
+				# new_msgs.append([msg[10],msg[12]])
+				new_msgs.append(Message(id=msg[0], sender=msg[10], sender_id=msg[10], message=msg[12], account=msg[9], date=parse_txt_date(msg[2])))
+	return new_msgs
+
+print ("Messages:")
+print ("Device:")
+for i in check_messages():
+	print ("%s: %s" % (i.sender, i.message))
+print ("QGVDial:")
+for i in check_qgvdial_messages():
+	print ("%s: %s" % (i.sender, i.message))
+	# pass
+	
+def watch_texts():
+	global detected
+	while True:
+		unread_msgs = check_qgvdial_messages()
+		if unread_msgs:
+			pyotherside.send('sayRich', '%s says: %s' % (unread_msgs[0].sender, unread_msgs[0].message), None, None, None)
+		if not daemons_running:
+			e.wait()
+			e.clear()
+		time.sleep(20)
+
+text_thread = threading.Thread(target=watch_headset_btn)
+
+#julius/julius.jolla -module -gram /usr/share/harbour-saera/qml/pages/julius/saera -gram /home/nemo/.cache/saera/musictitles -gram /home/nemo/.cache/saera/contacts -gram /home/nemo/.cache/saera/addresses -h /usr/share/harbour-saera/qml/pages/julius/hmmdefs -hlist /usr/share/harbour-saera/qml/pages/julius/tiedlist -input mic -tailmargin 800 -rejectshort 600
 def listen():
 	l = threading.Thread(target=listen_thread)
 	l.start()
@@ -715,7 +830,7 @@ def speak(string):
 		spoken_str = '\n'.join([i[0] for i in string])
 	if not os.path.exists("/tmp/espeak_lock"):
 		os.system('pactl set-sink-volume 1 %i' % (volume/2))
-		os.system('touch /tmp/espeak_lock && espeak --stdout -v +f2 "' + spoken_str.replace(":00"," o'clock").replace("\n",". ") + '" |'
+		os.system('touch /tmp/espeak_lock && espeak --stdout -v +f2 "' + spoken_str.replace(":00"," o'clock").replace("\n",". ").replace(":", ".") + '" |'
 				' gst-launch-0.10 -q fdsrc ! wavparse ! audioconvert ! volume volume=4.0 ! alsasink && rm /tmp/espeak_lock && pactl set-sink-volume 1 %i &' % volume)
 	detected = False
 	return string
