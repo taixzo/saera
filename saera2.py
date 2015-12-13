@@ -62,6 +62,8 @@ else:
 
 log_level = logging.INFO
 
+config = platform.load_config()
+
 if sys.version < '3':
 	import codecs
 	def u(x):
@@ -206,8 +208,7 @@ def formatTime(seconds):
 		return str(int(round(seconds/3600)))+" hour"+("s" if round(seconds/3600)!=1 else "")
 
 def formatDistance(meters):
-	imperial = True
-	if imperial:
+	if config.imperial:
 		feet = 3.28084*meters
 		if feet>26400: # 5 miles
 			miles = int(round(feet/5280))
@@ -354,7 +355,9 @@ class Saera:
 		if is_time:
 			fcst = [i for i in parsed_json['hourly_forecast'] if int(i['FCTTIME']['hour'])==result['outcome']['entities']['time'].hour][0]
 			temp_f = int(fcst['temp']['english'])
+			temp_c = int(fcst['temp']['metric'])
 			feelslike_f = float(fcst['feelslike']['english'])
+			feelslike_c = float(fcst['feelslike']['metric'])
 			wind_speed = int(fcst['wspd']['english'])
 			wind_string = "calm" if wind_speed<3 else str(wind_speed)+" mph "+fcst['wdir']['dir']
 			weather = fcst['condition'].lower()
@@ -362,7 +365,9 @@ class Saera:
 			hour = str(result['outcome']['entities']['time'].hour)
 		else:
 			temp_f = int(parsed_json['current_observation']['temp_f'])
+			temp_c = int(parsed_json['current_observation']['temp_c'])
 			feelslike_f = float(parsed_json['current_observation']['feelslike_f'])
+			feelslike_c = float(parsed_json['current_observation']['feelslike_c'])
 			wind_string = parsed_json['current_observation']['wind_string']
 			weather = parsed_json['current_observation']['weather'].lower()
 			try:
@@ -427,42 +432,44 @@ class Saera:
 						return "There's a few clouds, and it's night "+loc_str+"."
 				else:
 					return "No, the weather "+loc_str+" is "+weather+"."
+		temp = temp_f if config.imperial else temp_c
+		feelslike = feelslike_f if config.imperial else feelslike_c
 		if 'temperature' in result['outcome']['entities']:
 			if result['outcome']['entities']['temperature']['value'] == "cold":
 				if is_time:
 					if abs(temp_f-feelslike_f)<5:
 						if temp_f<40:
-							return "Yes, it will be "+str(int(round(temp_f)))+u("° ")+loc_str+"."
+							return "Yes, it will be "+str(int(round(temp)))+u("° ")+loc_str+"."
 						elif temp_f<60:
-							return "It will be sort of cold; the temperature "+loc_str+" is supposed to be "+str(int(round(temp_f)))+u("°.")
+							return "It will be sort of cold; the temperature "+loc_str+" is supposed to be "+str(int(round(temp)))+u("°.")
 						else:
-							return "No, it will be "+str(int(round(temp_f)))+u("° ")+loc_str+"."
+							return "No, it will be "+str(int(round(temp)))+u("° ")+loc_str+"."
 					else:
 						if feelslike_f<40:
-							return "Yes, it will be "+str(int(round(temp_f)))+u("° ")+loc_str+" but with the wind chill it will feel like "+str(int(round(feelslike_f)))+u("°.")
+							return "Yes, it will be "+str(int(round(temp)))+u("° ")+loc_str+" but with the wind chill it will feel like "+str(int(round(feelslike)))+u("°.")
 						elif feelslike_f<60:
-							return "It will be sort of cold; the temperature "+loc_str+" will be "+str(int(round(temp_f)))+u("° but it will feel like ")+str(int(round(feelslike_f)))+u("°.")
+							return "It will be sort of cold; the temperature "+loc_str+" will be "+str(int(round(temp)))+u("° but it will feel like ")+str(int(round(feelslike)))+u("°.")
 						else:
-							return "No, it will be "+str(int(round(temp_f)))+u("° ")+loc_str+" but it will feel like "+str(int(round(feelslike_f)))+u("°.")
+							return "No, it will be "+str(int(round(temp)))+u("° ")+loc_str+" but it will feel like "+str(int(round(feelslike)))+u("°.")
 				else:
 					if abs(temp_f-feelslike_f)<5:
 						if temp_f<40:
-							return "Yes, it's "+str(int(round(temp_f)))+u("° ")+loc_str+"."
+							return "Yes, it's "+str(int(round(temp)))+u("° ")+loc_str+"."
 						elif temp_f<60:
-							return "It's sort of cold; the temperature "+loc_str+" is "+str(int(round(temp_f)))+u("°.")
+							return "It's sort of cold; the temperature "+loc_str+" is "+str(int(round(temp)))+u("°.")
 						else:
-							return "No, it's "+str(int(round(temp_f)))+u("° ")+loc_str+"."
+							return "No, it's "+str(int(round(temp)))+u("° ")+loc_str+"."
 					else:
 						if feelslike_f<40:
-							return "Yes, it's "+str(int(round(temp_f)))+u("° ")+loc_str+" but it feels like "+str(int(round(feelslike_f)))+u("°.")
+							return "Yes, it's "+str(int(round(temp)))+u("° ")+loc_str+" but it feels like "+str(int(round(feelslike)))+u("°.")
 						elif feelslike_f<60:
-							return "It's sort of cold; the temperature "+loc_str+" is "+str(int(round(temp_f)))+u("° but it feels like ")+str(int(round(feelslike_f)))+u("°.")
+							return "It's sort of cold; the temperature "+loc_str+" is "+str(int(round(temp)))+u("° but it feels like ")+str(int(round(feelslike)))+u("°.")
 						else:
-							return "No, it's "+str(int(round(temp_f)))+u("° ")+loc_str+" but it feels like "+str(int(round(feelslike_f)))+u("°.")
+							return "No, it's "+str(int(round(temp)))+u("° ")+loc_str+" but it feels like "+str(int(round(feelslike)))+u("°.")
 		if is_time:
-			return "The weather "+loc_str+" will be "+weather+" and "+str(int(round(temp_f)))+u("°. at ")+hour+"."
+			return "The weather "+loc_str+" will be "+weather+" and "+str(int(round(temp)))+u("°. at ")+hour+"."
 		else:
-			return "The weather "+loc_str+" is "+weather+", and "+str(int(round(temp_f)))+u("°.")
+			return "The weather "+loc_str+" is "+weather+", and "+str(int(round(temp)))+u("°.")
 	def call_phone(self, result):
 		self.short_term_memory.set('intent','call_phone')
 		if 'phone_number' in result['outcome']['entities']:
