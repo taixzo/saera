@@ -944,6 +944,15 @@ class Saera:
 		for destination in places['results'][:5]:
 			retstr+="|"+destination['name']+'^'+str(destination['geometry']['location']['lat'])+','+str(destination['geometry']['location']['lng'])+'^'+str(destination['opening_hours']['open_now'] if 'opening_hours' in destination else None)
 		return retstr
+	def help(self):
+		return """Here are some things you could ask me:
+	What is the time in Tokyo?
+	Will it rain this afternoon?
+	What song is this?
+	Play music.
+	Call John Smith.
+	Wake me at eight.
+	Directions to 123 Main Street."""
 	def process(self,result):
 		print (result['outcome']['intent'])
 		self.short_term_memory.tick()
@@ -1030,6 +1039,8 @@ class Saera:
 			platform.quit()
 		elif result['outcome']['intent']=="restart":
 			platform.restart()
+		elif result['outcome']['intent']=="help":
+			return self.help()
 		else:
 			print (result)
 
