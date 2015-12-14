@@ -28,6 +28,7 @@ import hashlib
 import http.client as httplib
 import urllib.request as urllib2
 from collections import namedtuple
+import shutil
 
 Message = namedtuple("Message", ("id", "sender", "sender_id", "message", "account", "date"))
 
@@ -47,6 +48,8 @@ def load_config():
 		"use_gps":True,
 		"imperial":True,
 		"read_texts":True,
+		"internet_voice":True,
+		"internet_voice_engine":"Wit", # Options: Wit, Google, Houndify
 	}
 	if os.path.exists(settings_path):
 		with open(settings_path) as settings_file:
@@ -144,7 +147,7 @@ def regen_music():
 			name_artist, title = title.split(' - ')
 		title = regex.sub('', title).strip()
 		lst.append(title)
-		print (title)
+		# print (title)
 		song_title_map[title.lower()] = file
 
 contacts = {}
@@ -242,7 +245,9 @@ else:
 	pass # We don't do anything with streetnames here so no point to load them
 
 pyotherside.send('load_msg','Initializing speech recognition...')
-jproc = subprocess.Popen([f+'julius/julius.jolla','-module','-gram',f+'julius/saera', '-gram', '/home/nemo/.cache/saera/musictitles', '-gram', '/home/nemo/.cache/saera/contacts', '-gram', '/home/nemo/.cache/saera/addresses','-h',f+'julius/hmmdefs','-hlist',f+'julius/tiedlist','-input','mic','-tailmargin','800','-rejectshort','600'],stdout=subprocess.PIPE)
+if not os.path.exists('/tmp/saera'):
+	os.mkdir('/tmp/saera')
+jproc = subprocess.Popen([f+'julius/julius.jolla','-module', '-record', '/tmp/saera/', '-gram',f+'julius/saera', '-gram', '/home/nemo/.cache/saera/musictitles', '-gram', '/home/nemo/.cache/saera/contacts', '-gram', '/home/nemo/.cache/saera/addresses','-h',f+'julius/hmmdefs','-hlist',f+'julius/tiedlist','-input','mic','-tailmargin','800','-rejectshort','600'],stdout=subprocess.PIPE)
 # jproc = subprocess.Popen([f+'julius/julius.arm','-module','-gram','/tmp/saera/musictitles','-h',f+'julius/hmmdefs','-hlist',f+'julius/tiedlist','-input','mic','-tailmargin','800','-rejectshort','600'],stdout=subprocess.PIPE)
 client = pyjulius.Client('localhost',10500)
 print ('Connecting to pyjulius server')
@@ -469,12 +474,16 @@ def listen_thread():
 	global volume
 	volume_getter = subprocess.Popen(["pactl list sinks | grep \"Volume: front-left\" | awk '{print $3}'"], shell=True, stdout=subprocess.PIPE)
 	result, err = volume_getter.communicate()
+	# if config.internet_voice:
+	# 	if os.path.exists('/tmp/saera/outfile.ogg'):
+			# os.remove('/tmp/saera/outfile.ogg')
+		# audiorecorder = subprocess.Popen(["gst-launch-0.10 alsasrc ! audioconvert ! audioresample ! vorbisenc ! oggmux ! filesink location=/tmp/saera/outfile.ogg"], shell=True)
 	volume = int(result.split(b'\n')[1])
 	target_volume = int(volume/4)
 	subprocess.Popen(['pactl', 'set-sink-volume', '1', str(target_volume)])
 
 	# purge message queue
-	time.sleep(0.6)
+	time.sleep(0.7)
 	client.send("RESUME\n")
 	global listening
 	listening = True
@@ -854,3 +863,5 @@ def quit():
 	client.disconnect()
 	client.join()
 	jproc.terminate()
+	if os.path.exists('/tmp/saera'):
+		shutil.rmtree('/tmp/saera')
