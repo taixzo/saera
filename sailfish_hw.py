@@ -265,6 +265,7 @@ client.send("TERMINATE\n")
 detected = False
 daemons_running = True
 listening = False
+active_listening = False
 
 # These should really go in a utilities file
 def post_multipart(host, selector, fields, files):
@@ -312,12 +313,14 @@ access_secret = "XGjCnOU0U4Dysum3kGmPDG0YH8gKvoMQUZY1hzox"
 def pause_daemons():
 	global daemons_running
 	daemons_running = False
+	stop_active_listening()
 
 def resume_daemons():
 	global daemons_running
 	daemons_running = True
 	e.set()
 	e2.set()
+	start_active_listening()
 
 def watch_proximity(e):
 	global detected
@@ -420,6 +423,7 @@ def check_messages():
 	def parse_txt_date(date):
 		return time.mktime(datetime.strptime(date.split(" GMT")[0], '%a %b %d %H:%M:%S %Y').timetuple())
 
+
 	rproc = subprocess.Popen(["commhistory-tool", "listgroups"],stdout=subprocess.PIPE)
 	res = rproc.communicate()[0]
 	
@@ -443,7 +447,6 @@ def check_messages():
 	return new_msgs
 
 print ("Messages:")
-print ("Device:")
 for i in check_messages():
 	print ("%s: %s" % (i.sender, i.message))
 print ("QGVDial:")
@@ -530,10 +533,38 @@ def listen_thread():
 	client.send("TERMINATE\n")
 	pyotherside.send('process_spoken_text',res)
 
+def getTrigger():
+	while active_listening:
+		try:
+			print(".", end="")
+			result = client.results.get(True, 0.5)
+			if isinstance(result,pyjulius.Sentence) and len(result.words)==1 and result.words[0].word=="Saera" and result.words[0].confidence>0.7:
+				# getSpeech()
+				print ("Got trigger!")
+				pyotherside.send('trigger')
+				return
+		except Queue.Empty:
+			time.sleep(0.2)
+			continue
+
+def start_active_listening():
+	global active_listening
+	if not active_listening:
+		active_listening = True
+		l = threading.Thread(target=getTrigger)
+		l.start()
+
+def stop_active_listening():
+	global active_listening
+	active_listening = False
+	subprocess.Popen(['pactl', 'set-sink-volume', '1', str(volume)])
+
 def cancel_listening():
 	client.send("TERMINATE\n")
 	global listening
+	global active_listening
 	listening = False
+	active_listening = False
 	subprocess.Popen(['pactl', 'set-sink-volume', '1', str(volume)])
 
 class timed:

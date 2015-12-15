@@ -107,6 +107,29 @@ class Memory:
 
 import math, sys
 
+def packageTrackingNumber(num):
+	
+	if re.match(r"\b(1Z ?[0-9A-Z]{3} ?[0-9A-Z]{3} ?[0-9A-Z]{2} ?[0-9A-Z]{4} ?[0-9A-Z]{3} ?[0-9A-Z]|[\dT]\d\d\d ?\d\d\d\d ?\d\d\d)\b", num) is not None:
+		return "UPS"
+	elif re.match(r"\b(1Z ?[0-9A-Z]{3} ?[0-9A-Z]{3} ?[0-9A-Z]{2} ?[0-9A-Z]{4} ?[0-9A-Z]{3} ?[0-9A-Z]|[\dT]\d\d\d ?\d\d\d\d ?\d\d\d|\d{22})\b", num) is not None:
+		return "UPS"
+	elif re.match(r"(\b96\d{20}\b)|(\b\d{15}\b)|(\b\d{12}\b)", num) is not None:
+		return "FEDEX"
+	elif re.match(r"\b((98\d\d\d\d\d?\d\d\d\d|98\d\d) ?\d\d\d\d ?\d\d\d\d( ?\d\d\d)?)\b", num) is not None:
+		return "FEDEX"
+	elif re.match(r"^[0-9]{15}$", num) is not None:
+		return "FEDEX"
+	elif re.match(r"(\b\d{30}\b)|(\b91\d+\b)|(\b\d{20}\b)", num) is not None:
+		return "USPS"
+	elif re.match(r"^E\D{1}\d{9}\D{2}$|^9\d{15,21}$", num) is not None:
+		return "USPS"
+	elif re.match(r"^91[0-9]+$", num) is not None:
+		return "USPS"
+	elif re.match(r"^[A-Za-z]{2}[0-9]+US$", num) is not None:
+		return "USPS"
+	else:
+		return None
+
 def is_day(lon,dt=None):
 	sin,cos,pi = math.sin,math.cos,math.pi
 	if dt is None:
