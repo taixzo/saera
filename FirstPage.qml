@@ -60,9 +60,13 @@ Page {
       })
     }
 
-    function process_spoken_text(res) {
+    function goBusy() {
       busyIndicator.running = true;
       volume.visible = false;
+    }
+
+    function process_spoken_text(res) {
+      goBusy()
       listModel.append({value: res, who: "me", link: false, image: "", lat: 0, lon: 0, spot_preview: ""});
       py.call('saera2.run_text', [res], function(result){
           page.listening = false;
@@ -122,6 +126,10 @@ Page {
 
     function set_vol(vol) {
         volume.width = 128+Math.max(Math.log(vol)*Math.log(vol), (volume.width-150)*0.7)
+    }
+
+    function trigger() {
+      speak()
     }
 
     function enablePTP() {
@@ -224,6 +232,7 @@ Page {
              setHandler('sayRich', page.sayRich)
              setHandler('set_vol', page.set_vol)
              setHandler('process_spoken_text', page.process_spoken_text)
+             setHandler('goBusy', page.goBusy)
          }
          onError: console.log('Python error: ' + traceback)
     }

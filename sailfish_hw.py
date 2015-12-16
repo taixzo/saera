@@ -531,6 +531,8 @@ def listen_thread():
 	res = " ".join(words)+punct
 	res = res[0].upper()+res[1:]
 	client.send("TERMINATE\n")
+	if config.internet_voice:
+		pyotherside.send('goBusy')
 		tmpfile = max(os.listdir('/tmp/saera'))
 		data = open('/tmp/saera/%s' % tmpfile, 'rb').read()
 		if config.internet_voice_engine=='Wit':
