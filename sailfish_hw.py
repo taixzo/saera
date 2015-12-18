@@ -532,20 +532,24 @@ def listen_thread():
 	res = res[0].upper()+res[1:]
 	client.send("TERMINATE\n")
 	if config.internet_voice:
-		pyotherside.send('goBusy')
-		tmpfile = max(os.listdir('/tmp/saera'))
-		data = open('/tmp/saera/%s' % tmpfile, 'rb').read()
-		if config.internet_voice_engine=='Wit':
-			req = urllib2.Request('https://api.wit.ai/speech?v=20141022', data)
-			req.add_header('Content-Length', '%d' % len(data))
-			req.add_header('Authorization', "Bearer CH4ZMQO2X7VGXBCLERMDJFFO4RYQWFCK")
-			req.add_header('Content-Type', 'audio/wav')
-			rem_res = urllib2.urlopen(req)
-			out = rem_res.read()
-			j = json.loads(out.decode('utf-8'))
-			print (j)
-			if '_text' in j and j['_text']:
-				res = j['_text'][0].upper() + j['_text'][1:]
+		ifconfig_proc = subprocess.Popen(['/sbin/ifconfig'], stdout=subprocess.PIPE)
+		output, err = ifconfig_proc.communicate()
+		# Only send voice to server if we are on wifi
+		if b'wlan0' in output:
+			pyotherside.send('goBusy')
+			tmpfile = max(os.listdir('/tmp/saera'))
+			data = open('/tmp/saera/%s' % tmpfile, 'rb').read()
+			if config.internet_voice_engine=='Wit':
+				req = urllib2.Request('https://api.wit.ai/speech?v=20141022', data)
+				req.add_header('Content-Length', '%d' % len(data))
+				req.add_header('Authorization', "Bearer CH4ZMQO2X7VGXBCLERMDJFFO4RYQWFCK")
+				req.add_header('Content-Type', 'audio/wav')
+				rem_res = urllib2.urlopen(req)
+				out = rem_res.read()
+				j = json.loads(out.decode('utf-8'))
+				print (j)
+				if '_text' in j and j['_text']:
+					res = j['_text'][0].upper() + j['_text'][1:]
 	pyotherside.send('process_spoken_text',res)
 
 def getTrigger():
