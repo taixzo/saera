@@ -47,8 +47,8 @@ def load_config():
 	settings = {
 		"use_gps":True,
 		"imperial":True,
-		"read_texts":True,
-		"internet_voice":True,
+		"read_texts":False,
+		"internet_voice":False,
 		"internet_voice_engine":"Wit", # Options: Wit, Google, Houndify
 	}
 	if os.path.exists(settings_path):
