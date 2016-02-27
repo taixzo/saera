@@ -33,27 +33,67 @@ import Sailfish.Silica 1.0
 
 
 Page {
-    id: page
-    SilicaListView {
-        id: listView
-        model: 20
-        anchors.fill: parent
-        header: PageHeader {
-            title: "Nested Page"
-        }
-        delegate: BackgroundItem {
-            id: delegate
+  id: page
+  SilicaFlickable {
+    anchors.fill: parent
+    Column {
+      width: parent.width
+      height: parent.height
+      spacing: Theme.paddingMedium
+            
+      PageHeader {
+        id: header
+        title: "Settings"
+      }
+      Row {
+        width: parent.width
+        spacing: parent.spacing
+        x: parent.spacing
 
-            Label {
-                x: Theme.paddingLarge
-                text: "Item " + index
-                anchors.verticalCenter: parent.verticalCenter
-                color: delegate.highlighted ? Theme.highlightColor : Theme.primaryColor
-            }
-            onClicked: console.log("Clicked " + index)
+        Label {
+          width: parent.width - (3 * parent.spacing)
+          text: "Device key:"
+          font.pixelSize: Theme.fontSizeLarge
         }
-        VerticalScrollDecorator {}
+      }
+      Row {
+        width: parent.width
+        spacing: parent.spacing
+        x: parent.spacing
+
+        Label {
+          width: parent.width - (3 * parent.spacing)
+          horizontalAlignment: Text.AlignHCenter
+          
+          text: "0XfQ"
+          font.pixelSize: Theme.fontSizeLarge*6
+        }
+      }
+      Row {
+        width: parent.width
+        spacing: parent.spacing
+        x: parent.spacing
+
+        Label {
+          width: parent.width - (3 * parent.spacing)
+          text: "Enter key to connect to:"
+          font.pixelSize: Theme.fontSizeLarge
+        }
+      }
+      Row {
+        width: parent.width
+        spacing: parent.spacing
+        x: parent.spacing
+
+        TextField {
+          width: parent.width
+          horizontalAlignment: Text.AlignHCenter
+          placeholderText: "----"
+          font.pixelSize: Theme.fontSizeLarge
+        }
+      }
     }
+  }
 }
 
 

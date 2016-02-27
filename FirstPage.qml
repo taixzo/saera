@@ -42,6 +42,16 @@ Page {
     property real longitude: 0;
     property bool listening: false;
 
+    onStatusChanged: {
+        if (status === PageStatus.Active) {
+            pageStack.pushAttached(Qt.resolvedUrl("SecondPage.qml"));
+        }
+    }
+
+    function loadStories() {
+        model.loadTopStories();
+    }
+
     function speak() {
       py.call('saera2.check_can_listen',[],function(res){
         if (!res) return;
@@ -240,6 +250,11 @@ Page {
     SilicaListView {
 
         id: messages
+
+        header: PageHeader {
+            title: "Saera"
+        }
+
         VerticalScrollDecorator {
             flickable: messages
         }
