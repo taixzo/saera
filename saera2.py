@@ -46,15 +46,15 @@ if sys.version_info[0]<3:
 		else:
 			import cmd_hw as platform
 else:
-	#import harmattan_hw as platform
+	import harmattan_hw as platform
 	# import x86_hw as platform
-	try:
-		import sailfish_hw as platform
-	except ImportError:
-		if pfm.linux_distribution()[0].lower()=='ubuntu':
-			import ubuntu_hw as platform
-		else:
-			import cmd_hw as platform
+	# try:
+	# 	import sailfish_hw as platform
+	# except ImportError:
+	# 	if pfm.linux_distribution()[0].lower()=='ubuntu':
+	# 		import ubuntu_hw as platform
+	# 	else:
+	# 		import cmd_hw as platform
 
 # if not os.path.exists(platform.memory_path):
 
@@ -69,7 +69,10 @@ if sys.version < '3':
 	def u(x):
 		# return codecs.unicode_escape_decode(x)[0]
 		try:
-			return str(x)
+			if sys.version.startswith('2.6'):
+				return x.decode('utf-8')
+			else:
+				return str(x)
 		except:
 			return codecs.unicode_escape_decode(x)[0]
 else:
@@ -492,6 +495,11 @@ class Saera:
 		if is_time:
 			return "The weather "+loc_str+" will be "+weather+" and "+str(int(round(temp)))+u("°. at ")+hour+"."
 		else:
+			print loc_str
+			print weather
+			print str(int(round(temp)))
+			print u("°.")
+			print "The weather "+loc_str+" is "+weather+", and "+str(int(round(temp)))+u("°.")
 			return "The weather "+loc_str+" is "+weather+", and "+str(int(round(temp)))+u("°.")
 	def call_phone(self, result):
 		self.short_term_memory.set('intent','call_phone')

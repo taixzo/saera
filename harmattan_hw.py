@@ -5,6 +5,7 @@ import email
 import subprocess
 import sqlite3
 import dbus
+import json
 from datetime import datetime, timedelta
 import pyjulius
 import Queue
@@ -23,8 +24,48 @@ import guessing
 
 import ast # for safely parsing timed stuff
 
+import codecs
+def u(x):
+	try:
+		return x.decode('utf-8')
+	except:
+		return codecs.unicode_escape_decode(x)[0]
+
 global app
 app = None
+
+settings_path = os.getenv('HOME')+'/.config/saera/setting.json'
+
+class Struct:
+    def __init__(self, **entries): 
+        self.__dict__.update(entries)
+
+def load_config():
+	settings = {
+		"use_gps":True,
+		"imperial":True,
+		"read_texts":False,
+		"internet_voice":False,
+		"internet_voice_engine":"Wit", # Options: Wit, Google, Houndify
+	}
+	if os.path.exists(settings_path):
+		with open(settings_path) as settings_file:
+			try:
+				settings_dict = json.load(settings_file)
+			except ValueError:
+				settings_dict = {}
+			settings.update(settings_dict)
+	else:
+		try:
+			os.makedirs(settings_path[:settings_path.rindex('/')])
+		except OSError:
+			# Python 2.6 doesn't have support for the exist_ok argument, so manually catch the error
+			pass
+		with open(settings_path, 'w') as settings_file:
+			json.dump(settings, settings_file)
+	return Struct(**settings)
+
+config = load_config()
 
 class MicroMock(object):
 	def __init__(self, **kwargs):
@@ -471,7 +512,8 @@ def speak(string):
 	else:
 		spoken_str = '\n'.join([i[0] for i in string])
 	if not os.path.exists("/tmp/espeak_lock"):
-		os.system('touch /tmp/espeak_lock && espeak -v +f2 "' + spoken_str.replace(":00"," o'clock").replace("\n",". ") + '"  && rm /tmp/espeak_lock &')
+		command_str = u'touch /tmp/espeak_lock && espeak -v +f2 "' + spoken_str.replace(":00"," o'clock").replace("\n",". ") + u'"  && rm /tmp/espeak_lock &'
+		os.system(command_str.encode('utf-8'))
 	detected = False
 	return string
 

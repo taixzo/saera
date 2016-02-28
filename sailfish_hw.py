@@ -53,7 +53,11 @@ def load_config():
 	}
 	if os.path.exists(settings_path):
 		with open(settings_path) as settings_file:
-			settings.update(json.load(settings_file))
+			try:
+				settings_dict = json.load(settings_file)
+			except ValueError:
+				settings_dict = {}
+			settings.update(settings_dict)
 	else:
 		os.makedirs(settings_path[:settings_path.rindex('/')], exist_ok=True)
 		with open(settings_path, 'w') as settings_file:
