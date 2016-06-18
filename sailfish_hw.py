@@ -27,7 +27,7 @@ import hmac
 import hashlib
 import http.client as httplib
 import urllib.request as urllib2
-from collections import namedtuple
+from collections import namedtuple, deque
 import shutil
 
 Message = namedtuple("Message", ("id", "sender", "sender_id", "message", "account", "date"))
@@ -37,7 +37,8 @@ import ast # for safely parsing timed stuff
 global app
 app = None
 
-settings_path = os.getenv('HOME')+'/.config/saera/setting.json'
+settings_path = os.getenv('HOME')+'/.config/saera/settings.json'
+history_path = os.getenv('HOME')+'/.config/saera/history.json'
 
 class Struct:
     def __init__(self, **entries): 
@@ -62,8 +63,19 @@ def load_config():
 		os.makedirs(settings_path[:settings_path.rindex('/')], exist_ok=True)
 		with open(settings_path, 'w') as settings_file:
 			json.dump(settings, settings_file)
+
+	if os.path.exists(history_path):
+		with open(history_path) as history_file:
+			try:
+				h = json.load(history_file)
+			except ValueError:
+				h = []
+			for i in h:
+				pyotherside.send('sayRich', i[0], i[1], i[2], i[3])
+				history.append(i)
 	return Struct(**settings)
 
+history = deque(maxlen=20)
 config = load_config()
 
 class MicroMock(object):
@@ -324,6 +336,7 @@ def resume_daemons():
 	daemons_running = True
 	e.set()
 	e2.set()
+	e4.set()
 	start_active_listening()
 
 def watch_proximity(e):
@@ -333,7 +346,7 @@ def watch_proximity(e):
 		if bool(int(prox_detect)) and not detected:
 			detected = True
 			print ("Detected proximity input")
-			pyotherside.send('start')
+			pyotherside.send('start', False)
 		if not daemons_running:
 			print ('Application unfocused.')
 			e.wait()
@@ -341,12 +354,16 @@ def watch_proximity(e):
 			print ('Application focused.')
 		time.sleep(1)
 
+def undetect():
+	global detected
+	detected = False
+
 def watch_headset_btn():
 	dbproc = subprocess.Popen(["dbus-monitor --system \"type='signal',sender='org.bluez',interface='org.bluez.Headset',member='AnswerRequested'\""],shell=True,stdout=subprocess.PIPE)
 	while True:
 		res = dbproc.stdout.readline()
 		if res.endswith(b'AnswerRequested\n'):
-			pyotherside.send('start')
+			pyotherside.send('start', True)
 
 
 def watch_mic(e):
@@ -377,6 +394,7 @@ def watch_mic(e):
 e = threading.Event()
 e2 = threading.Event()
 e3 = threading.Event()
+e4 = threading.Event()
 prox_thread = threading.Thread(target=watch_proximity, args=(e,))
 mic_thread = threading.Thread(target=watch_mic, args=(e2,))
 headset_thread = threading.Thread(target=watch_headset_btn)
@@ -385,6 +403,7 @@ mic_thread.start()
 headset_thread.start()
 
 qgvdial_msgs = []
+texts_msgs = []
 
 def load_qgvdial_messages():
 	qconn = sqlite3.connect('/home/nemo/.qgvdial/qgvdial.sqlite.db')
@@ -447,29 +466,43 @@ def check_messages():
 				continue
 			if msg[6]=='0':
 				# new_msgs.append([msg[10],msg[12]])
-				new_msgs.append(Message(id=msg[0], sender=msg[10], sender_id=msg[10], message=msg[12], account=msg[9], date=parse_txt_date(msg[2])))
+				sender = msg[10]
+				if sender.startswith('-'):
+					sender = sender[1:]
+				mesg = Message(id=msg[0], sender=sender, sender_id=msg[10], message=msg[12], account=msg[9], date=parse_txt_date(msg[2]))
+				if mesg not in texts_msgs:
+					texts_msgs.append(mesg)
+					new_msgs.append(mesg)
 	return new_msgs
 
-print ("Messages:")
-for i in check_messages():
-	print ("%s: %s" % (i.sender, i.message))
-print ("QGVDial:")
-for i in check_qgvdial_messages():
-	print ("%s: %s" % (i.sender, i.message))
+# print ("Messages:")
+# for i in check_messages():
+# 	print ("%s: %s" % (i.sender, i.message))
+# print ("QGVDial:")
+# for i in check_qgvdial_messages():
+# 	print ("%s: %s" % (i.sender, i.message))
 	# pass
 	
-def watch_texts():
+def watch_texts(e):
 	global detected
 	while True:
-		unread_msgs = check_qgvdial_messages()
-		if unread_msgs:
-			pyotherside.send('sayRich', '%s says: %s' % (unread_msgs[0].sender, unread_msgs[0].message), None, None, None)
-		if not daemons_running:
-			e.wait()
-			e.clear()
 		time.sleep(20)
+		print ("Checking messages...")
+		unread_msgs = check_qgvdial_messages()
+		unread_msgs += check_messages()
+		print (unread_msgs)
+		if unread_msgs:
+			print ("Unread messages!")
+			msg = '%s says: %s' % (unread_msgs[-1].sender, unread_msgs[-1].message)
+			pyotherside.send('sayRich', msg, None, None, None)
+			speak(msg)
+			send_notifications(unread_msgs[-1].sender, unread_msgs[-1].message)
+		# if not daemons_running:
+		# 	e.wait()
+		# 	e.clear()
 
-text_thread = threading.Thread(target=watch_headset_btn)
+text_thread = threading.Thread(target=watch_texts, args=(e4,))
+text_thread.start()
 
 #julius/julius.jolla -module -gram /usr/share/harbour-saera/qml/pages/julius/saera -gram /home/nemo/.cache/saera/musictitles -gram /home/nemo/.cache/saera/contacts -gram /home/nemo/.cache/saera/addresses -h /usr/share/harbour-saera/qml/pages/julius/hmmdefs -hlist /usr/share/harbour-saera/qml/pages/julius/tiedlist -input mic -tailmargin 800 -rejectshort 600
 def listen():
@@ -490,7 +523,7 @@ def listen_thread():
 	subprocess.Popen(['pactl', 'set-sink-volume', '1', str(target_volume)])
 
 	# purge message queue
-	time.sleep(0.7)
+	time.sleep(0.9)
 	client.send("RESUME\n")
 	global listening
 	listening = True
@@ -555,6 +588,9 @@ def listen_thread():
 				if '_text' in j and j['_text']:
 					res = j['_text'][0].upper() + j['_text'][1:]
 	pyotherside.send('process_spoken_text',res)
+	history.append([res, None, None, None])
+	with open(history_path, 'w') as history_file:
+		json.dump(list(history), history_file)
 
 def getTrigger():
 	while active_listening:
@@ -893,8 +929,11 @@ def speak(string):
 		spoken_str = '\n'.join([i[0] for i in string])
 	if not os.path.exists("/tmp/espeak_lock"):
 		os.system('pactl set-sink-volume 1 %i' % (volume/2))
+
+		print('touch /tmp/espeak_lock && espeak --stdout -v +f2 "' + spoken_str.replace(":00"," o'clock").replace("\n",". ").replace(":", " ") + '" |'
+				' gst-launch-0.10 -q fdsrc ! wavparse ! audioconvert ! volume volume=4.0 ! alsasink && rm /tmp/espeak_lock && pactl set-sink-volume 1 65536 &')
 		os.system('touch /tmp/espeak_lock && espeak --stdout -v +f2 "' + spoken_str.replace(":00"," o'clock").replace("\n",". ").replace(":", " ") + '" |'
-				' gst-launch-0.10 -q fdsrc ! wavparse ! audioconvert ! volume volume=4.0 ! alsasink && rm /tmp/espeak_lock && pactl set-sink-volume 1 %i &' % volume)
+				' gst-launch-0.10 -q fdsrc ! wavparse ! audioconvert ! volume volume=4.0 ! alsasink && rm /tmp/espeak_lock && pactl set-sink-volume 1 65536 &')
 	detected = False
 	return string
 
@@ -907,9 +946,19 @@ def disablePTP():
 def sayRich(spokenMessage, message, img, lat=0, lon=0):
 	pyotherside.send('sayRich',message, img, lat, lon)
 	speak(spokenMessage)
+	history.append([message, img, lat, lon])
+	with open(history_path, 'w') as history_file:
+		print ("SAVING HISTORY")
+		json.dump(list(history), history_file)
 
 def check_can_listen():
 	return not os.path.exists("/tmp/espeak_lock")
+
+def send_notifications(title, body):
+	os.system("python -c \"import dbus; bus=dbus.SessionBus();\
+object=bus.get_object('org.freedesktop.Notifications','/org/freedesktop/Notifications');\
+interface = dbus.Interface(object, 'org.freedesktop.Notifications');\
+interface.Notify('Saera', 0, 'icon-m-notifications', '%s', '%s', dbus.Array(['default', '']), dbus.Dictionary({'x-nemo-preview-body': '%s', 'x-nemo-preview-summary': '%s'}, signature='sv'), 0)\"" % (title, body, body, title))
 
 def quit():
 	conn.close()
