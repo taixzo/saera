@@ -203,6 +203,7 @@ def decodePath (encoded, is3D):
 	return array
 
 global direction_list
+geoalarm_list = []
 direction_list = []
 
 def toRadians(x):
@@ -1109,6 +1110,13 @@ def set_position(lat, lon):
 	platform.cur.execute('INSERT INTO LocationLogs (Latitude, Longitude) VALUES ('+str(lat)+','+str(lon)+')')
 	platform.conn.commit()
 
+	if geoalarm_list != []:
+		for i, alarm in enumerate(geoalarm_list):
+			if geo_distance(lat, lon, alarm[0], alarm[1]) < alarm[2]:
+				platform.alarm(alarm[3])
+				del geoalarm_list[i]
+				break
+
 	if direction_list != []:
 		# if abs(lat-direction_list[0]['point'][1])<0.001 and abs(lon-direction_list[0]['point'][0])<0.013:
 		print (geo_distance(lat, lon, direction_list[0]['point'][1], direction_list[0]['point'][0]))
@@ -1146,6 +1154,8 @@ def activate():
 	if not platform.app:
 		return ""
 	if datetime.now().hour<5:
+		return ""
+	elif datetime.now().hour > 12:
 		return ""
 	platform.cur.execute("SELECT * FROM Variables WHERE VarName='last_activated'")
 	row = platform.cur.fetchone()
