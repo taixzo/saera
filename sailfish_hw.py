@@ -342,7 +342,12 @@ def resume_daemons():
 def watch_proximity(e):
 	global detected
 	while True:
-		prox_detect = open("/sys/devices/virtual/input/input10/prx_detect").read()
+		try:
+			prox_detect = open("/sys/devices/virtual/input/input10/prx_detect").read()
+		except:
+			# For devices with no proximity sensor
+			detected = False
+			break
 		if bool(int(prox_detect)) and not detected:
 			detected = True
 			print ("Detected proximity input")
