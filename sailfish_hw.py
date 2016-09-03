@@ -342,17 +342,21 @@ def resume_daemons():
 def watch_proximity(e):
 	global detected
 	while True:
-		prox_detect = open("/sys/devices/virtual/input/input10/prx_detect").read()
-		if bool(int(prox_detect)) and not detected:
-			detected = True
-			print ("Detected proximity input")
-			pyotherside.send('start', False)
-		if not daemons_running:
-			print ('Application unfocused.')
-			e.wait()
-			e.clear()
-			print ('Application focused.')
-		time.sleep(1)
+		try:
+			prox_detect = open("/sys/devices/virtual/input/input10/prx_detect").read()
+			if bool(int(prox_detect)) and not detected:
+				detected = True
+				print ("Detected proximity input")
+				pyotherside.send('start', False)
+			if not daemons_running:
+				print ('Application unfocused.')
+				e.wait()
+				e.clear()
+				print ('Application focused.')
+			time.sleep(1)
+		except FileNotFoundError:
+			# Device has no proximity sensor, or exposes it at a different path
+			break
 
 def undetect():
 	global detected
@@ -545,6 +549,7 @@ def listen_thread():
 				result = MicroMock(words=[MicroMock(word='*mumble*')])
 				break
 			elif not listening:
+				subprocess.Popen(['pactl', 'set-sink-volume', '1', '65536'])
 				return
 		except Queue.Empty:
 			continue
@@ -591,6 +596,7 @@ def listen_thread():
 	history.append([res, None, None, None])
 	with open(history_path, 'w') as history_file:
 		json.dump(list(history), history_file)
+	subprocess.Popen(['pactl', 'set-sink-volume', '1', '65536'])
 
 def getTrigger():
 	while active_listening:
@@ -927,12 +933,18 @@ def speak(string):
 		spoken_str = string.split('|')[0]
 	else:
 		spoken_str = '\n'.join([i[0] for i in string])
-	if not os.path.exists("/tmp/espeak_lock"):
-		os.system('pactl set-sink-volume 1 %i' % (volume/2))
+	if not os.path.isfile("/tmp/espeak_lock"):
+		# os.system('pactl set-sink-volume 1 %i' % (volume/2))
 
-		print('touch /tmp/espeak_lock && espeak --stdout -v +f2 "' + spoken_str.replace(":00"," o'clock").replace("\n",". ").replace(":", " ") + '" |'
-				' gst-launch-0.10 -q fdsrc ! wavparse ! audioconvert ! volume volume=4.0 ! alsasink && rm /tmp/espeak_lock && pactl set-sink-volume 1 65536 &')
-		os.system('touch /tmp/espeak_lock && espeak --stdout -v +f2 "' + spoken_str.replace(":00"," o'clock").replace("\n",". ").replace(":", " ") + '" |'
+		if os.path.exists('/usr/bin/gst-launch-1.0'):
+			print('touch /tmp/espeak_lock && espeak --stdout -v +f2 "' + spoken_str.replace(":00"," o'clock").replace("\n",". ").replace(":", " ") + '" |'
+				' gst-launch-1.0 -q fdsrc ! wavparse ! audioconvert ! pulsesink && rm /tmp/espeak_lock &')
+			os.system('touch /tmp/espeak_lock && espeak --stdout -v +f2 "' + spoken_str.replace(":00"," o'clock").replace("\n",". ").replace(":", " ") + '" |'
+				' gst-launch-1.0 -q fdsrc ! wavparse ! audioconvert ! pulsesink && rm /tmp/espeak_lock &')
+		else:
+			print('touch /tmp/espeak_lock && espeak --stdout -v +f2 "' + spoken_str.replace(":00"," o'clock").replace("\n",". ").replace(":", " ") + '" |'
+					' gst-launch-0.10 -q fdsrc ! wavparse ! audioconvert ! volume volume=4.0 ! alsasink && rm /tmp/espeak_lock && pactl set-sink-volume 1 65536 &')
+			os.system('touch /tmp/espeak_lock && espeak --stdout -v +f2 "' + spoken_str.replace(":00"," o'clock").replace("\n",". ").replace(":", " ") + '" |'
 				' gst-launch-0.10 -q fdsrc ! wavparse ! audioconvert ! volume volume=4.0 ! alsasink && rm /tmp/espeak_lock && pactl set-sink-volume 1 65536 &')
 	detected = False
 	return string
@@ -955,10 +967,10 @@ def check_can_listen():
 	return not os.path.exists("/tmp/espeak_lock")
 
 def send_notifications(title, body):
-	os.system("python -c \"import dbus; bus=dbus.SessionBus();\
-object=bus.get_object('org.freedesktop.Notifications','/org/freedesktop/Notifications');\
-interface = dbus.Interface(object, 'org.freedesktop.Notifications');\
-interface.Notify('Saera', 0, 'icon-m-notifications', '%s', '%s', dbus.Array(['default', '']), dbus.Dictionary({'x-nemo-preview-body': '%s', 'x-nemo-preview-summary': '%s'}, signature='sv'), 0)\"" % (title, body, body, title))
+	os.system("""python -c \"import dbus; bus=dbus.SessionBus();
+object=bus.get_object('org.freedesktop.Notifications','/org/freedesktop/Notifications');
+interface = dbus.Interface(object, 'org.freedesktop.Notifications');
+interface.Notify('Saera', 0, 'icon-m-notifications', '%s', '%s', dbus.Array(['default', '']), dbus.Dictionary({'x-nemo-preview-body': '%s', 'x-nemo-preview-summary': '%s'}, signature='sv'), 0)\"""" % (title, body, body, title))
 
 def quit():
 	conn.close()
