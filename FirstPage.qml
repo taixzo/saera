@@ -44,7 +44,7 @@ Page {
 
     onStatusChanged: {
         if (status === PageStatus.Active) {
-            pageStack.pushAttached(Qt.resolvedUrl("SecondPage.qml"));
+            pageStack.pushAttached(Qt.resolvedUrl("SecondPage.qml"), {"py":py});
         }
     }
 

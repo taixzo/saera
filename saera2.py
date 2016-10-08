@@ -28,6 +28,7 @@ import platform as pfm
 import subprocess
 
 from guessing import Guesser
+import timeparser2
 
 if sys.version_info[0]<3:
 	if sys.version_info[1]<7:
@@ -1180,6 +1181,12 @@ def cancel_listening():
 
 def play_url(url):
 	return platform.play_url(url)
+
+def set_24_hour_mode(mode_is_24):
+	if mode_is_24:
+		timeparser2.timemode = 24
+	else:
+		timeparser2.timemode = 12
 
 if __name__=="__main__":
 	initialize()
