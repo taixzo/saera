@@ -3,7 +3,7 @@
 
 # import pyotherside
 
-from time import timezone, sleep
+from time import timezone, sleep, time as currentTime
 from datetime import datetime, time, timedelta
 import calendar
 import logging
@@ -206,6 +206,8 @@ def decodePath (encoded, is3D):
 global direction_list
 geoalarm_list = []
 direction_list = []
+navigation_state = "waiting"
+loc_hist = []
 
 def toRadians(x):
 	return x*0.0174532925
@@ -243,7 +245,15 @@ def formatDistance(meters):
 			return str(miles)+" miles"
 		elif feet>=5280:
 			miles = feet/5280
-			return "{0:.1f}".format(round(miles,1)) + " mile"+("s" if round(miles,1) != 1 else "")
+			return str(int(round(miles))) + " mile"+("s" if round(miles) != 1 else "")
+		elif feet>1000:
+			if feet<1980:
+				return "a quarter mile"
+			elif feet<3300:
+				return "a half mile"
+			else:
+				# approximations. Approximations are good.
+				return "one mile"
 		elif feet>100:
 			return str(int(round(feet/50)*50))+" feet"
 		elif feet>25:
@@ -1110,7 +1120,18 @@ def resume_daemons():
 	return platform.resume_daemons()
 
 def set_position(lat, lon):
+	print (navigation_state)
 	global direction_list
+	global navigation_state
+	global loc_hist
+
+	loc_hist.append((lat, lon, currentTime()))
+	# Only store the last minute of locations
+	del loc_hist[0:-60]
+	speeds = [geo_distance(loc_hist[i][0],loc_hist[i][1],loc_hist[i+1][0],loc_hist[i+1][1])/(loc_hist[i+1][2]-loc_hist[i][2]) for i in range(len(loc_hist)-1)]
+	# In units of m/s
+	avg_speed = sum(speeds)/max(len(speeds), 1) # Avoid dividing by zero at startup
+
 	# platform.cur.execute('INSERT INTO Locations (LocName, Zip, Latitude, Longitude, Timezone) VALUES ("here", "", '+str(lat)+', '+str(lon)+', 0)')
 	platform.cur.execute('INSERT OR REPLACE INTO Locations (ID, LocName, Zip, Latitude, Longitude, Timezone) VALUES ((SELECT ID FROM Locations WHERE LocName = "here"), "here", "", '+str(lat)+', '+str(lon)+', 0)')
 	platform.cur.execute('INSERT OR REPLACE INTO Variables (ID, VarName, Value) VALUES ((SELECT ID FROM Variables WHERE VarName = "here"), "here", "'+str(platform.cur.lastrowid)+'");')
@@ -1127,35 +1148,88 @@ def set_position(lat, lon):
 	if direction_list != []:
 		# if abs(lat-direction_list[0]['point'][1])<0.001 and abs(lon-direction_list[0]['point'][0])<0.013:
 		print (geo_distance(lat, lon, direction_list[0]['point'][1], direction_list[0]['point'][0]))
-		if geo_distance(lat, lon, direction_list[0]['point'][1], direction_list[0]['point'][0])<75:
-		# if True:
-			print (direction_list[0])
-			platform.speak(direction_list[0]['text'])
-			sleep(10)
-			if len(direction_list)>1:
-				if direction_list[0]['text'] == "Start":
-					if direction_list[1]['point'][1]>lat:
-						if direction_list[1]['point'][1]-lat>abs(direction_list[1]['point'][0]-lon):
-							compass_dir = "north"
-						elif direction_list[1]['point'][0]>lon:
-							compass_dir = "east"
-						else:
-							compass_dir = "west"
-					else:
-						if lat-direction_list[1]['point'][1]>abs(direction_list[1]['point'][0]-lon):
-							compass_dir = "south"
-						elif direction_list[1]['point'][0]>lon:
-							compass_dir = "east"
-						else:
-							compass_dir = "west"
-					tex = "Head "+compass_dir+(" on " + direction_list[1]['text'].split(" onto ")[-1]+"." if " onto " in direction_list[1]['text'] else ".")
-					platform.sayRich(tex, tex, 4)
-				else:
-					platform.sayRich("In "+formatDistance(direction_list[0]['distance'])+", "+direction_list[1]['text'], direction_list[1]['text'],direction_list[1]['sign'], direction_list[1]['point'][1], direction_list[1]['point'][0])
-				direction_list = direction_list[1:]
+		if navigation_state in ("waiting", "in transit", "approaching"):
+			# TODO: change this value based on speed
+			if geo_distance(lat, lon, direction_list[0]['point'][1], direction_list[0]['point'][0])<max(75, avg_speed*5):
+			# if True:
+				print (direction_list[0])
+				platform.speak(direction_list[0]['text'])
+				sleep(10)
+				navigation_state = "checkpoint"
+			if navigation_state == "in transit":
+				approach_distance = 400 if config.imperial else 500
+				dist_to_next = geo_distance(lat, lon, direction_list[0]['point'][1], direction_list[0]['point'][0])
+				if dist_to_next<approach_distance:
+					platform.speak("In %s, %s" % (formatDistance(approach_distance), direction_list[0]['text']))
+					navigation_state = "approaching"
+		elif navigation_state == "checkpoint":
+			if len(direction_list)==1 and geo_distance(
+				lat,
+				lon,
+				direction_list[0]['point'][1],
+				direction_list[0]['point'][0]) < max(75, avg_speed*5):
+				return
+			elif geo_distance(
+				lat,
+				lon,
+				direction_list[0]['point'][1],
+				direction_list[0]['point'][0]) < min(max(75, avg_speed*5), geo_distance(
+					direction_list[1]['point'][1],
+					direction_list[1]['point'][0],
+					direction_list[0]['point'][1],
+					direction_list[0]['point'][0]) / 2
+				):
+				return
 			else:
-				direction_list = []
-				platform.disablePTP()
+				if len(direction_list)>1:
+					if direction_list[0]['text'] == "Start":
+						if direction_list[1]['point'][1]>lat:
+							if direction_list[1]['point'][1]-lat>abs(direction_list[1]['point'][0]-lon):
+								compass_dir = "north"
+							elif direction_list[1]['point'][0]>lon:
+								compass_dir = "east"
+							else:
+								compass_dir = "west"
+						else:
+							if lat-direction_list[1]['point'][1]>abs(direction_list[1]['point'][0]-lon):
+								compass_dir = "south"
+							elif direction_list[1]['point'][0]>lon:
+								compass_dir = "east"
+							else:
+								compass_dir = "west"
+						tex = "Head "+compass_dir+(" on " + direction_list[1]['text'].split(" onto ")[-1]+"." if " onto " in direction_list[1]['text'] else ".")
+						platform.sayRich(tex, tex, 4)
+						navigation_state = "in transit"
+					else:
+						current_street = direction_list[0]['text'].split(" onto ")[-1]+" " if " onto " in direction_list[0]["text"] else ""
+						formatted_distance = formatDistance(direction_list[0]['distance'])
+						# platform.sayRich("In "+formatDistance(direction_list[0]['distance'])+", "+direction_list[1]['text'], direction_list[1]['text'],direction_list[1]['sign'], direction_list[1]['point'][1], direction_list[1]['point'][0])
+						if direction_list[0]['distance'] > 1000:
+							platform.sayRich(
+								"Continue on %sfor %s." % (current_street, formatted_distance),
+								direction_list[1]['text'],
+								direction_list[1]['sign'],
+								direction_list[1]['point'][1],
+								direction_list[1]['point'][0])
+							navigation_state = "in transit"
+						else:
+							if direction_list[1]['distance'] > 1000 or len(direction_list) < 3:
+								platform.sayRich(
+									"In "+formatDistance(direction_list[0]['distance'])+", "+direction_list[1]['text'],
+									direction_list[1]['text'],direction_list[1]['sign'],
+									direction_list[1]['point'][1],
+									direction_list[1]['point'][0])
+							else:
+								platform.sayRich(
+									"In "+formatDistance(direction_list[0]['distance'])+", "+direction_list[1]['text']+", then "+direction_list[2]['text'],
+									direction_list[1]['text'],direction_list[1]['sign'],
+									direction_list[1]['point'][1],
+									direction_list[1]['point'][0])
+							navigation_state = "approaching"
+					direction_list = direction_list[1:]
+				else:
+					direction_list = []
+					platform.disablePTP()
 
 def activate():
 	if not platform.app:

@@ -493,10 +493,8 @@ def watch_texts(e):
 	global detected
 	while True:
 		time.sleep(20)
-		print ("Checking messages...")
 		unread_msgs = check_qgvdial_messages()
 		unread_msgs += check_messages()
-		print (unread_msgs)
 		if unread_msgs:
 			print ("Unread messages!")
 			msg = '%s says: %s' % (unread_msgs[-1].sender, unread_msgs[-1].message)
@@ -602,17 +600,19 @@ def listen_thread():
 
 def getTrigger():
 	while active_listening:
-		try:
-			print(".", end="")
-			result = client.results.get(True, 0.5)
-			if isinstance(result,pyjulius.Sentence) and len(result.words)==1 and result.words[0].word=="Saera" and result.words[0].confidence>0.7:
-				# getSpeech()
-				print ("Got trigger!")
-				pyotherside.send('trigger')
-				return
-		except Queue.Empty:
-			time.sleep(0.2)
-			continue
+		"""This needs work"""
+		pass
+		# try:
+		# 	print(".", end="")
+		# 	result = client.results.get(True, 0.5)
+		# 	if isinstance(result,pyjulius.Sentence) and len(result.words)==1 and result.words[0].word=="Saera" and result.words[0].confidence>0.7:
+		# 		# getSpeech()
+		# 		print ("Got trigger!")
+		# 		pyotherside.send('trigger')
+		# 		return
+		# except Queue.Empty:
+		# 	time.sleep(0.2)
+		# 	continue
 
 def start_active_listening():
 	global active_listening
