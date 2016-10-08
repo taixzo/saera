@@ -304,6 +304,7 @@ Page {
                     rightMargin: lat ? 10 : 0
                 }
                 color: "#FFFFFF"
+                font.pixelSize: Theme.fontSizeMedium
                 text: lat ? dist(lat, lon) : ""
             }
 
@@ -331,6 +332,7 @@ Page {
                     margins: Theme.paddingLarge
                 }
                 text: value
+                font.pixelSize: Theme.fontSizeMedium
                 wrapMode: Text.Wrap
                 width: parent.width - 2 * Theme.paddingLarge
                 horizontalAlignment: who=="me" ? Text.AlignRight : Text.AlignLeft
@@ -436,6 +438,7 @@ Page {
       anchors.top: loadingIndicator.bottom
       anchors.horizontalCenter: loadingIndicator.horizontalCenter
       text: "Loading"
+      font.pixelSize: Theme.fontSizeMedium
       color: Theme.highlightColor
     }
 
