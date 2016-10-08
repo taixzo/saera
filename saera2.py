@@ -867,7 +867,7 @@ class Saera:
 			loc = platform.cur.fetchone()
 			if not loc:
 				google_place_api_key = 'AIzaSyCmX7809UtrtmTYX_41cjZLcco6vx-OQvc'
-				url_path = "https://maps.googleapis.com/maps/api/place/nearbysearch/json?key=%s&location=%s,%s&rankby=distance&keyword=%s" % (
+				url_path = "https://maps.googleapis.com/maps/api/place/textsearch/json?key=%s&location=%s,%s&rankby=distance&query=%s" % (
 					google_place_api_key,
 					str(here[3]),
 					str(here[4]),
