@@ -46,15 +46,15 @@ if sys.version_info[0]<3:
 		else:
 			import cmd_hw as platform
 else:
-	import harmattan_hw as platform
+	# import harmattan_hw as platform
 	# import x86_hw as platform
-	# try:
-	# 	import sailfish_hw as platform
-	# except ImportError:
-	# 	if pfm.linux_distribution()[0].lower()=='ubuntu':
-	# 		import ubuntu_hw as platform
-	# 	else:
-	# 		import cmd_hw as platform
+	try:
+		import sailfish_hw as platform
+	except ImportError:
+		if pfm.linux_distribution()[0].lower()=='ubuntu':
+			import ubuntu_hw as platform
+		else:
+			import cmd_hw as platform
 
 # if not os.path.exists(platform.memory_path):
 
@@ -496,11 +496,11 @@ class Saera:
 		if is_time:
 			return "The weather "+loc_str+" will be "+weather+" and "+str(int(round(temp)))+u("°. at ")+hour+"."
 		else:
-			print loc_str
-			print weather
-			print str(int(round(temp)))
-			print u("°.")
-			print "The weather "+loc_str+" is "+weather+", and "+str(int(round(temp)))+u("°.")
+			print (loc_str)
+			print (weather)
+			print (str(int(round(temp))))
+			print (u("°."))
+			print ("The weather "+loc_str+" is "+weather+", and "+str(int(round(temp)))+u("°."))
 			return "The weather "+loc_str+" is "+weather+", and "+str(int(round(temp)))+u("°.")
 	def call_phone(self, result):
 		self.short_term_memory.set('intent','call_phone')
@@ -857,16 +857,22 @@ class Saera:
 				# locdic = json.loads(req)
 				# loc = (0,locdic['hits'][0]["name"],"",locdic['hits'][0]["point"]["lat"],locdic['hits'][0]["point"]["lng"])
 				try:
-					req = urllib2.urlopen('https://maps.googleapis.com/maps/api/geocode/json?key=AIzaSyBUI3LwzSUmm3cI8-nEMGrQYAzs6VWFIfg&address='+location.replace(' ','+')+'&bounds='+str(float(here[3])-0.1)+','+str(float(here[4])-0.1)+'|'+str(float(here[3])+0.1)+','+str(float(here[4])+0.1)+'').read().decode("utf-8")
-				except:
+					url_path = 'https://maps.googleapis.com/maps/api/geocode/json?key=AIzaSyBUI3LwzSUmm3cI8-nEMGrQYAzs6VWFIfg&address='+location.replace(' ','+')+'&bounds='+str(float(here[3])-0.1)+','+str(float(here[4])-0.1)+'|'+str(float(here[3])+0.1)+','+str(float(here[4])+0.1)+''
+					req = urllib2.urlopen(url_path).read().decode("utf-8")
+				except Exception as e:
+					print (url_path)
+					print (e)
 					return "I can't look up directions without an internet connection, sorry."
 				locdic = json.loads(req)
 				loc = (0,' '.join([i["long_name"] for i in locdic['results'][0]['address_components'] if i['types'][0] not in ('country','postal','postal_code_suffix','administrative_area_level_2','neighborhood')]),"",locdic['results'][0]["geometry"]["location"]["lat"],locdic['results'][0]["geometry"]["location"]["lng"])
 
 				print (loc)
 			try:
-				req = urllib2.urlopen("https://graphhopper.com/api/1/route?point="+str(here[3])+","+str(here[4])+"&point="+str(loc[3])+","+str(loc[4])+"&vehicle=car&points_encoded=true&calc_points=true&key=d5365874-1efe-4f12-92ee-5757f82041fe").read().decode("utf-8")
-			except:
+				url_path = "https://graphhopper.com/api/1/route?point="+str(here[3])+","+str(here[4])+"&point="+str(loc[3])+","+str(loc[4])+"&vehicle=car&points_encoded=true&calc_points=true&key=d5365874-1efe-4f12-92ee-5757f82041fe"
+				req = urllib2.urlopen(url_path).read().decode("utf-8")
+			except Exception as e:
+				print (url_path)
+				print (e)
 				return "I can't look up directions without an internet connection, sorry."
 			pathdic = json.loads(req)
 			path = decodePath(pathdic['paths'][0]['points'], False)
