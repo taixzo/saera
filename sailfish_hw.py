@@ -447,6 +447,8 @@ def check_qgvdial_messages():
 	return new_msgs
 
 def check_messages():
+	# Method needs debugged
+	return []
 	def parse_txt_date(date):
 		return time.mktime(datetime.strptime(date.split(" GMT")[0], '%a %b %d %H:%M:%S %Y').timetuple())
 
@@ -801,7 +803,11 @@ def play(song=None):
 def identify_song():
 	if os.path.exists('/tmp/rec.ogg'):
 		os.remove('/tmp/rec.ogg')
-	gproc = subprocess.Popen(['gst-launch-0.10 autoaudiosrc ! vorbisenc ! oggmux ! filesink location=/tmp/rec.ogg'], shell=True)
+
+	if os.path.exists('/usr/bin/gst-launch-1.0'):
+		gproc = subprocess.Popen(['gst-launch-1.0 autoaudiosrc ! vorbisenc ! oggmux ! filesink location=/tmp/rec.ogg'], shell=True)
+	else:
+		gproc = subprocess.Popen(['gst-launch-0.10 autoaudiosrc ! vorbisenc ! oggmux ! filesink location=/tmp/rec.ogg'], shell=True)
 	time.sleep(11)
 	gproc.terminate()
 
@@ -850,7 +856,11 @@ def identify_song():
 		return "I can't find out, the server gave me a "+str(result['status']['code'])+" error."
 
 def play_url(url):
-	g = subprocess.Popen(['gst-launch-0.10 playbin2 uri='+url], shell=True)
+	if os.path.exists('/usr/bin/gst-launch-1.0'):
+		# playbin2 was renamed to playbin in 1.0
+		g = subprocess.Popen(['gst-launch-1.0 playbin uri='+url], shell=True)
+	else:
+		g = subprocess.Popen(['gst-launch-0.10 playbin2 uri='+url], shell=True)
 	g.wait()
 	return
 
