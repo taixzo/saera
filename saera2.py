@@ -16,8 +16,10 @@ import random
 # import urllib2
 try:
 	import urllib.request as urllib2
+	from urllib.parse import quote as urlquote
 except:
 	import urllib2
+	from urllib import quote as urlquote
 try:
 	import json
 except ImportError:
@@ -864,19 +866,27 @@ class Saera:
 			platform.cur.execute("SELECT * FROM Locations WHERE LocName='"+location+"'")
 			loc = platform.cur.fetchone()
 			if not loc:
-				# req = urllib2.urlopen('https://graphhopper.com/api/1/geocode?q='+location.replace(' ','%20')+'&point='+str(here[3])+','+str(here[4])+'&key=d5365874-1efe-4f12-92ee-5757f82041fe').read().decode("utf-8")
-				# locdic = json.loads(req)
-				# loc = (0,locdic['hits'][0]["name"],"",locdic['hits'][0]["point"]["lat"],locdic['hits'][0]["point"]["lng"])
+				google_place_api_key = 'AIzaSyCmX7809UtrtmTYX_41cjZLcco6vx-OQvc'
+				url_path = "https://maps.googleapis.com/maps/api/place/nearbysearch/json?key=%s&location=%s,%s&rankby=distance&keyword=%s" % (
+					google_place_api_key,
+					str(here[3]),
+					str(here[4]),
+					urlquote(location))
 				try:
-					url_path = 'https://maps.googleapis.com/maps/api/geocode/json?key=AIzaSyBUI3LwzSUmm3cI8-nEMGrQYAzs6VWFIfg&address='+location.replace(' ','+')+'&bounds='+str(float(here[3])-0.1)+','+str(float(here[4])-0.1)+'|'+str(float(here[3])+0.1)+','+str(float(here[4])+0.1)+''
 					req = urllib2.urlopen(url_path).read().decode("utf-8")
-				except Exception as e:
-					print (url_path)
-					print (e)
+				except:
 					return "I can't look up directions without an internet connection, sorry."
+					
 				locdic = json.loads(req)
-				loc = (0,' '.join([i["long_name"] for i in locdic['results'][0]['address_components'] if i['types'][0] not in ('country','postal','postal_code_suffix','administrative_area_level_2','neighborhood')]),"",locdic['results'][0]["geometry"]["location"]["lat"],locdic['results'][0]["geometry"]["location"]["lng"])
-
+				try:
+					loc = (
+						0,
+						locdic['results'][0]['name'],
+						"",
+						locdic['results'][0]["geometry"]["location"]["lat"],
+						locdic['results'][0]["geometry"]["location"]["lng"])
+				except IndexError:
+					return "I found no results for %s" % location
 				print (loc)
 			try:
 				url_path = "https://graphhopper.com/api/1/route?point="+str(here[3])+","+str(here[4])+"&point="+str(loc[3])+","+str(loc[4])+"&vehicle=car&points_encoded=true&calc_points=true&key=d5365874-1efe-4f12-92ee-5757f82041fe"
@@ -1120,10 +1130,10 @@ def resume_daemons():
 	return platform.resume_daemons()
 
 def set_position(lat, lon):
-	print (navigation_state)
 	global direction_list
 	global navigation_state
 	global loc_hist
+	print (navigation_state)
 
 	loc_hist.append((lat, lon, currentTime()))
 	# Only store the last minute of locations
