@@ -867,7 +867,7 @@ class Saera:
 			loc = platform.cur.fetchone()
 			if not loc:
 				google_place_api_key = 'AIzaSyCmX7809UtrtmTYX_41cjZLcco6vx-OQvc'
-				url_path = "https://maps.googleapis.com/maps/api/place/textsearch/json?key=%s&location=%s,%s&rankby=distance&query=%s" % (
+				url_path = "https://maps.googleapis.com/maps/api/place/textsearch/json?key=%s&location=%s,%s&query=%s" % (
 					google_place_api_key,
 					str(here[3]),
 					str(here[4]),
@@ -888,6 +888,7 @@ class Saera:
 				except IndexError:
 					return "I found no results for %s" % location
 				print (loc)
+			#Graphhopper
 			try:
 				url_path = "https://graphhopper.com/api/1/route?point="+str(here[3])+","+str(here[4])+"&point="+str(loc[3])+","+str(loc[4])+"&vehicle=car&points_encoded=true&calc_points=true&key=d5365874-1efe-4f12-92ee-5757f82041fe"
 				req = urllib2.urlopen(url_path).read().decode("utf-8")
@@ -903,8 +904,56 @@ class Saera:
 				# point = path[int((instruction['interval'][0]+instruction['interval'][1])/2)]
 				point = path[instruction['interval'][0]]
 				instruction['point'] = point
+				instruction['type'] = {-3:'turn', -2:'turn', -1:'turn', 0:'continue', 1:'turn', 2:'turn', 3:'turn', 4:'arrive', 5:'arrive', 6:'roundabout'}
 				print (instruction['text'], 'at', point)
-			instructions = [{'text':'Start','point':instructions[0]['point'],'distance':0}] + instructions
+			# Mapbox
+			try:
+				mapbox_access_token = "pk.eyJ1IjoidGFpeHpvIiwiYSI6ImJhNWUyYTk2ZTVjOTlhYzZiMWM1NjZiY2ZjOTRiMDQxIn0.aYRF5wFC-5FTFjAoK78dTg"
+				# TODO: add &bearings=bearing_car_is_currently_going when rerouting
+				# For some reason Mapbox gives uses (lon, lat) pairs instead of (lat, lon)
+				url_path = "https://api.mapbox.com/directions/v5/mapbox/driving/%s,%s;%s,%s?steps=true&access_token=%s" % (
+					here[4],
+					here[3],
+					loc[4],
+					loc[3],
+					mapbox_access_token)
+				req = urllib2.urlopen(url_path).read().decode("utf-8")
+			except Exception as e:
+				print (url_path)
+				print (e)
+				return "I can't look up directions without an internet connection, sorry."
+			mapbox_response = json.loads(req)
+			steps = mapbox_response['routes'][0]['legs'][0]['steps']
+			instructions = []
+			for map_instruction in steps:
+				instruction = {}
+				instruction['point'] = (map_instruction['maneuver']['location'][0], map_instruction['maneuver']['location'][1])
+				instruction['text'] = map_instruction['maneuver']['instruction']
+				instruction['distance'] = map_instruction['distance']
+				instruction['type'] = map_instruction['maneuver']['type']
+				if instruction['type'] in ['turn','merge','fork','on ramp','off ramp']:
+					instruction['sign'] = {
+						"sharp left": -3,
+						"sharply left": -3,
+						"slight left": -2,
+						"slightly left": -2,
+						"left": -1,
+						"straight": 0,
+						"right": 1,
+						"slightly right": 2,
+						"slight right": 2,
+						"sharply right": 3,
+						"sharp right": 3,
+						"uturn": 6,
+					}[map_instruction['maneuver']['modifier']]
+				elif instruction['type'] in ['continue', 'new name']:
+					instruction['sign'] = 0
+				else:
+					instruction['sign'] = 4
+				instructions.append(instruction)
+
+
+			instructions = [{'text':'Start','point':instructions[0]['point'],'distance':0, 'sign':4, 'type':'depart'}] + instructions
 			platform.enablePTP()
 			direction_list = instructions
 			total_distance = int(round(pathdic['paths'][0]['distance']*0.000621371))
@@ -1136,8 +1185,8 @@ def set_position(lat, lon):
 	print (navigation_state)
 
 	loc_hist.append((lat, lon, currentTime()))
-	# Only store the last minute of locations
-	del loc_hist[0:-60]
+	# Only store the last half minute of locations
+	del loc_hist[0:-30]
 	speeds = [geo_distance(loc_hist[i][0],loc_hist[i][1],loc_hist[i+1][0],loc_hist[i+1][1])/(loc_hist[i+1][2]-loc_hist[i][2]) for i in range(len(loc_hist)-1)]
 	# In units of m/s
 	avg_speed = sum(speeds)/max(len(speeds), 1) # Avoid dividing by zero at startup
@@ -1173,73 +1222,78 @@ def set_position(lat, lon):
 					platform.speak("In %s, %s" % (formatDistance(approach_distance), direction_list[0]['text']))
 					navigation_state = "approaching"
 		elif navigation_state == "checkpoint":
-			if len(direction_list)==1 and geo_distance(
-				lat,
-				lon,
-				direction_list[0]['point'][1],
-				direction_list[0]['point'][0]) < max(75, avg_speed*5):
-				return
-			elif geo_distance(
-				lat,
-				lon,
-				direction_list[0]['point'][1],
-				direction_list[0]['point'][0]) < min(max(75, avg_speed*5), geo_distance(
-					direction_list[1]['point'][1],
-					direction_list[1]['point'][0],
+			try:
+				if len(direction_list)==1 and geo_distance(
+					lat,
+					lon,
 					direction_list[0]['point'][1],
-					direction_list[0]['point'][0]) / 2
-				):
-				return
-			else:
-				if len(direction_list)>1:
-					if direction_list[0]['text'] == "Start":
-						if direction_list[1]['point'][1]>lat:
-							if direction_list[1]['point'][1]-lat>abs(direction_list[1]['point'][0]-lon):
-								compass_dir = "north"
-							elif direction_list[1]['point'][0]>lon:
-								compass_dir = "east"
+					direction_list[0]['point'][0]) < max(75, avg_speed*5):
+					return
+				elif len(direction_list)>1 and geo_distance(
+					lat,
+					lon,
+					direction_list[0]['point'][1],
+					direction_list[0]['point'][0]) < min(max(75, avg_speed*5), geo_distance(
+						direction_list[1]['point'][1],
+						direction_list[1]['point'][0],
+						direction_list[0]['point'][1],
+						direction_list[0]['point'][0]) / 2
+					):
+					return
+				else:
+					if len(direction_list)>1:
+						if direction_list[0]['text'] == "Start":
+							if direction_list[1]['point'][1]>lat:
+								if direction_list[1]['point'][1]-lat>abs(direction_list[1]['point'][0]-lon):
+									compass_dir = "north"
+								elif direction_list[1]['point'][0]>lon:
+									compass_dir = "east"
+								else:
+									compass_dir = "west"
 							else:
-								compass_dir = "west"
-						else:
-							if lat-direction_list[1]['point'][1]>abs(direction_list[1]['point'][0]-lon):
-								compass_dir = "south"
-							elif direction_list[1]['point'][0]>lon:
-								compass_dir = "east"
-							else:
-								compass_dir = "west"
-						tex = "Head "+compass_dir+(" on " + direction_list[1]['text'].split(" onto ")[-1]+"." if " onto " in direction_list[1]['text'] else ".")
-						platform.sayRich(tex, tex, 4)
-						navigation_state = "in transit"
-					else:
-						current_street = direction_list[0]['text'].split(" onto ")[-1]+" " if " onto " in direction_list[0]["text"] else ""
-						formatted_distance = formatDistance(direction_list[0]['distance'])
-						# platform.sayRich("In "+formatDistance(direction_list[0]['distance'])+", "+direction_list[1]['text'], direction_list[1]['text'],direction_list[1]['sign'], direction_list[1]['point'][1], direction_list[1]['point'][0])
-						if direction_list[0]['distance'] > 1000:
-							platform.sayRich(
-								"Continue on %sfor %s." % (current_street, formatted_distance),
-								direction_list[1]['text'],
-								direction_list[1]['sign'],
-								direction_list[1]['point'][1],
-								direction_list[1]['point'][0])
+								if lat-direction_list[1]['point'][1]>abs(direction_list[1]['point'][0]-lon):
+									compass_dir = "south"
+								elif direction_list[1]['point'][0]>lon:
+									compass_dir = "east"
+								else:
+									compass_dir = "west"
+							tex = "Head "+compass_dir+(" on " + fix_nums(direction_list[1]['text']).split(" onto ")[-1]+"." if " onto " in direction_list[1]['text'] else ".")
+							platform.sayRich(tex, tex, 4)
 							navigation_state = "in transit"
 						else:
-							if direction_list[1]['distance'] > 1000 or len(direction_list) < 3:
+							current_street = direction_list[0]['text'].split(" onto ")[-1]+" " if " onto " in direction_list[0]["text"] else ""
+							formatted_distance = formatDistance(direction_list[0]['distance'])
+							# platform.sayRich("In "+formatDistance(direction_list[0]['distance'])+", "+direction_list[1]['text'], direction_list[1]['text'],direction_list[1]['sign'], direction_list[1]['point'][1], direction_list[1]['point'][0])
+							if direction_list[0]['distance'] > 1000:
 								platform.sayRich(
-									"In "+formatDistance(direction_list[0]['distance'])+", "+direction_list[1]['text'],
-									direction_list[1]['text'],direction_list[1]['sign'],
+									"Continue on %sfor %s." % (fix_nums(current_street), formatted_distance),
+									direction_list[1]['text'],
+									direction_list[1]['sign'],
 									direction_list[1]['point'][1],
 									direction_list[1]['point'][0])
+								navigation_state = "in transit"
 							else:
-								platform.sayRich(
-									"In "+formatDistance(direction_list[0]['distance'])+", "+direction_list[1]['text']+", then "+direction_list[2]['text'],
-									direction_list[1]['text'],direction_list[1]['sign'],
-									direction_list[1]['point'][1],
-									direction_list[1]['point'][0])
-							navigation_state = "approaching"
-					direction_list = direction_list[1:]
-				else:
-					direction_list = []
-					platform.disablePTP()
+								if direction_list[1]['distance'] > 1000 or len(direction_list) < 3:
+									platform.sayRich(
+										"In "+formatDistance(direction_list[0]['distance'])+", "+fix_nums(direction_list[1]['text']),
+										direction_list[1]['text'],direction_list[1]['sign'],
+										direction_list[1]['point'][1],
+										direction_list[1]['point'][0])
+								else:
+									platform.sayRich(
+										"In "+formatDistance(direction_list[0]['distance'])+", "+direction_list[1]['text']+", then "+fix_nums(direction_list[2]['text']),
+										direction_list[1]['text'],direction_list[1]['sign'],
+										direction_list[1]['point'][1],
+										direction_list[1]['point'][0])
+								navigation_state = "approaching"
+						direction_list = direction_list[1:]
+					else:
+						direction_list = []
+						platform.disablePTP()
+			except:
+				print (direction_list)
+				raise
+
 
 def activate():
 	if not platform.app:
