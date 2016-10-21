@@ -205,6 +205,10 @@ def decodePath (encoded, is3D):
 	# // print ("decoded " + length + " coordinates in " + ((end - start) / 1000) + "s");
 	return array
 
+def fix_nums(st):
+	rt = r'([\D]\d?\d)(\d\d)([\D]|$)'
+	return re.sub(rt,r'\1 \2\3',st)
+
 global direction_list
 geoalarm_list = []
 direction_list = []
