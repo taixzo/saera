@@ -624,7 +624,7 @@ def start_active_listening():
 def stop_active_listening():
 	global active_listening
 	active_listening = False
-	subprocess.Popen(['pactl', 'set-sink-volume', '1', str(volume)])
+	subprocess.Popen(['pactl', 'set-sink-volume', '1', 65536])
 
 def cancel_listening():
 	client.send("TERMINATE\n")
@@ -632,7 +632,7 @@ def cancel_listening():
 	global active_listening
 	listening = False
 	active_listening = False
-	subprocess.Popen(['pactl', 'set-sink-volume', '1', str(volume)])
+	subprocess.Popen(['pactl', 'set-sink-volume', '1', 65536])
 
 class timed:
 	alarms = []
@@ -943,19 +943,27 @@ def speak(string):
 		spoken_str = string.split('|')[0]
 	else:
 		spoken_str = '\n'.join([i[0] for i in string])
+
+	if is_playing():
+		prependString = "gdbus call -e -d org.mpris.MediaPlayer2."+activeMediaPlayer+" -o /org/mpris/MediaPlayer2 -m org.mpris.MediaPlayer2.Player.Pause && "
+		appendString = " && gdbus call -e -d org.mpris.MediaPlayer2."+activeMediaPlayer+" -o /org/mpris/MediaPlayer2 -m org.mpris.MediaPlayer2.Player.Play"
+	else:
+		prependString = ""
+		appendString = ""
+
 	if not os.path.isfile("/tmp/espeak_lock"):
 		# os.system('pactl set-sink-volume 1 %i' % (volume/2))
 
 		if os.path.exists('/usr/bin/gst-launch-1.0'):
 			print('touch /tmp/espeak_lock && espeak --stdout -v +f2 "' + spoken_str.replace(":00"," o'clock").replace("\n",". ").replace(":", " ") + '" |'
 				' gst-launch-1.0 -q fdsrc ! wavparse ! audioconvert ! pulsesink && rm /tmp/espeak_lock &')
-			os.system('touch /tmp/espeak_lock && espeak --stdout -v +f2 "' + spoken_str.replace(":00"," o'clock").replace("\n",". ").replace(":", " ") + '" |'
-				' gst-launch-1.0 -q fdsrc ! wavparse ! audioconvert ! pulsesink && rm /tmp/espeak_lock &')
+			os.system(prependString + 'touch /tmp/espeak_lock && espeak --stdout -v +f2 "' + spoken_str.replace(":00"," o'clock").replace("\n",". ").replace(":", " ") + '" |'
+				' gst-launch-1.0 -q fdsrc ! wavparse ! audioconvert ! pulsesink && rm /tmp/espeak_lock' + appendString + ' &')
 		else:
 			print('touch /tmp/espeak_lock && espeak --stdout -v +f2 "' + spoken_str.replace(":00"," o'clock").replace("\n",". ").replace(":", " ") + '" |'
 					' gst-launch-0.10 -q fdsrc ! wavparse ! audioconvert ! volume volume=4.0 ! alsasink && rm /tmp/espeak_lock && pactl set-sink-volume 1 65536 &')
-			os.system('touch /tmp/espeak_lock && espeak --stdout -v +f2 "' + spoken_str.replace(":00"," o'clock").replace("\n",". ").replace(":", " ") + '" |'
-				' gst-launch-0.10 -q fdsrc ! wavparse ! audioconvert ! volume volume=4.0 ! alsasink && rm /tmp/espeak_lock && pactl set-sink-volume 1 65536 &')
+			os.system(prependString + 'touch /tmp/espeak_lock && espeak --stdout -v +f2 "' + spoken_str.replace(":00"," o'clock").replace("\n",". ").replace(":", " ") + '" |'
+				' gst-launch-0.10 -q fdsrc ! wavparse ! audioconvert ! volume volume=4.0 ! alsasink && rm /tmp/espeak_lock && pactl set-sink-volume 1 65536' + appendString + ' &')
 	detected = False
 	return string
 
