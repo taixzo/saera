@@ -49,6 +49,7 @@ def load_config():
 		"use_gps":True,
 		"imperial":True,
 		"read_texts":False,
+		"speech_engine":"flite",
 		"internet_voice":False,
 		"internet_voice_engine":"Wit", # Options: Wit, Google, Houndify
 	}
@@ -71,10 +72,14 @@ def load_config():
 			except ValueError:
 				h = []
 			for i in h:
-				pyotherside.send('sayRich', i[0], i[1], i[2], i[3])
+				if len(i)>4 and i[4]:
+					pyotherside.send('addSpokenText', i[0], i[1], i[2], i[3])
+				else:
+					pyotherside.send('sayRich', i[0], i[1], i[2], i[3])
 				history.append(i)
 	return Struct(**settings)
 
+utterances = deque()
 history = deque(maxlen=20)
 config = load_config()
 
@@ -493,8 +498,8 @@ def watch_texts(e):
 	global detected
 	while True:
 		time.sleep(20)
-		unread_msgs = check_qgvdial_messages()
-		unread_msgs += check_messages()
+		# unread_msgs = check_qgvdial_messages()
+		unread_msgs = check_messages()
 		if unread_msgs:
 			print ("Unread messages!")
 			msg = '%s says: %s' % (unread_msgs[-1].sender, unread_msgs[-1].message)
@@ -593,9 +598,9 @@ def listen_thread():
 				if '_text' in j and j['_text']:
 					res = j['_text'][0].upper() + j['_text'][1:]
 	pyotherside.send('process_spoken_text',res)
-	history.append([res, None, None, None])
-	with open(history_path, 'w') as history_file:
-		json.dump(list(history), history_file)
+	# history.append([res, None, None, None, True])
+	# with open(history_path, 'w') as history_file:
+	# 	json.dump(list(history), history_file)
 	subprocess.Popen(['pactl', 'set-sink-volume', '1', '65536'])
 
 def getTrigger():
@@ -624,7 +629,7 @@ def start_active_listening():
 def stop_active_listening():
 	global active_listening
 	active_listening = False
-	subprocess.Popen(['pactl', 'set-sink-volume', '1', 65536])
+	subprocess.Popen(['pactl', 'set-sink-volume', '1', '65536'])
 
 def cancel_listening():
 	client.send("TERMINATE\n")
@@ -632,7 +637,7 @@ def cancel_listening():
 	global active_listening
 	listening = False
 	active_listening = False
-	subprocess.Popen(['pactl', 'set-sink-volume', '1', 65536])
+	subprocess.Popen(['pactl', 'set-sink-volume', '1', '65536'])
 
 class timed:
 	alarms = []
@@ -706,6 +711,9 @@ def set_reminder(time,message,location=None):
 	return timed.set_reminder(time,message,location)
 
 def run_text(t):
+	history.append([t, None, None, None, True])
+	with open(history_path, 'w') as history_file:
+		json.dump(list(history), history_file)
 	return app.execute_text(t)
 
 def run_app(s):
@@ -933,8 +941,11 @@ class MailFolder:
 			if not i in self.messages and not "part" in i:
 				self.messages[i] = email.message_from_file(open(os.getenv("HOME")+"/.qmf/mail/"+i))
 
-def speak(string):
+speech_thread = None
+
+def speak(string, is_backlog=False):
 	global detected
+	global speech_thread
 	try:
 		is_string = isinstance(string,basestring)
 	except NameError:
@@ -944,7 +955,7 @@ def speak(string):
 	else:
 		spoken_str = '\n'.join([i[0] for i in string])
 
-	if is_playing():
+	if is_playing() == "Playing":
 		prependString = "gdbus call -e -d org.mpris.MediaPlayer2."+activeMediaPlayer+" -o /org/mpris/MediaPlayer2 -m org.mpris.MediaPlayer2.Player.Pause && "
 		appendString = " && gdbus call -e -d org.mpris.MediaPlayer2."+activeMediaPlayer+" -o /org/mpris/MediaPlayer2 -m org.mpris.MediaPlayer2.Player.Play"
 	else:
@@ -954,18 +965,37 @@ def speak(string):
 	if not os.path.isfile("/tmp/espeak_lock"):
 		# os.system('pactl set-sink-volume 1 %i' % (volume/2))
 
-		if os.path.exists('/usr/bin/gst-launch-1.0'):
-			print('touch /tmp/espeak_lock && espeak --stdout -v +f2 "' + spoken_str.replace(":00"," o'clock").replace("\n",". ").replace(":", " ") + '" |'
-				' gst-launch-1.0 -q fdsrc ! wavparse ! audioconvert ! pulsesink && rm /tmp/espeak_lock &')
-			os.system(prependString + 'touch /tmp/espeak_lock && espeak --stdout -v +f2 "' + spoken_str.replace(":00"," o'clock").replace("\n",". ").replace(":", " ") + '" |'
-				' gst-launch-1.0 -q fdsrc ! wavparse ! audioconvert ! pulsesink && rm /tmp/espeak_lock' + appendString + ' &')
+		if config.speech_engine=="flite" and os.system("which flite > /dev/null 2>&1")==0:
+			# for the moment, let's assume we have gstreamer 1.0
+			os.system(prependString + 'touch /tmp/espeak_lock && flite -voice /usr/share/harbour-saera/qml/pages/flite/cmu_us_clb.flitevox -t "' + spoken_str.replace(":00"," o'clock").replace("\n",". ").replace(":", " ") + '" -o /tmp/saera_out.wav && gst-launch-1.0 -q filesrc location=/tmp/saera_out.wav ! wavparse ! pulsesink && rm /tmp/espeak_lock' + appendString + ' &')
+
 		else:
-			print('touch /tmp/espeak_lock && espeak --stdout -v +f2 "' + spoken_str.replace(":00"," o'clock").replace("\n",". ").replace(":", " ") + '" |'
-					' gst-launch-0.10 -q fdsrc ! wavparse ! audioconvert ! volume volume=4.0 ! alsasink && rm /tmp/espeak_lock && pactl set-sink-volume 1 65536 &')
-			os.system(prependString + 'touch /tmp/espeak_lock && espeak --stdout -v +f2 "' + spoken_str.replace(":00"," o'clock").replace("\n",". ").replace(":", " ") + '" |'
-				' gst-launch-0.10 -q fdsrc ! wavparse ! audioconvert ! volume volume=4.0 ! alsasink && rm /tmp/espeak_lock && pactl set-sink-volume 1 65536' + appendString + ' &')
+			if os.path.exists('/usr/bin/gst-launch-1.0'):
+				print('touch /tmp/espeak_lock && espeak --stdout -v +f2 "' + spoken_str.replace(":00"," o'clock").replace("\n",". ").replace(":", " ") + '" |'
+					' gst-launch-1.0 -q fdsrc ! wavparse ! audioconvert ! pulsesink && rm /tmp/espeak_lock &')
+				os.system(prependString + 'touch /tmp/espeak_lock && espeak --stdout -v +f2 "' + spoken_str.replace(":00"," o'clock").replace("\n",". ").replace(":", " ") + '" |'
+					' gst-launch-1.0 -q fdsrc ! wavparse ! audioconvert ! pulsesink && rm /tmp/espeak_lock' + appendString + ' &')
+			else:
+				print('touch /tmp/espeak_lock && espeak --stdout -v +f2 "' + spoken_str.replace(":00"," o'clock").replace("\n",". ").replace(":", " ") + '" |'
+						' gst-launch-0.10 -q fdsrc ! wavparse ! audioconvert ! volume volume=4.0 ! alsasink && rm /tmp/espeak_lock && pactl set-sink-volume 1 65536 &')
+				os.system(prependString + 'touch /tmp/espeak_lock && espeak --stdout -v +f2 "' + spoken_str.replace(":00"," o'clock").replace("\n",". ").replace(":", " ") + '" |'
+					' gst-launch-0.10 -q fdsrc ! wavparse ! audioconvert ! volume volume=4.0 ! alsasink && rm /tmp/espeak_lock && pactl set-sink-volume 1 65536' + appendString + ' &')
+	else:
+		if is_backlog:
+			utterances.appendleft(string)
+		else:
+			utterances.append(string)
+			if speech_thread is None:
+				speech_thread = threading.Thread(target=retry_speech)
+				speech_thread.start()
+		# pyotherside.send('sayRich', string+' - could not speak it', "", 0, 0)
 	detected = False
 	return string
+
+def retry_speech():
+	while utterances:
+		time.sleep(1)
+		speak(utterances.popleft())
 
 def enablePTP():
 	pyotherside.send('enablePTP')
@@ -976,7 +1006,7 @@ def disablePTP():
 def sayRich(spokenMessage, message, img, lat=0, lon=0):
 	pyotherside.send('sayRich',message, img, lat, lon)
 	speak(spokenMessage)
-	history.append([message, img, lat, lon])
+	history.append([message, img, lat, lon, False])
 	with open(history_path, 'w') as history_file:
 		print ("SAVING HISTORY")
 		json.dump(list(history), history_file)

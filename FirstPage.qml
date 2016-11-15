@@ -75,6 +75,11 @@ Page {
       volume.visible = false;
     }
 
+    function addSpokenText(msg, img, lat, lon) {
+      console.log("called")
+      listModel.append({value:msg, who: "me", link:false, image:"", lat:0, lon:0, spot_preview: ""});
+    }
+
     function process_spoken_text(res) {
       goBusy()
       listModel.append({value: res, who: "me", link: false, image: "", lat: 0, lon: 0, spot_preview: ""});
@@ -185,6 +190,7 @@ Page {
     }
 
     function sayRich(message, img, lat, lon) {
+      // console.log(message + ", " + img + ", "+ lat + ", "+ lon)
         var images = {}
         images[-3] = "image://theme/icon-direction-hard-left"
         images[-2] = "image://theme/icon-direction-left"
@@ -240,6 +246,7 @@ Page {
              setHandler('load_msg', page.load_msg)
              setHandler('enablePTP', page.enablePTP)
              setHandler('sayRich', page.sayRich)
+             setHandler('addSpokenText', page.addSpokenText)
              setHandler('set_vol', page.set_vol)
              setHandler('process_spoken_text', page.process_spoken_text)
              setHandler('goBusy', page.goBusy)
@@ -285,6 +292,16 @@ Page {
         }
         delegate: Item {
             width: ListView.view.width
+
+            MouseArea {
+              anchors.fill: parent
+              onClicked: {
+                if (who=="me") {
+                  inputfield.text = t.text
+                  inputfield.forceActiveFocus()
+                }
+              }
+            }
 
             Image {
                 id: i

@@ -34,7 +34,7 @@ def u(x):
 global app
 app = None
 
-settings_path = os.getenv('HOME')+'/.config/saera/setting.json'
+settings_path = os.getenv('HOME')+'/.config/saera/settings.json'
 
 class Struct:
     def __init__(self, **entries): 

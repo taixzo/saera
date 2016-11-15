@@ -32,6 +32,9 @@ import subprocess
 from guessing import Guesser
 import timeparser2
 
+import polyline
+import geoutil
+
 if sys.version_info[0]<3:
 	if sys.version_info[1]<7:
 		try:
@@ -110,6 +113,16 @@ class Memory:
 				if self.items[i][1]<0:
 					del self.items[i]
 
+class enum(object):
+    def __init__(self, **kwds):
+        self.__dict__.update(kwds)
+
+    def __eq__(self, other):
+        return self.__dict__ == other.__dict__
+
+def unsentencecase(strng):
+	if strng:
+		return strng[0].lower()+strng[1:]
 
 import math, sys
 
@@ -207,13 +220,21 @@ def decodePath (encoded, is3D):
 
 def fix_nums(st):
 	rt = r'([\D]\d?\d)(\d\d)([\D]|$)'
-	return re.sub(rt,r'\1 \2\3',st)
+	return re.sub(rt,r'\1:\2\3',st)
 
 global direction_list
 geoalarm_list = []
 direction_list = []
+total_direction_list = []
 navigation_state = "waiting"
 loc_hist = []
+directions_given = enum(
+	turn=False,
+	turn_distance=False,
+	half_mile=False,
+	two_mile=False,
+	continue_on=False
+)
 
 def toRadians(x):
 	return x*0.0174532925
@@ -516,7 +537,7 @@ class Saera:
 			print (loc_str)
 			print (weather)
 			print (str(int(round(temp))))
-			print (u("°."))
+			# print (u("°."))
 			print ("The weather "+loc_str+" is "+weather+", and "+str(int(round(temp)))+u("°."))
 			return "The weather "+loc_str+" is "+weather+", and "+str(int(round(temp)))+u("°.")
 	def call_phone(self, result):
@@ -892,76 +913,98 @@ class Saera:
 				except IndexError:
 					return "I found no results for %s" % location
 				print (loc)
+			#TODO: config file
+			DIRECTIONS_API = "Mapbox"
 			#Graphhopper
-			try:
-				url_path = "https://graphhopper.com/api/1/route?point="+str(here[3])+","+str(here[4])+"&point="+str(loc[3])+","+str(loc[4])+"&vehicle=car&points_encoded=true&calc_points=true&key=d5365874-1efe-4f12-92ee-5757f82041fe"
-				req = urllib2.urlopen(url_path).read().decode("utf-8")
-			except Exception as e:
-				print (url_path)
-				print (e)
-				return "I can't look up directions without an internet connection, sorry."
-			pathdic = json.loads(req)
-			path = decodePath(pathdic['paths'][0]['points'], False)
-			print (path)
-			instructions = pathdic['paths'][0]['instructions']
-			for index, instruction in enumerate(instructions):
-				# point = path[int((instruction['interval'][0]+instruction['interval'][1])/2)]
-				point = path[instruction['interval'][0]]
-				instruction['point'] = point
-				instruction['type'] = {-3:'turn', -2:'turn', -1:'turn', 0:'continue', 1:'turn', 2:'turn', 3:'turn', 4:'arrive', 5:'arrive', 6:'roundabout'}
-				print (instruction['text'], 'at', point)
-			# Mapbox
-			try:
-				mapbox_access_token = "pk.eyJ1IjoidGFpeHpvIiwiYSI6ImJhNWUyYTk2ZTVjOTlhYzZiMWM1NjZiY2ZjOTRiMDQxIn0.aYRF5wFC-5FTFjAoK78dTg"
-				# TODO: add &bearings=bearing_car_is_currently_going when rerouting
-				# For some reason Mapbox gives uses (lon, lat) pairs instead of (lat, lon)
-				url_path = "https://api.mapbox.com/directions/v5/mapbox/driving/%s,%s;%s,%s?steps=true&access_token=%s" % (
-					here[4],
-					here[3],
-					loc[4],
-					loc[3],
-					mapbox_access_token)
-				req = urllib2.urlopen(url_path).read().decode("utf-8")
-			except Exception as e:
-				print (url_path)
-				print (e)
-				return "I can't look up directions without an internet connection, sorry."
-			mapbox_response = json.loads(req)
-			steps = mapbox_response['routes'][0]['legs'][0]['steps']
-			instructions = []
-			for map_instruction in steps:
-				instruction = {}
-				instruction['point'] = (map_instruction['maneuver']['location'][0], map_instruction['maneuver']['location'][1])
-				instruction['text'] = map_instruction['maneuver']['instruction']
-				instruction['distance'] = map_instruction['distance']
-				instruction['type'] = map_instruction['maneuver']['type']
-				if instruction['type'] in ['turn','merge','fork','on ramp','off ramp']:
-					instruction['sign'] = {
-						"sharp left": -3,
-						"sharply left": -3,
-						"slight left": -2,
-						"slightly left": -2,
-						"left": -1,
-						"straight": 0,
-						"right": 1,
-						"slightly right": 2,
-						"slight right": 2,
-						"sharply right": 3,
-						"sharp right": 3,
-						"uturn": 6,
-					}[map_instruction['maneuver']['modifier']]
-				elif instruction['type'] in ['continue', 'new name']:
-					instruction['sign'] = 0
-				else:
-					instruction['sign'] = 4
-				instructions.append(instruction)
+			if DIRECTIONS_API=="Graphhopper":
+				try:
+					url_path = "https://graphhopper.com/api/1/route?point="+str(here[3])+","+str(here[4])+"&point="+str(loc[3])+","+str(loc[4])+"&vehicle=car&points_encoded=true&calc_points=true&key=d5365874-1efe-4f12-92ee-5757f82041fe"
+					req = urllib2.urlopen(url_path).read().decode("utf-8")
+				except Exception as e:
+					print (url_path)
+					print (e)
+					return "I can't look up directions without an internet connection, sorry."
+				pathdic = json.loads(req)
+				est_dist = pathdic['paths'][0]['distance']
+				est_time = pathdic['paths'][0]['time']/1000
+				path = decodePath(pathdic['paths'][0]['points'], False)
+				print (path)
+				instructions = pathdic['paths'][0]['instructions']
+				for index, instruction in enumerate(instructions):
+					# point = path[int((instruction['interval'][0]+instruction['interval'][1])/2)]
+					point = path[instruction['interval'][0]]
+					instruction['point'] = point
+					instruction['type'] = {-3:'turn', -2:'turn', -1:'turn', 0:'continue', 1:'turn', 2:'turn', 3:'turn', 4:'arrive', 5:'arrive', 6:'roundabout'}
+					print (instruction['text'], 'at', point)
+			else:
+				# Mapbox
+				try:
+					mapbox_access_token = "pk.eyJ1IjoidGFpeHpvIiwiYSI6ImJhNWUyYTk2ZTVjOTlhYzZiMWM1NjZiY2ZjOTRiMDQxIn0.aYRF5wFC-5FTFjAoK78dTg"
+					# TODO: add &bearings=bearing_car_is_currently_going when rerouting
+					# For some reason Mapbox gives uses (lon, lat) pairs instead of (lat, lon)
+					url_path = "https://api.mapbox.com/directions/v5/mapbox/driving/%s,%s;%s,%s?steps=true&access_token=%s" % (
+						here[4],
+						here[3],
+						loc[4],
+						loc[3],
+						mapbox_access_token)
+					req = urllib2.urlopen(url_path).read().decode("utf-8")
+				except Exception as e:
+					print (url_path)
+					print (e)
+					return "I can't look up directions without an internet connection, sorry."
+				mapbox_response = json.loads(req)
+				est_time = mapbox_response['routes'][0]['duration']
+				est_dist = mapbox_response['routes'][0]['distance']
+				steps = mapbox_response['routes'][0]['legs'][0]['steps']
+				instructions = []
+				for i, map_instruction in enumerate(steps):
+					instruction = {}
+					# for some reason these are given as lon, lat instead of lat, lon
+					instruction['point'] = (map_instruction['maneuver']['location'][1], map_instruction['maneuver']['location'][0])
+					instruction['text'] = map_instruction['maneuver']['instruction']
+					instruction['distance'] = steps[i-1]['distance'] if i>0 else geo_distance(here[3], here[4], instruction['point'][0], instruction['point'][1])
+					# instruction['distance'] = map_instruction['distance']
+					instruction['type'] = map_instruction['maneuver']['type']
+					if instruction['type'] in ['turn','merge','fork','on ramp','off ramp']:
+						instruction['sign'] = {
+							"sharp left": -3,
+							"sharply left": -3,
+							"slight left": -2,
+							"slightly left": -2,
+							"left": -1,
+							"straight": 0,
+							"right": 1,
+							"slightly right": 2,
+							"slight right": 2,
+							"sharply right": 3,
+							"sharp right": 3,
+							"uturn": 6,
+						}[map_instruction['maneuver']['modifier']]
+					elif instruction['type'] in ['continue', 'new name']:
+						instruction['sign'] = 0
+					else:
+						instruction['sign'] = 4
+					instruction['path'] = polyline.decode(steps[i-1]['geometry']) if i>0 else [[here[3],here[4]],[instruction['point'][0]+0.001, instruction['point'][1]+0.001]]
+					instructions.append(instruction)
 
 
-			instructions = [{'text':'Start','point':instructions[0]['point'],'distance':0, 'sign':4, 'type':'depart'}] + instructions
+			print (instructions[0]['path'])
+			# instructions = [{
+			# 					'text':'Start',
+			# 					'point':instructions[0]['point'],
+			# 					'path':[[here[3],here[4]],[instructions[0]['point'][0]+0.001, instructions[0]['point'][1]+0.001]],
+			# 					'distance':0, 
+			# 					'sign':4, 
+			# 					'type':'depart'}] + instructions
+			open('/home/nemo/.saera_directions', 'w').write(json.dumps(instructions))
 			platform.enablePTP()
 			direction_list = instructions
-			total_distance = int(round(pathdic['paths'][0]['distance']*0.000621371))
-			return "Ok, "+loc[1]+" is "+(str(total_distance)+" mile"+("s" if total_distance != 1 else "") if total_distance >= 1 else "less than a mile") + " away. It will take about "+formatTime(pathdic['paths'][0]['time']/1000)+"."
+			total_direction_list = direction_list
+			total_distance = int(round(est_dist*0.000621371))
+			platform.speak("Ok, "+loc[1]+" is "+(str(total_distance)+" mile"+("s" if total_distance != 1 else "") if total_distance >= 1 else "less than a mile") + " away. It will take about "+formatTime(est_time)+".")
+			sleep(10)
+			return ""
 		return "No."
 	def coin_flip(self,result):
 		if 'number' in result['outcome']['entities'] and result['outcome']['entities']['number']>1:
@@ -1164,7 +1207,7 @@ def quit():
 	platform.quit()
 
 def run_text(t):
-	return platform.speak(platform.app.execute_text(t))
+	return platform.speak(platform.run_text(t))
 
 def run_voice():
 	return platform.listen()
@@ -1182,7 +1225,209 @@ def resume_daemons():
 		return ""
 	return platform.resume_daemons()
 
+import logging
+logging.basicConfig(filename='/home/nemo/saera_nav.log', level=logging.DEBUG)
+last_flow_path = -1
+def update_flow_path(path, message):
+	global last_flow_path
+	if path!=last_flow_path:
+		last_flow_path = path
+		logging.debug(message)
+
 def set_position(lat, lon):
+	global direction_list
+	global total_direction_list
+	global current_street
+	max_distance_from_route = 50
+
+	global directions_given
+	global last_flow_path
+
+	# print ("%f, %f" % (lat, lon))
+
+	platform.cur.execute('INSERT OR REPLACE INTO Locations (ID, LocName, Zip, Latitude, Longitude, Timezone) VALUES ((SELECT ID FROM Locations WHERE LocName = "here"), "here", "", '+str(lat)+', '+str(lon)+', 0)')
+	platform.cur.execute('INSERT OR REPLACE INTO Variables (ID, VarName, Value) VALUES ((SELECT ID FROM Variables WHERE VarName = "here"), "here", "'+str(platform.cur.lastrowid)+'");')
+	platform.cur.execute('INSERT INTO LocationLogs (Latitude, Longitude) VALUES ('+str(lat)+','+str(lon)+')')
+	platform.conn.commit()
+
+	# Do we have a route?
+	if direction_list != []:
+		current_segment = direction_list[0]
+		current_distance = geo_distance(lat, lon, current_segment['point'][0], current_segment['point'][1])
+		# print (current_segment['point'])
+		print ("have route,", end=" ")
+
+		# Are we on the first part of the route?
+		if geoutil.distance_to_polyline([lat, lon], current_segment['path']) < max_distance_from_route:
+			print ("on1seg,", end=" ")
+			# Are we close to the turn?
+			if current_distance < 75: # TODO: change value based on speed
+				print ("turn,", end=" ")
+				# Have we given turn directions?
+				if directions_given.turn:
+					# Are we closer to the next part than this one?
+					if len(direction_list) > 1 and geoutil.distance_to_polyline([lat, lon], direction_list[1]['path']) < geoutil.distance_to_polyline([lat, lon], current_segment['path']):
+						print ("newseg,", end=" ")
+						# That is now the first part
+						last_direction = direction_list.pop(0)
+						current_street = last_direction['text'].split(" onto ")[-1]+" " if " onto " in last_direction["text"] else ""
+						directions_given.turn = False
+						directions_given.turn_distance = False
+						directions_given.half_mile = False
+						directions_given.two_mile = False
+						directions_given.continue_on = False
+						update_flow_path(1, "have route, on1seg, turn, newseg, %s" % last_direction['text'])
+					else:
+						# Clean up if this is the destination
+						if len(direction_list)==1:
+							update_flow_path(15, "no route")
+							direction_list = []
+						update_flow_path(2, "have route, on1seg, turn, no newseg")
+						print ("dp1: %f, dp2: %f" % (
+							geoutil.distance_to_polyline([lat, lon], direction_list[1]['path']),
+							geoutil.distance_to_polyline([lat, lon], current_segment['path'])
+						))
+				# No?
+				else:
+					print ("giveturn,", end=" ")
+					update_flow_path(3, "have route, on1seg, giveturn, %s" % current_segment['text'])
+					directions_given.turn = True
+					if len(direction_list) > 1 and direction_list[1]['distance'] < 100:
+						platform.speak("%s, then %s." % (fix_nums(current_segment['text']), fix_nums(direction_list[1]['text'])))
+					else:
+						platform.speak(fix_nums(current_segment['text']))
+			else:
+				print ("intrans,dist=%s" % current_distance, end=" ")
+				# Is the current segment more than 1 mile?
+				if current_segment['distance'] > 1600: # approximately
+					# Is it more than 5 miles?
+					if current_segment['distance'] > 8000:
+						# Are we less than 2 miles away?
+						if current_distance < 3218:
+							# Have we given 2-mile warning?
+							if directions_given.two_mile:
+								# Are we less than ½ mile away?
+								if current_distance < 850: # perhaps a bit of a buffer
+									# Have we given ½-mile warning?
+									if directions_given.half_mile:
+										update_flow_path(4, "have route, on1seg, intrans, half-mile given %s" % current_segment['text'])
+										print ("")
+										return
+									else:
+										# Give ½-mile warning
+										update_flow_path(5, "have route, on1seg, intrans, give half-mile %s" % current_segment['text'])
+										directions_given.half_mile = True
+										platform.sayRich("In %s, %s" % (formatDistance(current_distance), fix_nums(direction_list[0]['text'])),
+											current_segment['text'],
+											current_segment['sign'],
+											current_segment['point'][0],
+											current_segment['point'][1])
+								else:
+									# Have we given "continue" notification?
+									if directions_given.continue_on:
+										update_flow_path(6, "have route, on1seg, intrans, continue given %s" % current_segment['text'])
+										print("")
+										return
+									else:
+										# Give it
+										update_flow_path(7, "have route, on1seg, intrans, give continue %s" % current_segment['text'])
+										directions_given.continue_on = True
+										platform.sayRich(
+											"Continue on %sfor %s." % (fix_nums(current_street), formatDistance(current_segment['distance'])),
+											current_segment['text'],
+											current_segment['sign'],
+											current_segment['point'][0],
+											current_segment['point'][1])
+							else:
+								# Give it
+								update_flow_path(8, "have route, on1seg, intrans, give two-mile %s" % current_segment['text'])
+								directions_given.two_mile = True
+								platform.sayRich("In %s, %s" % (formatDistance(current_distance), fix_nums(current_segment['text'])),
+									current_segment['text'],
+									current_segment['sign'],
+									current_segment['point'][0],
+									current_segment['point'][1])
+					else:
+						# Are we less than 1/2 mile away?
+						if current_distance < 804:
+							# Have we given 1/2-mile warning?
+							if directions_given.half_mile:
+								update_flow_path(9, "have route, on1seg, intrans, half-mile given %s" % current_segment['text'])
+								print("")
+								return
+							else:
+								# Give it
+								update_flow_path(10, "have route, on1seg, intrans, give half-mile %s" % current_segment['text'])
+								directions_given.half_mile = True
+								platform.sayRich("In %s, %s" % (formatDistance(current_distance), fix_nums(current_segment['text'])),
+									current_segment['text'],
+									current_segment['sign'],
+									current_segment['point'][0],
+									current_segment['point'][1])
+						else:
+							# Have we given "continue" notification?
+							if directions_given.continue_on:
+								update_flow_path(11, "have route, on1seg, intrans, continue given %s" % current_segment['text'])
+								print("")
+								return
+							else:
+								# Give it
+								update_flow_path(12, "have route, on1seg, intrans, give continue %s" % current_segment['text'])
+								directions_given.continue_on = True
+								platform.sayRich(
+									"Continue on %sfor %s." % (fix_nums(current_street), formatDistance(current_segment['distance'])),
+									current_segment['text'],
+									current_segment['sign'],
+									current_segment['point'][0],
+									current_segment['point'][1])
+				else:
+					# Have we give turn directions?
+					if directions_given.turn_distance:
+						update_flow_path(13, "have route, on1seg, intrans, turn distance given %s" % current_segment['text'])
+						print("")
+						return
+					else:
+						# Give it
+						update_flow_path(14, "have route, on1seg, intrans, give turn distance %s" % current_segment['text'])
+						directions_given.turn_distance = True
+						if len(direction_list) > 1 and direction_list[1]['distance'] < 100:
+							platform.sayRich("In %s, %s, then %s." % (
+									formatDistance(current_distance),
+									fix_nums(current_segment['text']),
+									fix_nums(direction_list[1]['text'])),
+								current_segment['text'],
+								current_segment['sign'],
+								current_segment['point'][0],
+								current_segment['point'][1])
+						else:
+							platform.sayRich("In %s, %s" % (formatDistance(current_distance), fix_nums(current_segment['text'])),
+								current_segment['text'],
+								current_segment['sign'],
+								current_segment['point'][0],
+								current_segment['point'][1])
+		else:
+			closest_dist = 999999999999
+			# Are we on /any/ part of the route?
+			for segment in total_direction_list:
+				distance_to_segment = geoutil.distance_to_polyline([lat, lon], segment['path'])
+				closest_dist = min(distance_to_segment, closest_dist)
+				if distance_to_segment < closest_dist:
+					# That is now the first part
+					update_flow_path(15, "have route, found new part %s" % segment['text'])
+					print("on any part,", end=" ")
+					direction_list = total_direction_list[total_direction_list.index(segment):]
+					break
+			else:
+				update_flow_path(16, "have route, not on any part")
+				print("not on any part,", end=" ")
+				print(closest_dist, current_segment['path'], end=" ")
+				# platform.speak("I should reroute now")
+	print ("")
+
+
+
+
+def set_position_2(lat, lon):
 	global direction_list
 	global navigation_state
 	global loc_hist
@@ -1216,14 +1461,14 @@ def set_position(lat, lon):
 			if geo_distance(lat, lon, direction_list[0]['point'][1], direction_list[0]['point'][0])<max(75, avg_speed*5):
 			# if True:
 				print (direction_list[0])
-				platform.speak(direction_list[0]['text'])
+				platform.speak(fix_nums(direction_list[0]['text']))
 				sleep(10)
 				navigation_state = "checkpoint"
 			if navigation_state == "in transit":
 				approach_distance = 400 if config.imperial else 500
 				dist_to_next = geo_distance(lat, lon, direction_list[0]['point'][1], direction_list[0]['point'][0])
 				if dist_to_next<approach_distance:
-					platform.speak("In %s, %s" % (formatDistance(approach_distance), direction_list[0]['text']))
+					platform.speak("In %s, %s" % (formatDistance(approach_distance), fix_nums(direction_list[0]['text'])))
 					navigation_state = "approaching"
 		elif navigation_state == "checkpoint":
 			try:
