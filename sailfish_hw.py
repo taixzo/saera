@@ -49,6 +49,7 @@ def load_config():
 		"use_gps":True,
 		"imperial":True,
 		"read_texts":False,
+		"speech_engine":"flite",
 		"internet_voice":False,
 		"internet_voice_engine":"Wit", # Options: Wit, Google, Houndify
 	}
@@ -71,10 +72,14 @@ def load_config():
 			except ValueError:
 				h = []
 			for i in h:
-				pyotherside.send('sayRich', i[0], i[1], i[2], i[3])
+				if len(i)>4 and i[4]:
+					pyotherside.send('addSpokenText', i[0], i[1], i[2], i[3])
+				else:
+					pyotherside.send('sayRich', i[0], i[1], i[2], i[3])
 				history.append(i)
 	return Struct(**settings)
 
+utterances = deque()
 history = deque(maxlen=20)
 config = load_config()
 
@@ -114,13 +119,15 @@ except sqlite3.OperationalError:
 
 f = __file__.split('sailfish_hw.py')[0]
 
-# terminate any pre-existing julius processes
-p = subprocess.Popen(['ps', '-A'], stdout=subprocess.PIPE)
+# terminate any pre-existing julius processes that aren't suspended
+p = subprocess.Popen(['ps c | grep "[j]ulius" | grep S'], shell=True, stdout=subprocess.PIPE)
 out, err = p.communicate()
 for line in out.decode('UTF-8').splitlines():
 	if 'julius.arm' in line:
 		pid = int(line.split(None, 1)[0])
 		os.kill(pid, 9)
+
+
 
 activeMediaPlayer = "jolla-mediaplayer"
 song_title_map = {}
@@ -263,7 +270,17 @@ else:
 pyotherside.send('load_msg','Initializing speech recognition...')
 if not os.path.exists('/tmp/saera'):
 	os.mkdir('/tmp/saera')
-jproc = subprocess.Popen([f+'julius/julius.jolla','-module', '-record', '/tmp/saera/', '-gram',f+'julius/saera', '-gram', '/home/nemo/.cache/saera/musictitles', '-gram', '/home/nemo/.cache/saera/contacts', '-gram', '/home/nemo/.cache/saera/addresses','-h',f+'julius/hmmdefs','-hlist',f+'julius/tiedlist','-input','mic','-tailmargin','800','-rejectshort','600'],stdout=subprocess.PIPE)
+
+# if there's a stopped julius, use that
+stopped_juliuses = subprocess.Popen(['ps c | grep "[j]ulius" | grep T'], shell=True, stdout=subprocess.PIPE).communicate()[0]
+if stopped_juliuses:
+	pid = int(stopped_juliuses.split(None, 1)[0])
+	print("Connecting to stopped Julius with pid %i" % pid)
+	# 18 is SIGCONT
+	os.kill(pid, 18)
+	jproc = None
+else:
+	jproc = subprocess.Popen([f+'julius/julius.jolla','-module', '-record', '/tmp/saera/', '-gram',f+'julius/saera', '-gram', '/home/nemo/.cache/saera/musictitles', '-gram', '/home/nemo/.cache/saera/contacts', '-gram', '/home/nemo/.cache/saera/addresses','-h',f+'julius/hmmdefs','-hlist',f+'julius/tiedlist','-input','mic','-tailmargin','800','-rejectshort','600'],stdout=subprocess.PIPE)
 # jproc = subprocess.Popen([f+'julius/julius.arm','-module','-gram','/tmp/saera/musictitles','-h',f+'julius/hmmdefs','-hlist',f+'julius/tiedlist','-input','mic','-tailmargin','800','-rejectshort','600'],stdout=subprocess.PIPE)
 client = pyjulius.Client('localhost',10500)
 print ('Connecting to pyjulius server')
@@ -462,6 +479,8 @@ def check_qgvdial_messages():
 	return new_msgs
 
 def check_messages():
+	# Method needs debugged
+	return []
 	def parse_txt_date(date):
 		return time.mktime(datetime.strptime(date.split(" GMT")[0], '%a %b %d %H:%M:%S %Y').timetuple())
 
@@ -506,10 +525,8 @@ def watch_texts(e):
 	global detected
 	while True:
 		time.sleep(20)
-		print ("Checking messages...")
-		unread_msgs = check_qgvdial_messages()
-		unread_msgs += check_messages()
-		print (unread_msgs)
+		# unread_msgs = check_qgvdial_messages()
+		unread_msgs = check_messages()
 		if unread_msgs:
 			print ("Unread messages!")
 			msg = '%s says: %s' % (unread_msgs[-1].sender, unread_msgs[-1].message)
@@ -608,24 +625,26 @@ def listen_thread():
 				if '_text' in j and j['_text']:
 					res = j['_text'][0].upper() + j['_text'][1:]
 	pyotherside.send('process_spoken_text',res)
-	history.append([res, None, None, None])
-	with open(history_path, 'w') as history_file:
-		json.dump(list(history), history_file)
+	# history.append([res, None, None, None, True])
+	# with open(history_path, 'w') as history_file:
+	# 	json.dump(list(history), history_file)
 	subprocess.Popen(['pactl', 'set-sink-volume', '1', '65536'])
 
 def getTrigger():
 	while active_listening:
-		try:
-			print(".", end="")
-			result = client.results.get(True, 0.5)
-			if isinstance(result,pyjulius.Sentence) and len(result.words)==1 and result.words[0].word=="Saera" and result.words[0].confidence>0.7:
-				# getSpeech()
-				print ("Got trigger!")
-				pyotherside.send('trigger')
-				return
-		except Queue.Empty:
-			time.sleep(0.2)
-			continue
+		"""This needs work"""
+		pass
+		# try:
+		# 	print(".", end="")
+		# 	result = client.results.get(True, 0.5)
+		# 	if isinstance(result,pyjulius.Sentence) and len(result.words)==1 and result.words[0].word=="Saera" and result.words[0].confidence>0.7:
+		# 		# getSpeech()
+		# 		print ("Got trigger!")
+		# 		pyotherside.send('trigger')
+		# 		return
+		# except Queue.Empty:
+		# 	time.sleep(0.2)
+		# 	continue
 
 def start_active_listening():
 	global active_listening
@@ -637,7 +656,7 @@ def start_active_listening():
 def stop_active_listening():
 	global active_listening
 	active_listening = False
-	subprocess.Popen(['pactl', 'set-sink-volume', '1', str(volume)])
+	subprocess.Popen(['pactl', 'set-sink-volume', '1', '65536'])
 
 def cancel_listening():
 	client.send("TERMINATE\n")
@@ -645,7 +664,7 @@ def cancel_listening():
 	global active_listening
 	listening = False
 	active_listening = False
-	subprocess.Popen(['pactl', 'set-sink-volume', '1', str(volume)])
+	subprocess.Popen(['pactl', 'set-sink-volume', '1', '65536'])
 
 class timed:
 	alarms = []
@@ -719,6 +738,9 @@ def set_reminder(time,message,location=None):
 	return timed.set_reminder(time,message,location)
 
 def run_text(t):
+	history.append([t, None, None, None, True])
+	with open(history_path, 'w') as history_file:
+		json.dump(list(history), history_file)
 	return app.execute_text(t)
 
 def run_app(s):
@@ -816,7 +838,11 @@ def play(song=None):
 def identify_song():
 	if os.path.exists('/tmp/rec.ogg'):
 		os.remove('/tmp/rec.ogg')
-	gproc = subprocess.Popen(['gst-launch-0.10 autoaudiosrc ! vorbisenc ! oggmux ! filesink location=/tmp/rec.ogg'], shell=True)
+
+	if os.path.exists('/usr/bin/gst-launch-1.0'):
+		gproc = subprocess.Popen(['gst-launch-1.0 autoaudiosrc ! vorbisenc ! oggmux ! filesink location=/tmp/rec.ogg'], shell=True)
+	else:
+		gproc = subprocess.Popen(['gst-launch-0.10 autoaudiosrc ! vorbisenc ! oggmux ! filesink location=/tmp/rec.ogg'], shell=True)
 	time.sleep(11)
 	gproc.terminate()
 
@@ -865,7 +891,11 @@ def identify_song():
 		return "I can't find out, the server gave me a "+str(result['status']['code'])+" error."
 
 def play_url(url):
-	g = subprocess.Popen(['gst-launch-0.10 playbin2 uri='+url], shell=True)
+	if os.path.exists('/usr/bin/gst-launch-1.0'):
+		# playbin2 was renamed to playbin in 1.0
+		g = subprocess.Popen(['gst-launch-1.0 playbin uri='+url], shell=True)
+	else:
+		g = subprocess.Popen(['gst-launch-0.10 playbin2 uri='+url], shell=True)
 	g.wait()
 	return
 
@@ -938,8 +968,11 @@ class MailFolder:
 			if not i in self.messages and not "part" in i:
 				self.messages[i] = email.message_from_file(open(os.getenv("HOME")+"/.qmf/mail/"+i))
 
-def speak(string):
+speech_thread = None
+
+def speak(string, is_backlog=False):
 	global detected
+	global speech_thread
 	try:
 		is_string = isinstance(string,basestring)
 	except NameError:
@@ -948,21 +981,48 @@ def speak(string):
 		spoken_str = string.split('|')[0]
 	else:
 		spoken_str = '\n'.join([i[0] for i in string])
+
+	if is_playing() == "Playing":
+		prependString = "gdbus call -e -d org.mpris.MediaPlayer2."+activeMediaPlayer+" -o /org/mpris/MediaPlayer2 -m org.mpris.MediaPlayer2.Player.Pause && "
+		appendString = " && gdbus call -e -d org.mpris.MediaPlayer2."+activeMediaPlayer+" -o /org/mpris/MediaPlayer2 -m org.mpris.MediaPlayer2.Player.Play"
+	else:
+		prependString = ""
+		appendString = ""
+
 	if not os.path.isfile("/tmp/espeak_lock"):
 		# os.system('pactl set-sink-volume 1 %i' % (volume/2))
 
-		if os.path.exists('/usr/bin/gst-launch-1.0'):
-			print('touch /tmp/espeak_lock && espeak --stdout -v +f2 "' + spoken_str.replace(":00"," o'clock").replace("\n",". ").replace(":", " ") + '" |'
-				' gst-launch-1.0 -q fdsrc ! wavparse ! audioconvert ! pulsesink && rm /tmp/espeak_lock &')
-			os.system('touch /tmp/espeak_lock && espeak --stdout -v +f2 "' + spoken_str.replace(":00"," o'clock").replace("\n",". ").replace(":", " ") + '" |'
-				' gst-launch-1.0 -q fdsrc ! wavparse ! audioconvert ! pulsesink && rm /tmp/espeak_lock &')
+		if config.speech_engine=="flite" and os.system("which flite > /dev/null 2>&1")==0:
+			# for the moment, let's assume we have gstreamer 1.0
+			os.system('touch /tmp/espeak_lock && flite -voice /usr/share/harbour-saera/qml/pages/flite/cmu_us_clb.flitevox -t "' + spoken_str.replace(":00"," o'clock").replace("\n",". ").replace(":", " ") + '" -o /tmp/saera_out.wav && ' + prependString + 'gst-launch-1.0 -q filesrc location=/tmp/saera_out.wav ! wavparse ! pulsesink && rm /tmp/espeak_lock' + appendString + ' &')
+
 		else:
-			print('touch /tmp/espeak_lock && espeak --stdout -v +f2 "' + spoken_str.replace(":00"," o'clock").replace("\n",". ").replace(":", " ") + '" |'
-					' gst-launch-0.10 -q fdsrc ! wavparse ! audioconvert ! volume volume=4.0 ! alsasink && rm /tmp/espeak_lock && pactl set-sink-volume 1 65536 &')
-			os.system('touch /tmp/espeak_lock && espeak --stdout -v +f2 "' + spoken_str.replace(":00"," o'clock").replace("\n",". ").replace(":", " ") + '" |'
-				' gst-launch-0.10 -q fdsrc ! wavparse ! audioconvert ! volume volume=4.0 ! alsasink && rm /tmp/espeak_lock && pactl set-sink-volume 1 65536 &')
+			if os.path.exists('/usr/bin/gst-launch-1.0'):
+				print('touch /tmp/espeak_lock && espeak --stdout -v +f2 "' + spoken_str.replace(":00"," o'clock").replace("\n",". ").replace(":", " ") + '" |'
+					' gst-launch-1.0 -q fdsrc ! wavparse ! audioconvert ! pulsesink && rm /tmp/espeak_lock &')
+				os.system(prependString + 'touch /tmp/espeak_lock && espeak --stdout -v +f2 "' + spoken_str.replace(":00"," o'clock").replace("\n",". ").replace(":", " ") + '" |'
+					' gst-launch-1.0 -q fdsrc ! wavparse ! audioconvert ! pulsesink && rm /tmp/espeak_lock' + appendString + ' &')
+			else:
+				print('touch /tmp/espeak_lock && espeak --stdout -v +f2 "' + spoken_str.replace(":00"," o'clock").replace("\n",". ").replace(":", " ") + '" |'
+						' gst-launch-0.10 -q fdsrc ! wavparse ! audioconvert ! volume volume=4.0 ! alsasink && rm /tmp/espeak_lock && pactl set-sink-volume 1 65536 &')
+				os.system(prependString + 'touch /tmp/espeak_lock && espeak --stdout -v +f2 "' + spoken_str.replace(":00"," o'clock").replace("\n",". ").replace(":", " ") + '" |'
+					' gst-launch-0.10 -q fdsrc ! wavparse ! audioconvert ! volume volume=4.0 ! alsasink && rm /tmp/espeak_lock && pactl set-sink-volume 1 65536' + appendString + ' &')
+	else:
+		if is_backlog:
+			utterances.appendleft(string)
+		else:
+			utterances.append(string)
+			if speech_thread is None:
+				speech_thread = threading.Thread(target=retry_speech)
+				speech_thread.start()
+		# pyotherside.send('sayRich', string+' - could not speak it', "", 0, 0)
 	detected = False
 	return string
+
+def retry_speech():
+	while utterances:
+		time.sleep(1)
+		speak(utterances.popleft())
 
 def enablePTP():
 	pyotherside.send('enablePTP')
@@ -970,13 +1030,17 @@ def enablePTP():
 def disablePTP():
 	pyotherside.send('disablePTP')
 
-def sayRich(spokenMessage, message, img, lat=0, lon=0):
-	pyotherside.send('sayRich',message, img, lat, lon)
-	speak(spokenMessage)
-	history.append([message, img, lat, lon])
-	with open(history_path, 'w') as history_file:
-		print ("SAVING HISTORY")
-		json.dump(list(history), history_file)
+def sayRich(spokenMessage, message=None, img="", lat=0, lon=0, toSpeak=True):
+	if message is None:
+		message = spokenMessage
+	if message:
+		pyotherside.send('sayRich',message, img, lat, lon)
+	if toSpeak:
+		speak(spokenMessage)
+		history.append([message, img, lat, lon, False])
+		with open(history_path, 'w') as history_file:
+			print ("SAVING HISTORY")
+			json.dump(list(history), history_file)
 
 def check_can_listen():
 	return not os.path.exists("/tmp/espeak_lock")

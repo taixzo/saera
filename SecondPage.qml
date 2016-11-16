@@ -30,10 +30,14 @@
 
 import QtQuick 2.0
 import Sailfish.Silica 1.0
+import io.thp.pyotherside 1.0
 
 
 Page {
-  id: page
+  id: page2
+
+  property Python py
+
   SilicaFlickable {
     anchors.fill: parent
     Column {
@@ -90,6 +94,22 @@ Page {
           horizontalAlignment: Text.AlignHCenter
           placeholderText: "----"
           font.pixelSize: Theme.fontSizeLarge
+        }
+      }
+      Row {
+        width: parent.width
+        spacing: parent.spacing
+        x: parent.spacing
+
+        TextSwitch {
+            id: modeSwitch
+            text: "Enable 24-hour mode"
+            description: "Currently in 12 hour mode"
+            onCheckedChanged: {
+                console.log(checked ? "Checked" : "Unchecked")
+                modeSwitch.description = "Currently in " + (checked ? "24" : "12") + " hour mode"
+                py.call('saera2.set_24_hour_mode', [checked], function(res){})
+            }
         }
       }
     }

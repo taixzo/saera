@@ -1,5 +1,8 @@
 from datetime import datetime, timedelta
 
+# Whether we are in 12 or 24-hour time mode
+timemode = 12
+
 def parse(tokens):
 	tokens = [i.lower() for i in tokens]
 	numbers = {'zero':0,'oh':0,'one':1,'two':2,'three':3,'four':4,'five':5,'six':6,'seven':7,'eight':8,'nine':9,'ten':10,'eleven':11,'twelve':12,'thirteen':13,'fourteen':14,'fifteen':15,'sixteen':16,
@@ -34,6 +37,8 @@ def parse(tokens):
 		if token.isdigit():
 			if hour is None and addedtimeadjustment == 0:
 				hour = int(token)
+				if timemode==12 and now.hour >= 12 and hour <= 12 and hour >= now.hour-12:
+					hour = hour + 12
 				minute = minute or 0
 			else:
 				if minute in (None, 0) and addedtimeadjustment == 0:

@@ -3,7 +3,7 @@
 
 # import pyotherside
 
-from time import timezone, sleep
+from time import timezone, sleep, time as currentTime
 from datetime import datetime, time, timedelta
 import calendar
 import logging
@@ -16,8 +16,10 @@ import random
 # import urllib2
 try:
 	import urllib.request as urllib2
+	from urllib.parse import quote as urlquote
 except:
 	import urllib2
+	from urllib import quote as urlquote
 try:
 	import json
 except ImportError:
@@ -28,6 +30,10 @@ import platform as pfm
 import subprocess
 
 from guessing import Guesser
+import timeparser2
+
+import polyline
+import geoutil
 
 if sys.version_info[0]<3:
 	if sys.version_info[1]<7:
@@ -46,15 +52,15 @@ if sys.version_info[0]<3:
 		else:
 			import cmd_hw as platform
 else:
-	import harmattan_hw as platform
+	# import harmattan_hw as platform
 	# import x86_hw as platform
-	# try:
-	# 	import sailfish_hw as platform
-	# except ImportError:
-	# 	if pfm.linux_distribution()[0].lower()=='ubuntu':
-	# 		import ubuntu_hw as platform
-	# 	else:
-	# 		import cmd_hw as platform
+	try:
+		import sailfish_hw as platform
+	except ImportError:
+		if pfm.linux_distribution()[0].lower()=='ubuntu':
+			import ubuntu_hw as platform
+		else:
+			import cmd_hw as platform
 
 # if not os.path.exists(platform.memory_path):
 
@@ -107,6 +113,16 @@ class Memory:
 				if self.items[i][1]<0:
 					del self.items[i]
 
+class enum(object):
+    def __init__(self, **kwds):
+        self.__dict__.update(kwds)
+
+    def __eq__(self, other):
+        return self.__dict__ == other.__dict__
+
+def unsentencecase(strng):
+	if strng:
+		return strng[0].lower()+strng[1:]
 
 import math, sys
 
@@ -202,9 +218,23 @@ def decodePath (encoded, is3D):
 	# // print ("decoded " + length + " coordinates in " + ((end - start) / 1000) + "s");
 	return array
 
+def fix_nums(st):
+	rt = r'([\D]\d?\d)(\d\d)([\D]|$)'
+	return re.sub(rt,r'\1:\2\3',st)
+
 global direction_list
 geoalarm_list = []
 direction_list = []
+total_direction_list = []
+navigation_state = "waiting"
+loc_hist = []
+directions_given = enum(
+	turn=False,
+	turn_distance=False,
+	half_mile=False,
+	two_mile=False,
+	continue_on=False
+)
 
 def toRadians(x):
 	return x*0.0174532925
@@ -242,7 +272,15 @@ def formatDistance(meters):
 			return str(miles)+" miles"
 		elif feet>=5280:
 			miles = feet/5280
-			return "{0:.1f}".format(round(miles,1)) + " mile"+("s" if round(miles,1) != 1 else "")
+			return str(int(round(miles))) + " mile"+("s" if round(miles) != 1 else "")
+		elif feet>1000:
+			if feet<1980:
+				return "a quarter mile"
+			elif feet<3300:
+				return "a half mile"
+			else:
+				# approximations. Approximations are good.
+				return "one mile"
 		elif feet>100:
 			return str(int(round(feet/50)*50))+" feet"
 		elif feet>25:
@@ -496,11 +534,11 @@ class Saera:
 		if is_time:
 			return "The weather "+loc_str+" will be "+weather+" and "+str(int(round(temp)))+u("°. at ")+hour+"."
 		else:
-			print loc_str
-			print weather
-			print str(int(round(temp)))
-			print u("°.")
-			print "The weather "+loc_str+" is "+weather+", and "+str(int(round(temp)))+u("°.")
+			print (loc_str)
+			print (weather)
+			print (str(int(round(temp))))
+			# print (u("°."))
+			print ("The weather "+loc_str+" is "+weather+", and "+str(int(round(temp)))+u("°."))
 			return "The weather "+loc_str+" is "+weather+", and "+str(int(round(temp)))+u("°.")
 	def call_phone(self, result):
 		self.short_term_memory.set('intent','call_phone')
@@ -848,40 +886,131 @@ class Saera:
 			else:
 				return "Where do you live?"
 		if 'location' in result['outcome']['entities']:
-			platform.sayRich("", "One moment...","")
+			platform.sayRich("", "One moment...","",0,0,False)
 			location = result['outcome']['entities']['location']
 			platform.cur.execute("SELECT * FROM Locations WHERE LocName='"+location+"'")
 			loc = platform.cur.fetchone()
 			if not loc:
-				# req = urllib2.urlopen('https://graphhopper.com/api/1/geocode?q='+location.replace(' ','%20')+'&point='+str(here[3])+','+str(here[4])+'&key=d5365874-1efe-4f12-92ee-5757f82041fe').read().decode("utf-8")
-				# locdic = json.loads(req)
-				# loc = (0,locdic['hits'][0]["name"],"",locdic['hits'][0]["point"]["lat"],locdic['hits'][0]["point"]["lng"])
+				google_place_api_key = 'AIzaSyCmX7809UtrtmTYX_41cjZLcco6vx-OQvc'
+				url_path = "https://maps.googleapis.com/maps/api/place/textsearch/json?key=%s&location=%s,%s&query=%s" % (
+					google_place_api_key,
+					str(here[3]),
+					str(here[4]),
+					urlquote(location))
 				try:
-					req = urllib2.urlopen('https://maps.googleapis.com/maps/api/geocode/json?key=AIzaSyBUI3LwzSUmm3cI8-nEMGrQYAzs6VWFIfg&address='+location.replace(' ','+')+'&bounds='+str(float(here[3])-0.1)+','+str(float(here[4])-0.1)+'|'+str(float(here[3])+0.1)+','+str(float(here[4])+0.1)+'').read().decode("utf-8")
+					req = urllib2.urlopen(url_path).read().decode("utf-8")
 				except:
 					return "I can't look up directions without an internet connection, sorry."
+					
 				locdic = json.loads(req)
-				loc = (0,' '.join([i["long_name"] for i in locdic['results'][0]['address_components'] if i['types'][0] not in ('country','postal','postal_code_suffix','administrative_area_level_2','neighborhood')]),"",locdic['results'][0]["geometry"]["location"]["lat"],locdic['results'][0]["geometry"]["location"]["lng"])
-
+				try:
+					loc = (
+						0,
+						locdic['results'][0]['name'],
+						"",
+						locdic['results'][0]["geometry"]["location"]["lat"],
+						locdic['results'][0]["geometry"]["location"]["lng"])
+				except IndexError:
+					return "I found no results for %s" % location
 				print (loc)
-			try:
-				req = urllib2.urlopen("https://graphhopper.com/api/1/route?point="+str(here[3])+","+str(here[4])+"&point="+str(loc[3])+","+str(loc[4])+"&vehicle=car&points_encoded=true&calc_points=true&key=d5365874-1efe-4f12-92ee-5757f82041fe").read().decode("utf-8")
-			except:
-				return "I can't look up directions without an internet connection, sorry."
-			pathdic = json.loads(req)
-			path = decodePath(pathdic['paths'][0]['points'], False)
-			print (path)
-			instructions = pathdic['paths'][0]['instructions']
-			for index, instruction in enumerate(instructions):
-				# point = path[int((instruction['interval'][0]+instruction['interval'][1])/2)]
-				point = path[instruction['interval'][0]]
-				instruction['point'] = point
-				print (instruction['text'], 'at', point)
-			instructions = [{'text':'Start','point':instructions[0]['point'],'distance':0}] + instructions
+			#TODO: config file
+			DIRECTIONS_API = "Mapbox"
+			#Graphhopper
+			if DIRECTIONS_API=="Graphhopper":
+				try:
+					url_path = "https://graphhopper.com/api/1/route?point="+str(here[3])+","+str(here[4])+"&point="+str(loc[3])+","+str(loc[4])+"&vehicle=car&points_encoded=true&calc_points=true&key=d5365874-1efe-4f12-92ee-5757f82041fe"
+					req = urllib2.urlopen(url_path).read().decode("utf-8")
+				except Exception as e:
+					print (url_path)
+					print (e)
+					return "I can't look up directions without an internet connection, sorry."
+				pathdic = json.loads(req)
+				est_dist = pathdic['paths'][0]['distance']
+				est_time = pathdic['paths'][0]['time']/1000
+				path = decodePath(pathdic['paths'][0]['points'], False)
+				print (path)
+				instructions = pathdic['paths'][0]['instructions']
+				for index, instruction in enumerate(instructions):
+					# point = path[int((instruction['interval'][0]+instruction['interval'][1])/2)]
+					point = path[instruction['interval'][0]]
+					instruction['point'] = point
+					instruction['type'] = {-3:'turn', -2:'turn', -1:'turn', 0:'continue', 1:'turn', 2:'turn', 3:'turn', 4:'arrive', 5:'arrive', 6:'roundabout'}
+					print (instruction['text'], 'at', point)
+			else:
+				# Mapbox
+				try:
+					mapbox_access_token = "pk.eyJ1IjoidGFpeHpvIiwiYSI6ImJhNWUyYTk2ZTVjOTlhYzZiMWM1NjZiY2ZjOTRiMDQxIn0.aYRF5wFC-5FTFjAoK78dTg"
+					# TODO: add &bearings=bearing_car_is_currently_going when rerouting
+					# For some reason Mapbox gives uses (lon, lat) pairs instead of (lat, lon)
+					url_path = "https://api.mapbox.com/directions/v5/mapbox/driving/%s,%s;%s,%s?steps=true&access_token=%s" % (
+						here[4],
+						here[3],
+						loc[4],
+						loc[3],
+						mapbox_access_token)
+					req = urllib2.urlopen(url_path).read().decode("utf-8")
+				except Exception as e:
+					print (url_path)
+					print (e)
+					return "I can't look up directions without an internet connection, sorry."
+				mapbox_response = json.loads(req)
+				est_time = mapbox_response['routes'][0]['duration']
+				est_dist = mapbox_response['routes'][0]['distance']
+				steps = mapbox_response['routes'][0]['legs'][0]['steps']
+				instructions = []
+				for i, map_instruction in enumerate(steps):
+					instruction = {}
+					# for some reason these are given as lon, lat instead of lat, lon
+					instruction['point'] = (map_instruction['maneuver']['location'][1], map_instruction['maneuver']['location'][0])
+					instruction['text'] = map_instruction['maneuver']['instruction']
+					instruction['distance'] = steps[i-1]['distance'] if i>0 else geo_distance(here[3], here[4], instruction['point'][0], instruction['point'][1])
+					# instruction['distance'] = map_instruction['distance']
+					instruction['type'] = map_instruction['maneuver']['type']
+					if instruction['type'] in ['turn','merge','fork','on ramp','off ramp']:
+						instruction['sign'] = {
+							"sharp left": -3,
+							"sharply left": -3,
+							"slight left": -2,
+							"slightly left": -2,
+							"left": -1,
+							"straight": 0,
+							"right": 1,
+							"slightly right": 2,
+							"slight right": 2,
+							"sharply right": 3,
+							"sharp right": 3,
+							"uturn": 6,
+						}[map_instruction['maneuver']['modifier']]
+					elif instruction['type'] in ['continue', 'new name']:
+						instruction['sign'] = 0
+					else:
+						instruction['sign'] = 4
+					instruction['path'] = polyline.decode(steps[i-1]['geometry']) if i>0 else [[here[3],here[4]],[instruction['point'][0]+0.001, instruction['point'][1]+0.001]]
+					instructions.append(instruction)
+
+
+			print (instructions[0]['path'])
+			# instructions = [{
+			# 					'text':'Start',
+			# 					'point':instructions[0]['point'],
+			# 					'path':[[here[3],here[4]],[instructions[0]['point'][0]+0.001, instructions[0]['point'][1]+0.001]],
+			# 					'distance':0, 
+			# 					'sign':4, 
+			# 					'type':'depart'}] + instructions
+			open('/home/nemo/.saera_directions', 'w').write(json.dumps(instructions))
 			platform.enablePTP()
 			direction_list = instructions
-			total_distance = int(round(pathdic['paths'][0]['distance']*0.000621371))
-			return "Ok, "+loc[1]+" is "+(str(total_distance)+" mile"+("s" if total_distance != 1 else "") if total_distance >= 1 else "less than a mile") + " away. It will take about "+formatTime(pathdic['paths'][0]['time']/1000)+"."
+			total_direction_list = direction_list
+			total_distance = int(round(est_dist*0.000621371))
+			platform.sayRich("Ok, "+loc[1]+" is "+(str(total_distance)+" mile"+("s" if total_distance != 1 else "") if total_distance >= 1 else "less than a mile") + " away. It will take about "+formatTime(est_time)+".")
+			sleep(10)
+			platform.sayRich("",
+				direction_list[0]['text'],
+				direction_list[0]['sign'],
+				direction_list[0]['point'][0],
+				direction_list[0]['point'][1],
+				False)
+			return ""
 		return "No."
 	def coin_flip(self,result):
 		if 'number' in result['outcome']['entities'] and result['outcome']['entities']['number']>1:
@@ -1084,7 +1213,7 @@ def quit():
 	platform.quit()
 
 def run_text(t):
-	return platform.speak(platform.app.execute_text(t))
+	return platform.speak(platform.run_text(t))
 
 def run_voice():
 	return platform.listen()
@@ -1102,10 +1231,20 @@ def resume_daemons():
 		return ""
 	return platform.resume_daemons()
 
+import logging
+logging.basicConfig(filename='/home/nemo/saera_nav.log', level=logging.DEBUG)
+last_flow_path = -1
+def update_flow_path(path, message):
+	global last_flow_path
+	if path!=last_flow_path:
+		last_flow_path = path
+		logging.debug(message)
+
 def set_position(lat, lon):
 	global direction_list
-	if math.isnan(lat) or math.isnan(lon):
-		return
+	global total_direction_list
+	global current_street
+	max_distance_from_route = 50
 	# platform.cur.execute('INSERT INTO Locations (LocName, Zip, Latitude, Longitude, Timezone) VALUES ("here", "", '+str(lat)+', '+str(lon)+', 0)')
 	platform.cur.execute('INSERT OR REPLACE INTO Locations (ID, LocName, Zip, Latitude, Longitude, Timezone) VALUES ((SELECT ID FROM Locations WHERE LocName = "here"), "here", "", '+str(lat)+', '+str(lon)+', 0)')
 	platform.cur.execute('INSERT OR REPLACE INTO Variables (ID, VarName, Value) VALUES ((SELECT ID FROM Variables WHERE VarName = "here"), "here", "'+str(platform.cur.lastrowid)+'");')
@@ -1122,35 +1261,93 @@ def set_position(lat, lon):
 	if direction_list != []:
 		# if abs(lat-direction_list[0]['point'][1])<0.001 and abs(lon-direction_list[0]['point'][0])<0.013:
 		print (geo_distance(lat, lon, direction_list[0]['point'][1], direction_list[0]['point'][0]))
-		if geo_distance(lat, lon, direction_list[0]['point'][1], direction_list[0]['point'][0])<75:
-		# if True:
-			print (direction_list[0])
-			platform.speak(direction_list[0]['text'])
-			sleep(10)
-			if len(direction_list)>1:
-				if direction_list[0]['text'] == "Start":
-					if direction_list[1]['point'][1]>lat:
-						if direction_list[1]['point'][1]-lat>abs(direction_list[1]['point'][0]-lon):
-							compass_dir = "north"
-						elif direction_list[1]['point'][0]>lon:
-							compass_dir = "east"
-						else:
-							compass_dir = "west"
-					else:
-						if lat-direction_list[1]['point'][1]>abs(direction_list[1]['point'][0]-lon):
-							compass_dir = "south"
-						elif direction_list[1]['point'][0]>lon:
-							compass_dir = "east"
-						else:
-							compass_dir = "west"
-					tex = "Head "+compass_dir+(" on " + direction_list[1]['text'].split(" onto ")[-1]+"." if " onto " in direction_list[1]['text'] else ".")
-					platform.sayRich(tex, tex, 4)
+		if navigation_state in ("waiting", "in transit", "approaching"):
+			# TODO: change this value based on speed
+			if geo_distance(lat, lon, direction_list[0]['point'][1], direction_list[0]['point'][0])<max(75, avg_speed*5):
+			# if True:
+				print (direction_list[0])
+				platform.speak(fix_nums(direction_list[0]['text']))
+				sleep(10)
+				navigation_state = "checkpoint"
+			if navigation_state == "in transit":
+				approach_distance = 400 if config.imperial else 500
+				dist_to_next = geo_distance(lat, lon, direction_list[0]['point'][1], direction_list[0]['point'][0])
+				if dist_to_next<approach_distance:
+					platform.speak("In %s, %s" % (formatDistance(approach_distance), fix_nums(direction_list[0]['text'])))
+					navigation_state = "approaching"
+		elif navigation_state == "checkpoint":
+			try:
+				if len(direction_list)==1 and geo_distance(
+					lat,
+					lon,
+					direction_list[0]['point'][1],
+					direction_list[0]['point'][0]) < max(75, avg_speed*5):
+					return
+				elif len(direction_list)>1 and geo_distance(
+					lat,
+					lon,
+					direction_list[0]['point'][1],
+					direction_list[0]['point'][0]) < min(max(75, avg_speed*5), geo_distance(
+						direction_list[1]['point'][1],
+						direction_list[1]['point'][0],
+						direction_list[0]['point'][1],
+						direction_list[0]['point'][0]) / 2
+					):
+					return
 				else:
-					platform.sayRich("In "+formatDistance(direction_list[0]['distance'])+", "+direction_list[1]['text'], direction_list[1]['text'],direction_list[1]['sign'], direction_list[1]['point'][1], direction_list[1]['point'][0])
-				direction_list = direction_list[1:]
-			else:
-				direction_list = []
-				platform.disablePTP()
+					if len(direction_list)>1:
+						if direction_list[0]['text'] == "Start":
+							if direction_list[1]['point'][1]>lat:
+								if direction_list[1]['point'][1]-lat>abs(direction_list[1]['point'][0]-lon):
+									compass_dir = "north"
+								elif direction_list[1]['point'][0]>lon:
+									compass_dir = "east"
+								else:
+									compass_dir = "west"
+							else:
+								if lat-direction_list[1]['point'][1]>abs(direction_list[1]['point'][0]-lon):
+									compass_dir = "south"
+								elif direction_list[1]['point'][0]>lon:
+									compass_dir = "east"
+								else:
+									compass_dir = "west"
+							tex = "Head "+compass_dir+(" on " + fix_nums(direction_list[1]['text']).split(" onto ")[-1]+"." if " onto " in direction_list[1]['text'] else ".")
+							platform.sayRich(tex, tex, 4)
+							navigation_state = "in transit"
+						else:
+							current_street = direction_list[0]['text'].split(" onto ")[-1]+" " if " onto " in direction_list[0]["text"] else ""
+							formatted_distance = formatDistance(direction_list[0]['distance'])
+							# platform.sayRich("In "+formatDistance(direction_list[0]['distance'])+", "+direction_list[1]['text'], direction_list[1]['text'],direction_list[1]['sign'], direction_list[1]['point'][1], direction_list[1]['point'][0])
+							if direction_list[0]['distance'] > 1000:
+								platform.sayRich(
+									"Continue on %sfor %s." % (fix_nums(current_street), formatted_distance),
+									direction_list[1]['text'],
+									direction_list[1]['sign'],
+									direction_list[1]['point'][1],
+									direction_list[1]['point'][0])
+								navigation_state = "in transit"
+							else:
+								if direction_list[1]['distance'] > 1000 or len(direction_list) < 3:
+									platform.sayRich(
+										"In "+formatDistance(direction_list[0]['distance'])+", "+fix_nums(direction_list[1]['text']),
+										direction_list[1]['text'],direction_list[1]['sign'],
+										direction_list[1]['point'][1],
+										direction_list[1]['point'][0])
+								else:
+									platform.sayRich(
+										"In "+formatDistance(direction_list[0]['distance'])+", "+direction_list[1]['text']+", then "+fix_nums(direction_list[2]['text']),
+										direction_list[1]['text'],direction_list[1]['sign'],
+										direction_list[1]['point'][1],
+										direction_list[1]['point'][0])
+								navigation_state = "approaching"
+						direction_list = direction_list[1:]
+					else:
+						direction_list = []
+						platform.disablePTP()
+			except:
+				print (direction_list)
+				raise
+
 
 def activate():
 	if not platform.app:
@@ -1176,6 +1373,12 @@ def cancel_listening():
 
 def play_url(url):
 	return platform.play_url(url)
+
+def set_24_hour_mode(mode_is_24):
+	if mode_is_24:
+		timeparser2.timemode = 24
+	else:
+		timeparser2.timemode = 12
 
 if __name__=="__main__":
 	initialize()

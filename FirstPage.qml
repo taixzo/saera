@@ -44,7 +44,7 @@ Page {
 
     onStatusChanged: {
         if (status === PageStatus.Active) {
-            pageStack.pushAttached(Qt.resolvedUrl("SecondPage.qml"));
+            pageStack.pushAttached(Qt.resolvedUrl("SecondPage.qml"), {"py":py});
         }
     }
 
@@ -73,6 +73,11 @@ Page {
     function goBusy() {
       busyIndicator.running = true;
       volume.visible = false;
+    }
+
+    function addSpokenText(msg, img, lat, lon) {
+      console.log("called")
+      listModel.append({value:msg, who: "me", link:false, image:"", lat:0, lon:0, spot_preview: ""});
     }
 
     function process_spoken_text(res) {
@@ -185,6 +190,7 @@ Page {
     }
 
     function sayRich(message, img, lat, lon) {
+      // console.log(message + ", " + img + ", "+ lat + ", "+ lon)
         var images = {}
         images[-3] = "image://theme/icon-direction-hard-left"
         images[-2] = "image://theme/icon-direction-left"
@@ -240,6 +246,7 @@ Page {
              setHandler('load_msg', page.load_msg)
              setHandler('enablePTP', page.enablePTP)
              setHandler('sayRich', page.sayRich)
+             setHandler('addSpokenText', page.addSpokenText)
              setHandler('set_vol', page.set_vol)
              setHandler('process_spoken_text', page.process_spoken_text)
              setHandler('goBusy', page.goBusy)
@@ -286,6 +293,16 @@ Page {
         delegate: Item {
             width: ListView.view.width
 
+            MouseArea {
+              anchors.fill: parent
+              onClicked: {
+                if (who=="me") {
+                  inputfield.text = t.text
+                  inputfield.forceActiveFocus()
+                }
+              }
+            }
+
             Image {
                 id: i
                 anchors {
@@ -304,6 +321,7 @@ Page {
                     rightMargin: lat ? 10 : 0
                 }
                 color: "#FFFFFF"
+                font.pixelSize: Theme.fontSizeMedium
                 text: lat ? dist(lat, lon) : ""
             }
 
@@ -331,6 +349,7 @@ Page {
                     margins: Theme.paddingLarge
                 }
                 text: value
+                font.pixelSize: Theme.fontSizeMedium
                 wrapMode: Text.Wrap
                 width: parent.width - 2 * Theme.paddingLarge
                 horizontalAlignment: who=="me" ? Text.AlignRight : Text.AlignLeft
@@ -436,6 +455,7 @@ Page {
       anchors.top: loadingIndicator.bottom
       anchors.horizontalCenter: loadingIndicator.horizontalCenter
       text: "Loading"
+      font.pixelSize: Theme.fontSizeMedium
       color: Theme.highlightColor
     }
 
