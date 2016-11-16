@@ -119,13 +119,15 @@ except sqlite3.OperationalError:
 
 f = __file__.split('sailfish_hw.py')[0]
 
-# terminate any pre-existing julius processes
-p = subprocess.Popen(['ps', '-A'], stdout=subprocess.PIPE)
+# terminate any pre-existing julius processes that aren't suspended
+p = subprocess.Popen(['ps c | grep "[j]ulius" | grep S'], shell=True, stdout=subprocess.PIPE)
 out, err = p.communicate()
 for line in out.decode('UTF-8').splitlines():
 	if 'julius.arm' in line:
 		pid = int(line.split(None, 1)[0])
 		os.kill(pid, 9)
+
+
 
 activeMediaPlayer = "jolla-mediaplayer"
 song_title_map = {}
@@ -268,7 +270,17 @@ else:
 pyotherside.send('load_msg','Initializing speech recognition...')
 if not os.path.exists('/tmp/saera'):
 	os.mkdir('/tmp/saera')
-jproc = subprocess.Popen([f+'julius/julius.jolla','-module', '-record', '/tmp/saera/', '-gram',f+'julius/saera', '-gram', '/home/nemo/.cache/saera/musictitles', '-gram', '/home/nemo/.cache/saera/contacts', '-gram', '/home/nemo/.cache/saera/addresses','-h',f+'julius/hmmdefs','-hlist',f+'julius/tiedlist','-input','mic','-tailmargin','800','-rejectshort','600'],stdout=subprocess.PIPE)
+
+# if there's a stopped julius, use that
+stopped_juliuses = subprocess.Popen(['ps c | grep "[j]ulius" | grep T'], shell=True, stdout=subprocess.PIPE).communicate()[0]
+if stopped_juliuses:
+	pid = int(stopped_juliuses.split(None, 1)[0])
+	print("Connecting to stopped Julius with pid %i" % pid)
+	# 18 is SIGCONT
+	os.kill(pid, 18)
+	jproc = None
+else:
+	jproc = subprocess.Popen([f+'julius/julius.jolla','-module', '-record', '/tmp/saera/', '-gram',f+'julius/saera', '-gram', '/home/nemo/.cache/saera/musictitles', '-gram', '/home/nemo/.cache/saera/contacts', '-gram', '/home/nemo/.cache/saera/addresses','-h',f+'julius/hmmdefs','-hlist',f+'julius/tiedlist','-input','mic','-tailmargin','800','-rejectshort','600'],stdout=subprocess.PIPE)
 # jproc = subprocess.Popen([f+'julius/julius.arm','-module','-gram','/tmp/saera/musictitles','-h',f+'julius/hmmdefs','-hlist',f+'julius/tiedlist','-input','mic','-tailmargin','800','-rejectshort','600'],stdout=subprocess.PIPE)
 client = pyjulius.Client('localhost',10500)
 print ('Connecting to pyjulius server')
