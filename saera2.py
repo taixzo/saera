@@ -886,7 +886,7 @@ class Saera:
 			else:
 				return "Where do you live?"
 		if 'location' in result['outcome']['entities']:
-			platform.sayRich("", "One moment...","")
+			platform.sayRich("", "One moment...","",0,0,False)
 			location = result['outcome']['entities']['location']
 			platform.cur.execute("SELECT * FROM Locations WHERE LocName='"+location+"'")
 			loc = platform.cur.fetchone()
@@ -1002,8 +1002,14 @@ class Saera:
 			direction_list = instructions
 			total_direction_list = direction_list
 			total_distance = int(round(est_dist*0.000621371))
-			platform.speak("Ok, "+loc[1]+" is "+(str(total_distance)+" mile"+("s" if total_distance != 1 else "") if total_distance >= 1 else "less than a mile") + " away. It will take about "+formatTime(est_time)+".")
+			platform.sayRich("Ok, "+loc[1]+" is "+(str(total_distance)+" mile"+("s" if total_distance != 1 else "") if total_distance >= 1 else "less than a mile") + " away. It will take about "+formatTime(est_time)+".")
 			sleep(10)
+			platform.sayRich("",
+				direction_list[0]['text'],
+				direction_list[0]['sign'],
+				direction_list[0]['point'][0],
+				direction_list[0]['point'][1],
+				False)
 			return ""
 		return "No."
 	def coin_flip(self,result):
@@ -1276,12 +1282,20 @@ def set_position(lat, lon):
 						directions_given.half_mile = False
 						directions_given.two_mile = False
 						directions_given.continue_on = False
+						current_segment = direction_list[0]
+						platform.sayRich("",
+							current_segment['text'],
+							current_segment['sign'],
+							current_segment['point'][0],
+							current_segment['point'][1],
+							False)
 						update_flow_path(1, "have route, on1seg, turn, newseg, %s" % last_direction['text'])
 					else:
 						# Clean up if this is the destination
 						if len(direction_list)==1:
 							update_flow_path(15, "no route")
 							direction_list = []
+							platform.disablePTP()
 						update_flow_path(2, "have route, on1seg, turn, no newseg")
 						print ("dp1: %f, dp2: %f" % (
 							geoutil.distance_to_polyline([lat, lon], direction_list[1]['path']),
@@ -1317,11 +1331,7 @@ def set_position(lat, lon):
 										# Give ½-mile warning
 										update_flow_path(5, "have route, on1seg, intrans, give half-mile %s" % current_segment['text'])
 										directions_given.half_mile = True
-										platform.sayRich("In %s, %s" % (formatDistance(current_distance), fix_nums(direction_list[0]['text'])),
-											current_segment['text'],
-											current_segment['sign'],
-											current_segment['point'][0],
-											current_segment['point'][1])
+										platform.sayRich("In %s, %s" % (formatDistance(current_distance), fix_nums(direction_list[0]['text'])),"")
 								else:
 									# Have we given "continue" notification?
 									if directions_given.continue_on:
@@ -1333,20 +1343,12 @@ def set_position(lat, lon):
 										update_flow_path(7, "have route, on1seg, intrans, give continue %s" % current_segment['text'])
 										directions_given.continue_on = True
 										platform.sayRich(
-											"Continue on %sfor %s." % (fix_nums(current_street), formatDistance(current_segment['distance'])),
-											current_segment['text'],
-											current_segment['sign'],
-											current_segment['point'][0],
-											current_segment['point'][1])
+											"Continue on %sfor %s." % (fix_nums(current_street), formatDistance(current_segment['distance'])),"")
 							else:
 								# Give it
 								update_flow_path(8, "have route, on1seg, intrans, give two-mile %s" % current_segment['text'])
 								directions_given.two_mile = True
-								platform.sayRich("In %s, %s" % (formatDistance(current_distance), fix_nums(current_segment['text'])),
-									current_segment['text'],
-									current_segment['sign'],
-									current_segment['point'][0],
-									current_segment['point'][1])
+								platform.sayRich("In %s, %s" % (formatDistance(current_distance), fix_nums(current_segment['text'])),"")
 					else:
 						# Are we less than 1/2 mile away?
 						if current_distance < 804:
@@ -1359,11 +1361,7 @@ def set_position(lat, lon):
 								# Give it
 								update_flow_path(10, "have route, on1seg, intrans, give half-mile %s" % current_segment['text'])
 								directions_given.half_mile = True
-								platform.sayRich("In %s, %s" % (formatDistance(current_distance), fix_nums(current_segment['text'])),
-									current_segment['text'],
-									current_segment['sign'],
-									current_segment['point'][0],
-									current_segment['point'][1])
+								platform.sayRich("In %s, %s" % (formatDistance(current_distance), fix_nums(current_segment['text'])),"")
 						else:
 							# Have we given "continue" notification?
 							if directions_given.continue_on:
@@ -1375,11 +1373,7 @@ def set_position(lat, lon):
 								update_flow_path(12, "have route, on1seg, intrans, give continue %s" % current_segment['text'])
 								directions_given.continue_on = True
 								platform.sayRich(
-									"Continue on %sfor %s." % (fix_nums(current_street), formatDistance(current_segment['distance'])),
-									current_segment['text'],
-									current_segment['sign'],
-									current_segment['point'][0],
-									current_segment['point'][1])
+									"Continue on %sfor %s." % (fix_nums(current_street), formatDistance(current_segment['distance'])),"")
 				else:
 					# Have we give turn directions?
 					if directions_given.turn_distance:
@@ -1394,17 +1388,9 @@ def set_position(lat, lon):
 							platform.sayRich("In %s, %s, then %s." % (
 									formatDistance(current_distance),
 									fix_nums(current_segment['text']),
-									fix_nums(direction_list[1]['text'])),
-								current_segment['text'],
-								current_segment['sign'],
-								current_segment['point'][0],
-								current_segment['point'][1])
+									fix_nums(direction_list[1]['text'])),"")
 						else:
-							platform.sayRich("In %s, %s" % (formatDistance(current_distance), fix_nums(current_segment['text'])),
-								current_segment['text'],
-								current_segment['sign'],
-								current_segment['point'][0],
-								current_segment['point'][1])
+							platform.sayRich("In %s, %s" % (formatDistance(current_distance), fix_nums(current_segment['text'])),"")
 		else:
 			closest_dist = 999999999999
 			# Are we on /any/ part of the route?
@@ -1415,6 +1401,12 @@ def set_position(lat, lon):
 					# That is now the first part
 					update_flow_path(15, "have route, found new part %s" % segment['text'])
 					print("on any part,", end=" ")
+					platform.sayRich("",
+							segment['text'],
+							segment['sign'],
+							segment['point'][0],
+							segment['point'][1],
+							False)
 					direction_list = total_direction_list[total_direction_list.index(segment):]
 					break
 			else:

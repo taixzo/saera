@@ -1003,13 +1003,17 @@ def enablePTP():
 def disablePTP():
 	pyotherside.send('disablePTP')
 
-def sayRich(spokenMessage, message, img, lat=0, lon=0):
-	pyotherside.send('sayRich',message, img, lat, lon)
-	speak(spokenMessage)
-	history.append([message, img, lat, lon, False])
-	with open(history_path, 'w') as history_file:
-		print ("SAVING HISTORY")
-		json.dump(list(history), history_file)
+def sayRich(spokenMessage, message=None, img="", lat=0, lon=0, toSpeak=True):
+	if message is None:
+		message = spokenMessage
+	if message:
+		pyotherside.send('sayRich',message, img, lat, lon)
+	if toSpeak:
+		speak(spokenMessage)
+		history.append([message, img, lat, lon, False])
+		with open(history_path, 'w') as history_file:
+			print ("SAVING HISTORY")
+			json.dump(list(history), history_file)
 
 def check_can_listen():
 	return not os.path.exists("/tmp/espeak_lock")
