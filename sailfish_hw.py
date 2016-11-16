@@ -967,7 +967,7 @@ def speak(string, is_backlog=False):
 
 		if config.speech_engine=="flite" and os.system("which flite > /dev/null 2>&1")==0:
 			# for the moment, let's assume we have gstreamer 1.0
-			os.system(prependString + 'touch /tmp/espeak_lock && flite -voice /usr/share/harbour-saera/qml/pages/flite/cmu_us_clb.flitevox -t "' + spoken_str.replace(":00"," o'clock").replace("\n",". ").replace(":", " ") + '" -o /tmp/saera_out.wav && gst-launch-1.0 -q filesrc location=/tmp/saera_out.wav ! wavparse ! pulsesink && rm /tmp/espeak_lock' + appendString + ' &')
+			os.system('touch /tmp/espeak_lock && flite -voice /usr/share/harbour-saera/qml/pages/flite/cmu_us_clb.flitevox -t "' + spoken_str.replace(":00"," o'clock").replace("\n",". ").replace(":", " ") + '" -o /tmp/saera_out.wav && ' + prependString + 'gst-launch-1.0 -q filesrc location=/tmp/saera_out.wav ! wavparse ! pulsesink && rm /tmp/espeak_lock' + appendString + ' &')
 
 		else:
 			if os.path.exists('/usr/bin/gst-launch-1.0'):
