@@ -388,7 +388,6 @@ def watch_proximity(e):
 		except FileNotFoundError:
 			# Device has no proximity sensor, or exposes it at a different path
 			break
->>>>>>> 279f501822eda19d95dfcf63122977a55e7f3630
 
 def undetect():
 	global detected
