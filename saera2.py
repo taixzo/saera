@@ -970,13 +970,13 @@ class Saera:
 						instruction['sign'] = {
 							"sharp left": -3,
 							"sharply left": -3,
-							"slight left": -2,
-							"slightly left": -2,
-							"left": -1,
+							"slight left": -1,
+							"slightly left": -1,
+							"left": -2,
 							"straight": 0,
-							"right": 1,
-							"slightly right": 2,
-							"slight right": 2,
+							"right": 2,
+							"slightly right": 1,
+							"slight right": 1,
 							"sharply right": 3,
 							"sharp right": 3,
 							"uturn": 6,
@@ -1213,7 +1213,8 @@ def quit():
 	platform.quit()
 
 def run_text(t):
-	return platform.speak(platform.run_text(t))
+	# return platform.speak(platform.run_text(t))
+	return platform.run_text(t)
 
 def run_voice():
 	return platform.listen()
