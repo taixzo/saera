@@ -25,14 +25,14 @@ class Nominatim(Geocoder):
     Note that Nominatim does not support SSL.
     """
 
-    structured_query_params = {
+    structured_query_params = set([
         'street',
         'city',
         'county',
         'state',
         'country',
         'postalcode',
-    }
+    ])
 
     def __init__(
             self,
@@ -145,12 +145,12 @@ class Nominatim(Geocoder):
         """
 
         if isinstance(query, dict):
-            params = {
-                key: val
+            params = dict([
+                (key, val)
                 for key, val
                 in query.items()
                 if key in self.structured_query_params
-            }
+            ])
         else:
             params = {'q': self.format_string % query}
 

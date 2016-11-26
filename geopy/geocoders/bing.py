@@ -25,13 +25,13 @@ class Bing(Geocoder):
         https://msdn.microsoft.com/en-us/library/ff701715.aspx
     """
 
-    structured_query_params = {
+    structured_query_params = set([
         'addressLine',
         'locality',
         'adminDistrict',
         'countryRegion',
         'postalCode',
-    }
+    ])
 
     def __init__(
             self,
@@ -128,12 +128,12 @@ class Bing(Geocoder):
             .. versionadded:: 1.4.0
         """
         if isinstance(query, dict):
-            params = {
-                key: val
+            params = dict([
+                (key, val)
                 for key, val
                 in query.items()
                 if key in self.structured_query_params
-            }
+            ])
             params['key'] = self.api_key
         else:
             params = {

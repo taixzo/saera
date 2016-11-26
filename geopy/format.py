@@ -114,13 +114,12 @@ _DIRECTIONS = [
 ]
 
 DIRECTIONS, DIRECTIONS_ABBR = zip(*_DIRECTIONS)
-ANGLE_DIRECTIONS = {
-    n * 11.25: d
-    for n, d
-    in enumerate(DIRECTIONS)
-}
-ANGLE_DIRECTIONS_ABBR = {
-    n * 11.25: d
+ANGLE_DIRECTIONS = dict([
+    (n * 11.25, d)
+    for n, d in enumerate(DIRECTIONS)
+])
+ANGLE_DIRECTIONS_ABBR = dict([
+    (n * 11.25, d)
     for n, d
     in enumerate(DIRECTIONS_ABBR)
-}
+])
