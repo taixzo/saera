@@ -100,7 +100,7 @@ Page {
                 for (var i=2; i<infos.length; i++) {
                   dest = infos[i].split('^')
                   destcoords = dest[1].split(',')
-                  listModel.append({value: dest[0]+(dest[2]=="True" ? " (Open)" : " (Closed)"), who: "saera", link: false, image: "", lat: parseFloat(destcoords[0]), lon: parseFloat(destcoords[1]), spot_preview: ""});
+                  listModel.append({value: dest[0]+(dest[2]=="True" ? " (Open)" : " (Closed)"), who: "saera", link: false, image: "", lat: parseFloat(destcoords[0]), lon: parseFloat(destcoords[1]), spot_preview: "", is_dest: true});
                 }
               }
             } else {
@@ -280,7 +280,7 @@ Page {
             id: listModel
             onCountChanged: {
                 messages.currentIndex = messages.count - 1
-                if (messages.count>2 && listModel.get(messages.count-2).lat) {
+                if (messages.count>2 && listModel.get(messages.count-2).lat && ! listModel.get(messages.count-2).is_dest) {
                     listModel.get(messages.count-2).lat = 0
                     listModel.get(messages.count-2).lon = 0
                 }
@@ -390,7 +390,7 @@ Page {
                       for (var i=2; i<infos.length; i++) {
                         dest = infos[i].split('^')
                         destcoords = dest[1].split(',')
-                        listModel.append({value: dest[0]+(dest[2]=="True" ? " (Open)" : " (Closed)"), who: "saera", link: false, image: "", lat: parseFloat(destcoords[0]), lon: parseFloat(destcoords[1]), spot_preview: ""});
+                        listModel.append({value: dest[0]+(dest[2]=="True" ? " (Open)" : " (Closed)"), who: "saera", link: false, image: "", lat: parseFloat(destcoords[0]), lon: parseFloat(destcoords[1]), spot_preview: "", is_dest: true});
                       }
                     }
                   } else {
