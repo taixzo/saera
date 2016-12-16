@@ -770,9 +770,26 @@ def is_playing():
 								"org.freedesktop.DBus.Properties.Get",
 								"org.mpris.MediaPlayer2.Player",
 								"PlaybackStatus"], stdout=subprocess.PIPE).communicate()
+	vplresult = subprocess.Popen(["gdbus",
+								"call",
+								"-e",
+								"-d",
+								"org.mpris.MediaPlayer2.llsVplayer",
+								"-o",
+								"/org/mpris/MediaPlayer2",
+								"-m",
+								"org.freedesktop.DBus.Properties.Get",
+								"org.mpris.MediaPlayer2.Player",
+								"PlaybackStatus"], stdout=subprocess.PIPE).communicate()
 	if not result[0]:
-		activeMediaPlayer = "CuteSpot"
-		return "Playing" if "Playing" in spotresult[0].decode("UTF-8") else "Paused" if "Paused" in spotresult[0].decode("UTF-8") else "Off" if not spotresult[0] else "Stopped"
+		if spotresult[0]:
+			activeMediaPlayer = "CuteSpot"
+			return "Playing" if "Playing" in spotresult[0].decode("UTF-8") else "Paused" if "Paused" in spotresult[0].decode("UTF-8") else "Off" if not spotresult[0] else "Stopped"
+		elif vplresult[0]:
+			activeMediaPlayer = "llsVplayer"
+			return "Playing" if "Playing" in vplresult[0].decode("UTF-8") else "Paused" if "Paused" in vplresult[0].decode("UTF-8") else "Off" if not vplresult[0] else "Stopped"
+		else:
+			return "Off"
 	else:
 		activeMediaPlayer = "jolla-mediaplayer"
 		return "Playing" if "Playing" in result[0].decode("UTF-8") else "Paused" if "Paused" in result[0].decode("UTF-8") else "Stopped"
