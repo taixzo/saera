@@ -72,16 +72,27 @@ def load_config():
 			except ValueError:
 				h = []
 			for i in h:
-				if len(i)>4 and i[4]:
-					pyotherside.send('addSpokenText', i[0], i[1], i[2], i[3])
-				else:
-					pyotherside.send('sayRich', i[0], i[1], i[2], i[3])
-				history.append(i)
+				if i[0]:
+					if len(i)>4 and i[4]:
+						print ("History: "+i[0])
+						pyotherside.send('addSpokenText', i[0], i[1], i[2], i[3])
+					else:
+						pyotherside.send('sayRich', i[0], i[1], i[2], i[3])
+					history.append(i)
 	return Struct(**settings)
+
+def save_config():
+	settings = config.__dict__
+	with open(settings_path, 'w') as settings_file:
+		json.dump(settings, settings_file)
 
 utterances = deque()
 history = deque(maxlen=20)
 config = load_config()
+
+def set_ovr_mode(mode):
+	config.internet_voice = mode if mode != "Off" else False
+	save_config()
 
 class MicroMock(object):
 	def __init__(self, **kwargs):
@@ -363,6 +374,7 @@ def watch_proximity(e):
 			prox_detect = open("/sys/devices/virtual/input/input10/prx_detect").read()
 		except FileNotFoundError:
 			# For devices with no proximity sensor
+			# Device has no proximity sensor, or exposes it at a different path
 			detected = False
 			break
 		if bool(int(prox_detect)) and not detected:
@@ -374,7 +386,7 @@ def watch_proximity(e):
 			e.wait()
 			e.clear()
 			print ('Application focused.')
-		time.sleep(1)
+			time.sleep(1)
 			if bool(int(prox_detect)) and not detected:
 				detected = True
 				print ("Detected proximity input")
@@ -385,9 +397,6 @@ def watch_proximity(e):
 				e.clear()
 				print ('Application focused.')
 			time.sleep(1)
-		except FileNotFoundError:
-			# Device has no proximity sensor, or exposes it at a different path
-			break
 
 def undetect():
 	global detected

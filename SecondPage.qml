@@ -37,6 +37,7 @@ Page {
   id: page2
 
   property Python py
+  property variant settings
 
   SilicaFlickable {
     anchors.fill: parent
@@ -49,7 +50,7 @@ Page {
         id: header
         title: "Settings"
       }
-      Row {
+      /*Row {
         width: parent.width
         spacing: parent.spacing
         x: parent.spacing
@@ -95,7 +96,7 @@ Page {
           placeholderText: "----"
           font.pixelSize: Theme.fontSizeLarge
         }
-      }
+      }*/
       Row {
         width: parent.width
         spacing: parent.spacing
@@ -111,6 +112,51 @@ Page {
                 py.call('saera2.set_24_hour_mode', [checked], function(res){})
             }
         }
+      }
+      Row {
+        width: parent.width
+        spacing: parent.spacing
+        x: parent.spacing
+
+        ComboBox {
+          // width: 
+          label: "Online voice recognition"
+          id: ovr_mode
+
+          currentIndex: page2.settings.internet_voice
+
+          menu: ContextMenu {
+            MenuItem { text: "Off"}
+            MenuItem { text: "Wifi only" }
+            MenuItem { text: "Always" }
+          }
+          onCurrentIndexChanged: {
+            console.log(ovr_mode.value)
+            py.call('saera2.set_ovr_mode', [ovr_mode.value], function(res){})
+          }
+        }
+      }
+
+      Row {
+        width: parent.width
+        spacing: parent.spacing
+        x: parent.spacing
+
+        visible: ovr_mode.value != "Off"
+
+        ComboBox {
+          label: "Engine to use"
+          id: ovr_engine
+
+          menu: ContextMenu {
+            MenuItem { text: "Wit" }
+            MenuItem {
+              text: "Houndify"
+              enabled: false
+            }
+          }
+        }
+
       }
     }
   }

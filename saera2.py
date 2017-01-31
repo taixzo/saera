@@ -40,10 +40,10 @@ if sys.version_info[0]<3:
 		try:
 			import fremantle_hw as platform
 		except ImportError:
-			try:
+			# try:
 				import harmattan_hw as platform
-			except ImportError:
-				import cmd_hw as platform
+			# except ImportError:
+				# import cmd_hw as platform
 	else:
 		if pfm.linux_distribution()[0].lower()=='ubuntu':
 			import ubuntu_hw as platform
@@ -380,6 +380,8 @@ class Saera:
 				except:
 					return "I need an internet connection to look up the weather, sorry."
 				locdic = json.loads(req)
+				if not locdic['geonames']:
+					return "I don't know where %s is." % location
 				loc = (0,locdic['geonames'][0]["toponymName"],"",locdic['geonames'][0]["lat"],locdic['geonames'][0]["lng"])
 				try:
 					tz = json.loads(urllib2.urlopen('http://api.geonames.org/timezoneJSON?lat='+locdic['geonames'][0]["lat"]+'&lng='+locdic['geonames'][0]["lng"]+'&username=taixzo').read().decode("utf-8"))['rawOffset']
@@ -1213,8 +1215,8 @@ def quit():
 	platform.quit()
 
 def run_text(t):
-	# return platform.speak(platform.run_text(t))
-	return platform.run_text(t)
+	return platform.speak(platform.run_text(t))
+	# return platform.run_text(t)
 
 def run_voice():
 	return platform.listen()
@@ -1233,7 +1235,7 @@ def resume_daemons():
 	return platform.resume_daemons()
 
 import logging
-logging.basicConfig(filename='/home/nemo/saera_nav.log', level=logging.DEBUG)
+# logging.basicConfig(filename='/home/nemo/saera_nav.log', level=logging.DEBUG)
 last_flow_path = -1
 def update_flow_path(path, message):
 	global last_flow_path
@@ -1380,6 +1382,9 @@ def set_24_hour_mode(mode_is_24):
 		timeparser2.timemode = 24
 	else:
 		timeparser2.timemode = 12
+
+def set_ovr_mode(mode):
+	platform.set_ovr_mode(mode)
 
 if __name__=="__main__":
 	initialize()

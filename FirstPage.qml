@@ -42,9 +42,11 @@ Page {
     property real longitude: 0;
     property bool listening: false;
 
+    property variant settings: {}
+
     onStatusChanged: {
         if (status === PageStatus.Active) {
-            pageStack.pushAttached(Qt.resolvedUrl("SecondPage.qml"), {"py":py});
+            pageStack.pushAttached(Qt.resolvedUrl("SecondPage.qml"), {"py":py, "settings":settings});
         }
     }
 
