@@ -250,14 +250,19 @@ def regen_streetnames():
 	print (streetnames)
 	# espeak2julius.create_grammar(streetnames, 'addresses', 'addresses')
 
+cmd_list = [f+'julius/julius.jolla','-module', '-record', '/tmp/saera/', '-gram',f+'julius/saera']
+
 pyotherside.send('load_msg','Loading music titles...')
 if not os.path.exists('/home/nemo/.cache/saera/musictitles.dfa'):
 	if not os.path.exists('/home/nemo/.cache/saera'):
 		os.mkdir('/home/nemo/.cache/saera')
 	regen_music()
 	espeak2julius.create_grammar(lst, 'musictitles', 'songtitles')
+	if os.path.exists('/home/nemo/.cache/saera/musictitles.dfa'): # double check that we have a grammar
+		cmd_list += ['-gram', '/home/nemo/.cache/saera/musictitles']
 else:
 	regen_music()
+	cmd_list += ['-gram', '/home/nemo/.cache/saera/musictitles']
 
 pyotherside.send('load_msg','Loading contacts...')
 if not os.path.exists('/home/nemo/.cache/saera/contacts.dfa'):
@@ -265,8 +270,11 @@ if not os.path.exists('/home/nemo/.cache/saera/contacts.dfa'):
 		os.mkdir('/home/nemo/.cache/saera')
 	regen_contacts()
 	espeak2julius.create_grammar(list(contacts) if contacts else ['John Smith'], 'contacts', 'contacts')
+	if os.path.exists('/home/nemo/.cache/saera/contacts.dfa'):
+		cmd_list += ['-gram', '/home/nemo/.cache/saera/contacts']
 else:
 	regen_contacts()
+	cmd_list += ['-gram', '/home/nemo/.cache/saera/contacts']
 
 pyotherside.send('load_msg','Loading street names...')
 if not os.path.exists('/home/nemo/.cache/saera/addresses.dfa'):
@@ -275,8 +283,11 @@ if not os.path.exists('/home/nemo/.cache/saera/addresses.dfa'):
 	regen_streetnames()
 	pyotherside.send('load_msg','Loading street names\n(this may take a while)...')
 	espeak2julius.create_grammar(streetnames, 'addresses', 'addresses')
+	if os.path.exists('/home/nemo/.cache/saera/addresses.dfa'):
+		cmd_list += ['-gram', '/home/nemo/.cache/saera/addresses']
 else:
 	pass # We don't do anything with streetnames here so no point to load them
+	cmd_list += ['-gram', '/home/nemo/.cache/saera/addresses']
 
 pyotherside.send('load_msg','Initializing speech recognition...')
 if not os.path.exists('/tmp/saera'):
@@ -291,7 +302,8 @@ if stopped_juliuses:
 	os.kill(pid, 18)
 	jproc = None
 else:
-	jproc = subprocess.Popen([f+'julius/julius.jolla','-module', '-record', '/tmp/saera/', '-gram',f+'julius/saera', '-gram', '/home/nemo/.cache/saera/musictitles', '-gram', '/home/nemo/.cache/saera/contacts', '-gram', '/home/nemo/.cache/saera/addresses','-h',f+'julius/hmmdefs','-hlist',f+'julius/tiedlist','-input','mic','-tailmargin','800','-rejectshort','600'],stdout=subprocess.PIPE)
+	cmd_list += ['-h',f+'julius/hmmdefs','-hlist',f+'julius/tiedlist','-input','mic','-tailmargin','800','-rejectshort','600']
+	jproc = subprocess.Popen(cmd_list,stdout=subprocess.PIPE)
 # jproc = subprocess.Popen([f+'julius/julius.arm','-module','-gram','/tmp/saera/musictitles','-h',f+'julius/hmmdefs','-hlist',f+'julius/tiedlist','-input','mic','-tailmargin','800','-rejectshort','600'],stdout=subprocess.PIPE)
 client = pyjulius.Client('localhost',10500)
 print ('Connecting to pyjulius server')
