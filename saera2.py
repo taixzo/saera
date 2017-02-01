@@ -540,7 +540,6 @@ class Saera:
 			print (weather)
 			print (str(int(round(temp))))
 			# print (u("°."))
-			print ("The weather "+loc_str+" is "+weather+", and "+str(int(round(temp)))+u("°."))
 			return "The weather "+loc_str+" is "+weather+", and "+str(int(round(temp)))+u("°.")
 	def call_phone(self, result):
 		self.short_term_memory.set('intent','call_phone')

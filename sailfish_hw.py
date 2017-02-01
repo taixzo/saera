@@ -257,9 +257,13 @@ if not os.path.exists('/home/nemo/.cache/saera/musictitles.dfa'):
 	if not os.path.exists('/home/nemo/.cache/saera'):
 		os.mkdir('/home/nemo/.cache/saera')
 	regen_music()
-	espeak2julius.create_grammar(lst, 'musictitles', 'songtitles')
-	if os.path.exists('/home/nemo/.cache/saera/musictitles.dfa'): # double check that we have a grammar
-		cmd_list += ['-gram', '/home/nemo/.cache/saera/musictitles']
+	try:
+		espeak2julius.create_grammar(lst, 'musictitles', 'songtitles')
+		if os.path.exists('/home/nemo/.cache/saera/musictitles.dfa'): # double check that we have a grammar
+			cmd_list += ['-gram', '/home/nemo/.cache/saera/musictitles']
+	except UnicodeEncodeError:
+		# TODO: add support for unicode words in espeak2julius
+		print ("Unicode names fround in music titles, skipping")
 else:
 	regen_music()
 	cmd_list += ['-gram', '/home/nemo/.cache/saera/musictitles']
@@ -269,9 +273,13 @@ if not os.path.exists('/home/nemo/.cache/saera/contacts.dfa'):
 	if not os.path.exists('/home/nemo/.cache/saera'):
 		os.mkdir('/home/nemo/.cache/saera')
 	regen_contacts()
-	espeak2julius.create_grammar(list(contacts) if contacts else ['John Smith'], 'contacts', 'contacts')
-	if os.path.exists('/home/nemo/.cache/saera/contacts.dfa'):
-		cmd_list += ['-gram', '/home/nemo/.cache/saera/contacts']
+	try:
+		espeak2julius.create_grammar(list(contacts) if contacts else ['John Smith'], 'contacts', 'contacts')
+		if os.path.exists('/home/nemo/.cache/saera/contacts.dfa'):
+			cmd_list += ['-gram', '/home/nemo/.cache/saera/contacts']
+	except UnicodeEncodeError:
+		# TODO: add support for unicode words in espeak2julius
+		print ("Unicode names fround in contacts, skipping")
 else:
 	regen_contacts()
 	cmd_list += ['-gram', '/home/nemo/.cache/saera/contacts']
@@ -282,9 +290,13 @@ if not os.path.exists('/home/nemo/.cache/saera/addresses.dfa'):
 		os.mkdir('/home/nemo/.cache/saera')
 	regen_streetnames()
 	pyotherside.send('load_msg','Loading street names\n(this may take a while)...')
-	espeak2julius.create_grammar(streetnames, 'addresses', 'addresses')
-	if os.path.exists('/home/nemo/.cache/saera/addresses.dfa'):
-		cmd_list += ['-gram', '/home/nemo/.cache/saera/addresses']
+	try:
+		espeak2julius.create_grammar(streetnames, 'addresses', 'addresses')
+		if os.path.exists('/home/nemo/.cache/saera/addresses.dfa'):
+			cmd_list += ['-gram', '/home/nemo/.cache/saera/addresses']
+	except UnicodeEncodeError:
+		# TODO: add support for unicode words in espeak2julius
+		print ("Unicode names fround in street names, skipping")
 else:
 	pass # We don't do anything with streetnames here so no point to load them
 	cmd_list += ['-gram', '/home/nemo/.cache/saera/addresses']
