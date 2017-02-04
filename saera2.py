@@ -1247,108 +1247,176 @@ def set_position(lat, lon):
 	global total_direction_list
 	global current_street
 	max_distance_from_route = 50
-	# platform.cur.execute('INSERT INTO Locations (LocName, Zip, Latitude, Longitude, Timezone) VALUES ("here", "", '+str(lat)+', '+str(lon)+', 0)')
+
+	global directions_given
+	global last_flow_path
+
+	# print ("%f, %f" % (lat, lon))
+
 	platform.cur.execute('INSERT OR REPLACE INTO Locations (ID, LocName, Zip, Latitude, Longitude, Timezone) VALUES ((SELECT ID FROM Locations WHERE LocName = "here"), "here", "", '+str(lat)+', '+str(lon)+', 0)')
 	platform.cur.execute('INSERT OR REPLACE INTO Variables (ID, VarName, Value) VALUES ((SELECT ID FROM Variables WHERE VarName = "here"), "here", "'+str(platform.cur.lastrowid)+'");')
 	platform.cur.execute('INSERT INTO LocationLogs (Latitude, Longitude) VALUES ('+str(lat)+','+str(lon)+')')
 	platform.conn.commit()
 
-	if geoalarm_list != []:
-		for i, alarm in enumerate(geoalarm_list):
-			if geo_distance(lat, lon, alarm[0], alarm[1]) < alarm[2]:
-				platform.alarm(alarm[3])
-				del geoalarm_list[i]
-				break
-
+	# Do we have a route?
 	if direction_list != []:
-		# if abs(lat-direction_list[0]['point'][1])<0.001 and abs(lon-direction_list[0]['point'][0])<0.013:
-		print (geo_distance(lat, lon, direction_list[0]['point'][1], direction_list[0]['point'][0]))
-		if navigation_state in ("waiting", "in transit", "approaching"):
-			# TODO: change this value based on speed
-			if geo_distance(lat, lon, direction_list[0]['point'][1], direction_list[0]['point'][0])<max(75, avg_speed*5):
-			# if True:
-				print (direction_list[0])
-				platform.speak(fix_nums(direction_list[0]['text']))
-				sleep(10)
-				navigation_state = "checkpoint"
-			if navigation_state == "in transit":
-				approach_distance = 400 if config.imperial else 500
-				dist_to_next = geo_distance(lat, lon, direction_list[0]['point'][1], direction_list[0]['point'][0])
-				if dist_to_next<approach_distance:
-					platform.speak("In %s, %s" % (formatDistance(approach_distance), fix_nums(direction_list[0]['text'])))
-					navigation_state = "approaching"
-		elif navigation_state == "checkpoint":
-			try:
-				if len(direction_list)==1 and geo_distance(
-					lat,
-					lon,
-					direction_list[0]['point'][1],
-					direction_list[0]['point'][0]) < max(75, avg_speed*5):
-					return
-				elif len(direction_list)>1 and geo_distance(
-					lat,
-					lon,
-					direction_list[0]['point'][1],
-					direction_list[0]['point'][0]) < min(max(75, avg_speed*5), geo_distance(
-						direction_list[1]['point'][1],
-						direction_list[1]['point'][0],
-						direction_list[0]['point'][1],
-						direction_list[0]['point'][0]) / 2
-					):
-					return
-				else:
-					if len(direction_list)>1:
-						if direction_list[0]['text'] == "Start":
-							if direction_list[1]['point'][1]>lat:
-								if direction_list[1]['point'][1]-lat>abs(direction_list[1]['point'][0]-lon):
-									compass_dir = "north"
-								elif direction_list[1]['point'][0]>lon:
-									compass_dir = "east"
-								else:
-									compass_dir = "west"
-							else:
-								if lat-direction_list[1]['point'][1]>abs(direction_list[1]['point'][0]-lon):
-									compass_dir = "south"
-								elif direction_list[1]['point'][0]>lon:
-									compass_dir = "east"
-								else:
-									compass_dir = "west"
-							tex = "Head "+compass_dir+(" on " + fix_nums(direction_list[1]['text']).split(" onto ")[-1]+"." if " onto " in direction_list[1]['text'] else ".")
-							platform.sayRich(tex, tex, 4)
-							navigation_state = "in transit"
-						else:
-							current_street = direction_list[0]['text'].split(" onto ")[-1]+" " if " onto " in direction_list[0]["text"] else ""
-							formatted_distance = formatDistance(direction_list[0]['distance'])
-							# platform.sayRich("In "+formatDistance(direction_list[0]['distance'])+", "+direction_list[1]['text'], direction_list[1]['text'],direction_list[1]['sign'], direction_list[1]['point'][1], direction_list[1]['point'][0])
-							if direction_list[0]['distance'] > 1000:
-								platform.sayRich(
-									"Continue on %sfor %s." % (fix_nums(current_street), formatted_distance),
-									direction_list[1]['text'],
-									direction_list[1]['sign'],
-									direction_list[1]['point'][1],
-									direction_list[1]['point'][0])
-								navigation_state = "in transit"
-							else:
-								if direction_list[1]['distance'] > 1000 or len(direction_list) < 3:
-									platform.sayRich(
-										"In "+formatDistance(direction_list[0]['distance'])+", "+fix_nums(direction_list[1]['text']),
-										direction_list[1]['text'],direction_list[1]['sign'],
-										direction_list[1]['point'][1],
-										direction_list[1]['point'][0])
-								else:
-									platform.sayRich(
-										"In "+formatDistance(direction_list[0]['distance'])+", "+direction_list[1]['text']+", then "+fix_nums(direction_list[2]['text']),
-										direction_list[1]['text'],direction_list[1]['sign'],
-										direction_list[1]['point'][1],
-										direction_list[1]['point'][0])
-								navigation_state = "approaching"
-						direction_list = direction_list[1:]
+		current_segment = direction_list[0]
+		current_distance = geo_distance(lat, lon, current_segment['point'][0], current_segment['point'][1])
+		# print (current_segment['point'])
+		print ("have route,", end=" ")
+
+		# Are we on the first part of the route?
+		if geoutil.distance_to_polyline([lat, lon], current_segment['path']) < max_distance_from_route:
+			print ("on1seg,", end=" ")
+			# Are we close to the turn?
+			if current_distance < 75: # TODO: change value based on speed
+				print ("turn,", end=" ")
+				# Have we given turn directions?
+				if directions_given.turn:
+					# Are we closer to the next part than this one?
+					if len(direction_list) > 1 and geoutil.distance_to_polyline([lat, lon], direction_list[1]['path']) < geoutil.distance_to_polyline([lat, lon], current_segment['path']):
+						print ("newseg,", end=" ")
+						# That is now the first part
+						last_direction = direction_list.pop(0)
+						current_street = last_direction['text'].split(" onto ")[-1]+" " if " onto " in last_direction["text"] else ""
+						directions_given.turn = False
+						directions_given.turn_distance = False
+						directions_given.half_mile = False
+						directions_given.two_mile = False
+						directions_given.continue_on = False
+						current_segment = direction_list[0]
+						platform.sayRich("",
+							current_segment['text'],
+							current_segment['sign'],
+							current_segment['point'][0],
+							current_segment['point'][1],
+							False)
+						update_flow_path(1, "have route, on1seg, turn, newseg, %s" % last_direction['text'])
 					else:
-						direction_list = []
-						platform.disablePTP()
-			except:
-				print (direction_list)
-				raise
+						# Clean up if this is the destination
+						if len(direction_list)==1:
+							update_flow_path(15, "no route")
+							direction_list = []
+							platform.disablePTP()
+						update_flow_path(2, "have route, on1seg, turn, no newseg")
+						print ("dp1: %f, dp2: %f" % (
+							geoutil.distance_to_polyline([lat, lon], direction_list[1]['path']),
+							geoutil.distance_to_polyline([lat, lon], current_segment['path'])
+						))
+				# No?
+				else:
+					print ("giveturn,", end=" ")
+					update_flow_path(3, "have route, on1seg, giveturn, %s" % current_segment['text'])
+					directions_given.turn = True
+					if len(direction_list) > 1 and direction_list[1]['distance'] < 100:
+						platform.speak("%s, then %s." % (fix_nums(current_segment['text']), fix_nums(direction_list[1]['text'])))
+					else:
+						platform.speak(fix_nums(current_segment['text']))
+			else:
+				print ("intrans,dist=%s" % current_distance, end=" ")
+				# Is the current segment more than 1 mile?
+				if current_segment['distance'] > 1600: # approximately
+					# Is it more than 5 miles?
+					if current_segment['distance'] > 8000:
+						# Are we less than 2 miles away?
+						if current_distance < 3218:
+							# Have we given 2-mile warning?
+							if directions_given.two_mile:
+								# Are we less than ½ mile away?
+								if current_distance < 850: # perhaps a bit of a buffer
+									# Have we given ½-mile warning?
+									if directions_given.half_mile:
+										update_flow_path(4, "have route, on1seg, intrans, half-mile given %s" % current_segment['text'])
+										print ("")
+										return
+									else:
+										# Give ½-mile warning
+										update_flow_path(5, "have route, on1seg, intrans, give half-mile %s" % current_segment['text'])
+										directions_given.half_mile = True
+										platform.sayRich("In %s, %s" % (formatDistance(current_distance), fix_nums(direction_list[0]['text'])),"")
+								else:
+									# Have we given "continue" notification?
+									if directions_given.continue_on:
+										update_flow_path(6, "have route, on1seg, intrans, continue given %s" % current_segment['text'])
+										print("")
+										return
+									else:
+										# Give it
+										update_flow_path(7, "have route, on1seg, intrans, give continue %s" % current_segment['text'])
+										directions_given.continue_on = True
+										platform.sayRich(
+											"Continue on %sfor %s." % (fix_nums(current_street), formatDistance(current_segment['distance'])),"")
+							else:
+								# Give it
+								update_flow_path(8, "have route, on1seg, intrans, give two-mile %s" % current_segment['text'])
+								directions_given.two_mile = True
+								platform.sayRich("In %s, %s" % (formatDistance(current_distance), fix_nums(current_segment['text'])),"")
+					else:
+						# Are we less than 1/2 mile away?
+						if current_distance < 804:
+							# Have we given 1/2-mile warning?
+							if directions_given.half_mile:
+								update_flow_path(9, "have route, on1seg, intrans, half-mile given %s" % current_segment['text'])
+								print("")
+								return
+							else:
+								# Give it
+								update_flow_path(10, "have route, on1seg, intrans, give half-mile %s" % current_segment['text'])
+								directions_given.half_mile = True
+								platform.sayRich("In %s, %s" % (formatDistance(current_distance), fix_nums(current_segment['text'])),"")
+						else:
+							# Have we given "continue" notification?
+							if directions_given.continue_on:
+								update_flow_path(11, "have route, on1seg, intrans, continue given %s" % current_segment['text'])
+								print("")
+								return
+							else:
+								# Give it
+								update_flow_path(12, "have route, on1seg, intrans, give continue %s" % current_segment['text'])
+								directions_given.continue_on = True
+								platform.sayRich(
+									"Continue on %sfor %s." % (fix_nums(current_street), formatDistance(current_segment['distance'])),"")
+				else:
+					# Have we give turn directions?
+					if directions_given.turn_distance:
+						update_flow_path(13, "have route, on1seg, intrans, turn distance given %s" % current_segment['text'])
+						print("")
+						return
+					else:
+						# Give it
+						update_flow_path(14, "have route, on1seg, intrans, give turn distance %s" % current_segment['text'])
+						directions_given.turn_distance = True
+						if len(direction_list) > 1 and direction_list[1]['distance'] < 100:
+							platform.sayRich("In %s, %s, then %s." % (
+									formatDistance(current_distance),
+									fix_nums(current_segment['text']),
+									fix_nums(direction_list[1]['text'])),"")
+						else:
+							platform.sayRich("In %s, %s" % (formatDistance(current_distance), fix_nums(current_segment['text'])),"")
+		else:
+			closest_dist = 999999999999
+			# Are we on /any/ part of the route?
+			for segment in total_direction_list:
+				distance_to_segment = geoutil.distance_to_polyline([lat, lon], segment['path'])
+				closest_dist = min(distance_to_segment, closest_dist)
+				if distance_to_segment < closest_dist:
+					# That is now the first part
+					update_flow_path(15, "have route, found new part %s" % segment['text'])
+					print("on any part,", end=" ")
+					platform.sayRich("",
+							segment['text'],
+							segment['sign'],
+							segment['point'][0],
+							segment['point'][1],
+							False)
+					direction_list = total_direction_list[total_direction_list.index(segment):]
+					break
+			else:
+				update_flow_path(16, "have route, not on any part")
+				print("not on any part,", end=" ")
+				print(closest_dist, current_segment['path'], end=" ")
+				# platform.speak("I should reroute now")
+	print ("")
 
 
 def activate():
