@@ -1009,6 +1009,18 @@ def get_unread_email():
 	else:
 		return []
 
+def get_all_email():
+	if has_mail:
+		mailconn.execute("VACUUM") # to move messages from the WAL into the main database
+		mailcur.execute("SELECT * FROM mailmessages WHERE stamp>'"+(datetime.now()+timedelta(days=-1)).strftime("%Y-%m-%dT%H:%M:%S.000")+"'")
+		rows = mailcur.fetchall()
+		messages = []
+		for row in rows:
+			messages.append({'type':'email','to':row[9],'from':row[4].split(" <")[0].split(" (")[0].replace('"',''),'subject':row[6].split(' [')[0],'content':row[22]})
+		return messages
+	else:
+		return []
+
 class MailFolder:
 	def __init__(self):
 		self.messages = {}
@@ -1016,6 +1028,8 @@ class MailFolder:
 		for i in os.listdir(os.getenv("HOME")+"/.qmf/mail/"):
 			if not i in self.messages and not "part" in i:
 				self.messages[i] = email.message_from_file(open(os.getenv("HOME")+"/.qmf/mail/"+i))
+
+print (json.dumps(get_all_email()))
 
 speech_thread = None
 
