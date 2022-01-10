@@ -1,4 +1,6 @@
 import sys
+import os
+import argparse
 
 MODE = 'NORMAL'
 CURSOR = 0
@@ -8,6 +10,8 @@ MIN_PHONETIC = 3
 editbuffer = ''
 yankbuffer = ''
 STATELIST = []
+filename = ''
+file = None
 
 # Utility functions
 def safe_rindex(s, n):
@@ -116,6 +120,9 @@ def escape():
     editbuffer = ' '.join(editbuffer)
     MODE = 'NORMAL'
     return 'normal mode'
+
+def save():
+    pass
 
 command_words = [
     "word",
@@ -242,4 +249,34 @@ def main():
             buf = ''
 
 if __name__=='__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument("file", nargs='?', help="The filename to edit. Can be an existing or new filename.")
+    parser.add_argument("-r", "--readonly", help="Open a file for reading only, no writing.", action="store_true")
+    args = parser.parse_args()
+    if args.file:
+        if os.path.exists(args.file):
+            filename = args.file
+            if args.readonly:
+                try:
+                    file = open(filename, 'r')
+                    editbuffer = file.read()
+                except PermissionError:
+                    print ("Cannot open the file "+args.file+" for reading.")
+                    sys.exit(0)
+            else:
+                try:
+                    file = open(filename, 'r+')
+                    editbuffer = file.read()
+                except PermissionError:
+                    print ("Cannot open the file "+args.file+" for writing.")
+                    sys.exit(0)
+        else:
+            if args.readonly:
+                print ("File "+args.file+" does not exist.")
+                sys.exit(0)
+            filename = os.path.dirname(os.path.abspath(args.file))
+            try:
+                file = open(filename, 'w')
+            except PermissionError:
+                print ("Cannot create the file "+args.file)
     main()
